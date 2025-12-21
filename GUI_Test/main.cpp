@@ -5,6 +5,7 @@
 #include <cstdio>
 #include "../matrix_pixels.hpp"
 #include "../color_rgba.hpp"
+#include "../matrix_effects.hpp"
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -14,9 +15,12 @@ constexpr int screenHeight = 480;
 constexpr int cMatrixWidth  = 16;
 constexpr int cMatrixHeight = 16;
 
-// Pixel step on screen and size of the drawn block
-constexpr int cPW = 32; // distance between cells
-constexpr int cPS = 22; // size of the filled square
+struct RenderLayout {
+    int step;   // distance between cells (grid pitch)
+    int fill;   // size of the filled square
+    int offsX;  // top-left offset to center grid horizontally
+    int offsY;  // top-left offset to center grid vertically
+};
 
 // Simple SDL wrapper to draw matrix_pixels with a time-based gradient
 class csMainProgramSDL {
@@ -40,7 +44,7 @@ public:
                                   SDL_WINDOWPOS_UNDEFINED,
                                   screenWidth,
                                   screenHeight,
-                                  SDL_WINDOW_SHOWN);
+                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
         if (window == nullptr) {
             return false;
         }
@@ -49,26 +53,8 @@ public:
         if (renderer == nullptr) {
             return false;
         }
+        SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         return true;
-    }
-
-    void updateGradient() {
-        // Time-dependent gradient; hue-like drift on X/Y axes.
-        const float t = static_cast<float>(SDL_GetTicks()) * 0.001f;
-        auto wave = [](float v) -> uint8_t {
-            return static_cast<uint8_t>((std::sin(v) * 0.5f + 0.5f) * 255.0f);
-        };
-
-        for (int y = 0; y < cMatrixHeight; ++y) {
-            for (int x = 0; x < cMatrixWidth; ++x) {
-                const float xf = static_cast<float>(x) * 0.4f;
-                const float yf = static_cast<float>(y) * 0.4f;
-                const uint8_t r = wave(t * 0.8f + xf);
-                const uint8_t g = wave(t * 1.0f + yf);
-                const uint8_t b = wave(t * 0.6f + xf + yf * 0.5f);
-                matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
-            }
-        }
     }
 
     void mainLoop() {
@@ -81,35 +67,59 @@ public:
                 }
             }
 
-            updateGradient();
+            updateGradient(matrix, SDL_GetTicks());
             renderProc();
             SDL_Delay(16); // ~60 FPS
         }
     }
 
-    void drawPixel(int x, int y, csColorRGBA c) {
+    [[nodiscard]] RenderLayout makeLayout() const noexcept {
+        // Keep a small padding; fit grid into logical renderer size.
+        constexpr int padding = 10;
+        const int matrixW = static_cast<int>(matrix.width());
+        const int matrixH = static_cast<int>(matrix.height());
+
+        const int availW = max_c(screenWidth - padding * 2, 1);
+        const int availH = max_c(screenHeight - padding * 2, 1);
+
+        const int step = max_c(1, min_c(availW / matrixW, availH / matrixH));
+        const int fill = max_c(1, step - max_c(2, step / 4)); // leave a border
+
+        const int totalW = step * matrixW;
+        const int totalH = step * matrixH;
+        const int offsX = (screenWidth - totalW) / 2;
+        const int offsY = (screenHeight - totalH) / 2;
+
+        return RenderLayout{step, fill, offsX, offsY};
+    }
+
+    void drawPixel(int x, int y, int step, int fill, csColorRGBA c) {
         SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
-        SDL_Rect rectBorder = {x, y, cPW - 1, cPW - 1};
+        SDL_Rect rectBorder = {x, y, step - 1, step - 1};
         SDL_RenderDrawRect(renderer, &rectBorder);
 
         SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, SDL_ALPHA_OPAQUE);
-        SDL_Rect rectFill = {x + (cPW - cPS) / 2,
-                             y + (cPW - cPS) / 2,
-                             cPS,
-                             cPS};
+        SDL_Rect rectFill = {x + (step - fill) / 2,
+                             y + (step - fill) / 2,
+                             fill,
+                             fill};
         SDL_RenderFillRect(renderer, &rectFill);
     }
 
     void renderProc() {
+        const RenderLayout layout = makeLayout();
+
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
-        const int offsX = 20;
-        const int offsY = 20;
         for (int x = 0; x < cMatrixWidth; ++x) {
             for (int y = 0; y < cMatrixHeight; ++y) {
                 const csColorRGBA c = matrix.getPixel(x, y);
-                drawPixel(offsX + x * cPW, offsY + y * cPW, c);
+                drawPixel(layout.offsX + x * layout.step,
+                          layout.offsY + y * layout.step,
+                          layout.step,
+                          layout.fill,
+                          c);
             }
         }
 
