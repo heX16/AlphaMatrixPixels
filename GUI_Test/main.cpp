@@ -11,10 +11,6 @@
 constexpr int screenWidth  = 640;
 constexpr int screenHeight = 480;
 
-// Logical matrix size for the demo
-constexpr int cMatrixWidth  = 16;
-constexpr int cMatrixHeight = 16;
-
 struct RenderLayout {
     int step;   // distance between cells (grid pitch)
     int fill;   // size of the filled square
@@ -31,8 +27,7 @@ public:
     SDL_Renderer* renderer{};
     SDL_Event event{};
 
-    csMatrixPixels matrix{static_cast<tMatrixPixelsSize>(cMatrixWidth),
-                          static_cast<tMatrixPixelsSize>(cMatrixHeight)};
+    csMatrixPixels matrix{0, 0};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -54,6 +49,7 @@ public:
             return false;
         }
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
+        recreateMatrix(16, 16);
         return true;
     }
 
@@ -62,8 +58,21 @@ public:
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT || event.type == SDL_APP_TERMINATING) {
                     quit = true;
-                } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                    quit = true;
+                } else if (event.type == SDL_KEYDOWN) {
+                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        quit = true;
+                    } else if (event.key.keysym.sym == SDLK_1 || event.key.keysym.sym == SDLK_2) {
+                        tMatrixPixelsSize w = 0;
+                        tMatrixPixelsSize h = 0;
+                        if (event.key.keysym.sym == SDLK_1) {
+                            w = 16;
+                            h = 16;
+                        } else if (event.key.keysym.sym == SDLK_2) {
+                            w = 15;
+                            h = 5;
+                        }
+                        recreateMatrix(w, h);
+                    }
                 }
             }
 
@@ -112,8 +121,10 @@ public:
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
-        for (int x = 0; x < cMatrixWidth; ++x) {
-            for (int y = 0; y < cMatrixHeight; ++y) {
+        const int matrixW = static_cast<int>(matrix.width());
+        const int matrixH = static_cast<int>(matrix.height());
+        for (int x = 0; x < matrixW; ++x) {
+            for (int y = 0; y < matrixH; ++y) {
                 const csColorRGBA c = matrix.getPixel(x, y);
                 drawPixel(layout.offsX + x * layout.step,
                           layout.offsY + y * layout.step,
@@ -124,6 +135,13 @@ public:
         }
 
         SDL_RenderPresent(renderer);
+    }
+
+    void recreateMatrix(tMatrixPixelsSize w, tMatrixPixelsSize h) {
+        if (w == 0 || h == 0) {
+            return;
+        }
+        matrix = csMatrixPixels{w, h};
     }
 
     void done() {
