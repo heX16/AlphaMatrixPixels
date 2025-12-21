@@ -18,8 +18,8 @@ struct TestStats {
         }                                                                                      \
     } while (0)
 
-inline bool colorEq(const csColorRGBA& c, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    return c.r == r && c.g == g && c.b == b && c.a == a;
+inline bool colorEq(const csColorRGBA& c, uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
+    return c.a == a && c.r == r && c.g == g && c.b == b;
 }
 
 // Reference SourceOver implementation (straight alpha) for expectations.
@@ -39,27 +39,27 @@ inline csColorRGBA refSourceOver(csColorRGBA dst, csColorRGBA src, uint8_t globa
 void test_color_component_ctor(TestStats& stats) {
     const char* testName = "color_component_ctor";
     csColorRGBA c{10, 20, 30, 40};
-    EXPECT_TRUE(colorEq(c, 10, 20, 30, 40), "component constructor keeps channels");
+    EXPECT_TRUE(colorEq(c, 40, 10, 20, 30), "component constructor keeps channels");
 }
 
 void test_color_packed_alpha_promote(TestStats& stats) {
     const char* testName = "color_packed_alpha_promote";
-    // Packed as 0xRRGGBBAA; here AA==0 -> should be promoted to 0xFF.
-    csColorRGBA c{0x01020300u};
-    EXPECT_TRUE(colorEq(c, 0x01, 0x02, 0x03, 0xFF), "alpha promoted when zero");
+    // Packed as 0xAARRGGBB; here AA==0 -> should be promoted to 0xFF.
+    csColorRGBA c{0x00010203u}; // A=0x00, R=0x01, G=0x02, B=0x03
+    EXPECT_TRUE(colorEq(c, 0xFF, 0x01, 0x02, 0x03), "alpha promoted when zero (ARGB)");
 }
 
 void test_color_packed_preserve(TestStats& stats) {
     const char* testName = "color_packed_preserve";
-    csColorRGBA c{0x0A0B0C7Fu};
-    EXPECT_TRUE(colorEq(c, 0x0A, 0x0B, 0x0C, 0x7F), "packed alpha preserved when non-zero");
+    csColorRGBA c{0x80010203u}; // A=0x80, R=0x01, G=0x02, B=0x03
+    EXPECT_TRUE(colorEq(c, 0x80, 0x01, 0x02, 0x03), "packed alpha preserved when non-zero (ARGB)");
 }
 
 void test_color_divide(TestStats& stats) {
     const char* testName = "color_divide";
     csColorRGBA c{200, 100, 50, 255};
     c /= 2;
-    EXPECT_TRUE(colorEq(c, 100, 50, 25, 127), "division applies to all channels");
+    EXPECT_TRUE(colorEq(c, 127, 100, 50, 25), "division applies to all channels");
 }
 
 void test_color_blend_ops(TestStats& stats) {
@@ -67,9 +67,9 @@ void test_color_blend_ops(TestStats& stats) {
     csColorRGBA dst{50, 60, 70, 80};
     csColorRGBA src{200, 10, 20, 255};
     auto sum = dst + src;
-    EXPECT_TRUE(colorEq(sum, src.r, src.g, src.b, src.a), "operator+ with opaque src returns src");
+    EXPECT_TRUE(colorEq(sum, src.a, src.r, src.g, src.b), "operator+ with opaque src returns src");
     dst += src;
-    EXPECT_TRUE(colorEq(dst, src.r, src.g, src.b, src.a), "operator+= mutates to src when opaque");
+    EXPECT_TRUE(colorEq(dst, src.a, src.r, src.g, src.b), "operator+= mutates to src when opaque");
 }
 
 void test_color_source_over_global_alpha(TestStats& stats) {
@@ -79,7 +79,7 @@ void test_color_source_over_global_alpha(TestStats& stats) {
     const uint8_t global = 128;
     const csColorRGBA expected = refSourceOver(dst, src, global);
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src, global);
-    EXPECT_TRUE(colorEq(actual, expected.r, expected.g, expected.b, expected.a), "sourceOver with global alpha matches reference");
+    EXPECT_TRUE(colorEq(actual, expected.a, expected.r, expected.g, expected.b), "sourceOver with global alpha matches reference");
 }
 
 void test_color_source_over_no_global(TestStats& stats) {
@@ -88,7 +88,7 @@ void test_color_source_over_no_global(TestStats& stats) {
     const csColorRGBA src{255, 0, 0, 128};
     const csColorRGBA expected = refSourceOver(dst, src);
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src);
-    EXPECT_TRUE(colorEq(actual, expected.r, expected.g, expected.b, expected.a), "sourceOver without global alpha matches reference");
+    EXPECT_TRUE(colorEq(actual, expected.a, expected.r, expected.g, expected.b), "sourceOver without global alpha matches reference");
 }
 
 void test_matrix_ctor_and_clear(TestStats& stats) {
@@ -104,7 +104,7 @@ void test_matrix_set_get_in_bounds(TestStats& stats) {
     csMatrixPixels m{2, 2};
     csColorRGBA c{10, 20, 30, 40};
     m.setPixel(1, 1, c);
-    EXPECT_TRUE(colorEq(m.getPixel(1, 1), 10, 20, 30, 40), "setPixel stores value");
+    EXPECT_TRUE(colorEq(m.getPixel(1, 1), 40, 10, 20, 30), "setPixel stores value");
 }
 
 void test_matrix_out_of_bounds(TestStats& stats) {
@@ -126,7 +126,7 @@ void test_matrix_setPixelBlend(TestStats& stats) {
     m.setPixel(0, 0, dst);
     m.setPixelBlend(0, 0, src);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src);
-    EXPECT_TRUE(colorEq(m.getPixel(0, 0), expected.r, expected.g, expected.b, expected.a), "setPixelBlend matches SourceOver");
+    EXPECT_TRUE(colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixelBlend matches SourceOver");
 }
 
 void test_matrix_setPixelBlend_with_global(TestStats& stats) {
@@ -137,7 +137,7 @@ void test_matrix_setPixelBlend_with_global(TestStats& stats) {
     m.setPixel(0, 0, dst);
     m.setPixelBlend(0, 0, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src, 128);
-    EXPECT_TRUE(colorEq(m.getPixel(0, 0), expected.r, expected.g, expected.b, expected.a), "setPixelBlend with global alpha matches SourceOver");
+    EXPECT_TRUE(colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixelBlend with global alpha matches SourceOver");
 }
 
 void test_matrix_getPixelBlend(TestStats& stats) {
@@ -148,8 +148,8 @@ void test_matrix_getPixelBlend(TestStats& stats) {
     m.setPixel(0, 0, fg);
     const csColorRGBA blended = m.getPixelBlend(0, 0, dst);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, fg);
-    EXPECT_TRUE(colorEq(blended, expected.r, expected.g, expected.b, expected.a), "getPixelBlend returns SourceOver without mutating");
-    EXPECT_TRUE(colorEq(m.getPixel(0, 0), fg.r, fg.g, fg.b, fg.a), "getPixelBlend does not modify matrix");
+    EXPECT_TRUE(colorEq(blended, expected.a, expected.r, expected.g, expected.b), "getPixelBlend returns SourceOver without mutating");
+    EXPECT_TRUE(colorEq(m.getPixel(0, 0), fg.a, fg.r, fg.g, fg.b), "getPixelBlend does not modify matrix");
 }
 
 void test_matrix_drawMatrix_clip(TestStats& stats) {
@@ -160,7 +160,7 @@ void test_matrix_drawMatrix_clip(TestStats& stats) {
     src.setPixel(1, 1, csColorRGBA{0, 255, 0, 255});     // drawn to (0,0)
     dst.drawMatrix(-1, -1, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 1), 128);
-    EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected.r, expected.g, expected.b, expected.a), "clipped draw writes only overlapping pixel");
+    EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "clipped draw writes only overlapping pixel");
     EXPECT_TRUE(colorEq(dst.getPixel(1, 1), 0, 0, 0, 0), "non-overlapping stays clear");
 }
 
@@ -174,8 +174,8 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
     dst.drawMatrix(0, 0, src, 200);
     csColorRGBA expected00 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 255, 0, 255}, src.getPixel(0, 0), 200);
     csColorRGBA expected10 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 0), 200);
-    EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected00.r, expected00.g, expected00.b, expected00.a), "drawMatrix blends with dst");
-    EXPECT_TRUE(colorEq(dst.getPixel(1, 0), expected10.r, expected10.g, expected10.b, expected10.a), "drawMatrix fills empty dst");
+    EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected00.a, expected00.r, expected00.g, expected00.b), "drawMatrix blends with dst");
+    EXPECT_TRUE(colorEq(dst.getPixel(1, 0), expected10.a, expected10.r, expected10.g, expected10.b), "drawMatrix fills empty dst");
 }
 
 int main() {

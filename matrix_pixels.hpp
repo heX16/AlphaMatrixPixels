@@ -22,7 +22,7 @@ constexpr T min_c(T a, T b) noexcept {
 }
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
-// Color format: 0xRRGGBBAA (R in the most significant byte, A in the least).
+// Color format: 0xAARRGGBB (A in the most significant byte).
 class csMatrixPixels {
 public:
     // Construct matrix with given size, all pixels cleared.
