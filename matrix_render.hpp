@@ -5,6 +5,7 @@
 
 #include "color_rgba.hpp"
 #include "matrix_pixels.hpp"
+#include "cs_math.hpp"
 
 
 
@@ -146,22 +147,37 @@ public:
 class GradientEffect final : public csMatrixRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
-        const float t = static_cast<float>(currTime) * 0.001f;
+        using matrix_pixels_math::fp32;
+        using matrix_pixels_math::FP32_FRAC_BITS;
+        using matrix_pixels_math::float_to_fp32;
+        using matrix_pixels_math::fp32_sin;
+        using matrix_pixels_math::fp32_to_float;
+        using matrix_pixels_math::int32_to_fp32;
+        using matrix_pixels_math::fp32_mul;
 
-        auto wave = [](float v) -> uint8_t {
-            return static_cast<uint8_t>((std::sin(v) * 0.5f + 0.5f) * 255.0f);
+        auto wave = [](fp32 phase) -> uint8_t {
+            const float s = fp32_to_float(fp32_sin(phase));
+            const float norm = s * 0.5f + 0.5f;
+            const int val = static_cast<int>(norm * 255.0f + 0.5f);
+            return static_cast<uint8_t>(val < 0 ? 0 : (val > 255 ? 255 : val));
         };
+
+        const fp32 t = float_to_fp32(static_cast<float>(currTime) * 0.001f);
+        const fp32 k08 = float_to_fp32(0.8f);
+        const fp32 k06 = float_to_fp32(0.6f);
+        const fp32 k04 = float_to_fp32(0.4f);
+        const fp32 k05 = float_to_fp32(0.5f);
 
         const int width = static_cast<int>(matrix.width());
         const int height = static_cast<int>(matrix.height());
 
         for (int y = 0; y < height; ++y) {
+            const fp32 yf = fp32_mul(int32_to_fp32(y), k04);
             for (int x = 0; x < width; ++x) {
-                const float xf = static_cast<float>(x) * 0.4f;
-                const float yf = static_cast<float>(y) * 0.4f;
-                const uint8_t r = wave(t * 0.8f + xf);
-                const uint8_t g = wave(t * 1.0f + yf);
-                const uint8_t b = wave(t * 0.6f + xf + yf * 0.5f);
+                const fp32 xf = fp32_mul(int32_to_fp32(x), k04);
+                const uint8_t r = wave(fp32_mul(t, k08) + xf);
+                const uint8_t g = wave(t + yf);
+                const uint8_t b = wave(fp32_mul(t, k06) + xf + fp32_mul(yf, k05));
                 matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
