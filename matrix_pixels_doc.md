@@ -1,4 +1,4 @@
-# Документация `cs_pixel_matrix`
+# Документация `MatrixPixels`
 
 **Название проекта:** MatrixPixels
 
@@ -7,8 +7,8 @@
 
 ## Основные типы
 - `csColorRGBA` — упакованный ARGB (A в старшем байте). Размер гарантирован 4 байта (packed/pragma + static_assert).
-- `tPixelMatrixCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).
-- `tPixelMatrixSize` (`uint16_t`) — размеры матрицы.
+- `tMatrixPixelsCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).
+- `tMatrixPixelsSize` (`uint16_t`) — размеры матрицы.
 
 ### Особенности `csColorRGBA`
 - Конструктор из `uint32_t packed`:
@@ -25,11 +25,11 @@
   - `sourceOverStraight(dst, src, global_alpha)` — SourceOver со глобальной альфой-множителем.
   - `sourceOverStraight(dst, src)` — SourceOver, используя только `src.a`.
 
-## Класс `csPixelMatrix`
+## Класс `csMatrixPixels`
 Хранит буфер `width * height` (динамический `new[]`), операции вне границ — тихо игнорируются (геттер возвращает прозрачный чёрный).
 
 ### Конструкторы/присваивания
-- `csPixelMatrix(w, h)` — инициализация нулями.
+- `csMatrixPixels(w, h)` — инициализация нулями.
 - Копирование/перемещение и соответствующие операторы поддерживаются (глубокая копия или перенос буфера).
 
 ### Методы
@@ -45,7 +45,7 @@
 ```cpp
 #include "matrix_pixels.hpp"
 
-csPixelMatrix m(4, 3);
+csMatrixPixels m(4, 3);
 csColorRGBA red{255, 0, 0, 255};
 csColorRGBA semi{0, 0, 255, 128}; // полупрозрачный синий
 
@@ -59,8 +59,8 @@ csColorRGBA blended = m.getPixelBlend(1, 1, bg);
 
 ### Пример `drawMatrix` с клиппингом
 ```cpp
-csPixelMatrix dest(8, 8);
-csPixelMatrix src(4, 4);
+csMatrixPixels dest(8, 8);
+csMatrixPixels src(4, 4);
 src.setPixel(0, 0, csColorRGBA{255,255,0,128});
 dest.drawMatrix(-1, -1, src, 200); // частично выйдет за границы, будет обрезано
 ```

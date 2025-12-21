@@ -63,8 +63,8 @@ div255(p,A) = (p*255 + A/2) / A      // округление к ближайше
 ## API
 
 ```text
-class csPixelMatrix {
-  csPixelMatrix(uint16 size_x, uint16 size_y)
+class csMatrixPixels {
+  csMatrixPixels(uint16 size_x, uint16 size_y)
 
   setPixel(x,y, tColorRGBA color)
   setPixelBlend(x,y, tColorRGBA color, uint8 alpha)
@@ -72,7 +72,7 @@ class csPixelMatrix {
   tColorRGBA getPixel(x,y)
   tColorRGBA getPixelBlend(x,y, bgColor)
 
-  drawMatrix(x,y, &csPixelMatrix source)
+  drawMatrix(x,y, &csMatrixPixels source)
 }
 ```
 

@@ -8,8 +8,8 @@ using std::size_t;
 using std::uint8_t;
 using std::uint16_t;
 
-using tPixelMatrixCoord = std::int32_t;
-using tPixelMatrixSize = std::uint16_t;
+using tMatrixPixelsCoord = std::int32_t;
+using tMatrixPixelsSize = std::uint16_t;
 
 template <typename T>
 constexpr T max_c(T a, T b) noexcept {
@@ -23,26 +23,26 @@ constexpr T min_c(T a, T b) noexcept {
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
 // Color format: 0xRRGGBBAA (R in the most significant byte, A in the least).
-class csPixelMatrix {
+class csMatrixPixels {
 public:
     // Construct matrix with given size, all pixels cleared.
-    csPixelMatrix(tPixelMatrixSize size_x, tPixelMatrixSize size_y)
+    csMatrixPixels(tMatrixPixelsSize size_x, tMatrixPixelsSize size_y)
         : size_x_{size_x}, size_y_{size_y}, pixels_(allocate(size_x, size_y)) {}
 
     // Copy constructor: makes deep copy of pixel buffer.
     // Triggers when you pass by value or return by value, e.g.:
-    //   csPixelMatrix b = a;  // invokes copy ctor
+    //   csMatrixPixels b = a;  // invokes copy ctor
     //   auto f() { return a; } // NRVO elided or copy/move ctor
-    csPixelMatrix(const csPixelMatrix& other)
+    csMatrixPixels(const csMatrixPixels& other)
         : size_x_{other.size_x_}, size_y_{other.size_y_}, pixels_(allocate(size_x_, size_y_)) {
         copyPixels(pixels_, other.pixels_, count());
     }
 
     // Move constructor: transfers ownership of buffer, leaving source empty.
     // Triggers on std::move or returning a temporary, e.g.:
-    //   csPixelMatrix b = std::move(a);
-    //   return csPixelMatrix{w,h};
-    csPixelMatrix(csPixelMatrix&& other) noexcept
+    //   csMatrixPixels b = std::move(a);
+    //   return csMatrixPixels{w,h};
+    csMatrixPixels(csMatrixPixels&& other) noexcept
         : size_x_{other.size_x_}, size_y_{other.size_y_}, pixels_{other.pixels_} {
         other.pixels_ = nullptr;
         other.size_x_ = 0;
@@ -51,7 +51,7 @@ public:
 
     // Copy assignment: deep copy when assigning existing object.
     //   b = a;
-    csPixelMatrix& operator=(const csPixelMatrix& other) {
+    csMatrixPixels& operator=(const csMatrixPixels& other) {
         if (this != &other) {
             resize(other.size_x_, other.size_y_);
             copyPixels(pixels_, other.pixels_, count());
@@ -61,7 +61,7 @@ public:
 
     // Move assignment: steal buffer from other, reset other to empty.
     //   b = std::move(a);
-    csPixelMatrix& operator=(csPixelMatrix&& other) noexcept {
+    csMatrixPixels& operator=(csMatrixPixels&& other) noexcept {
         if (this != &other) {
             delete[] pixels_;
             size_x_ = other.size_x_;
@@ -74,13 +74,13 @@ public:
         return *this;
     }
 
-    ~csPixelMatrix() { delete[] pixels_; }
+    ~csMatrixPixels() { delete[] pixels_; }
 
     [[nodiscard]] uint16_t width() const noexcept { return size_x_; }
     [[nodiscard]] uint16_t height() const noexcept { return size_y_; }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
-    inline void setPixel(tPixelMatrixCoord x, tPixelMatrixCoord y, csColorRGBA color) noexcept {
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
         if (inside(x, y)) {
             pixels_[index(x, y)] = color;
         }
@@ -88,7 +88,7 @@ public:
 
     // Blend source color over destination pixel using SourceOver (straight alpha).
     // 'alpha' is an extra global multiplier for the source alpha channel.
-    inline void setPixelBlend(tPixelMatrixCoord x, tPixelMatrixCoord y, csColorRGBA color, uint8_t alpha) noexcept {
+    inline void setPixelBlend(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color, alpha);
@@ -96,7 +96,7 @@ public:
     }
 
     // Blend source color over destination pixel using SourceOver with only the pixel's own alpha.
-    inline void setPixelBlend(tPixelMatrixCoord x, tPixelMatrixCoord y, csColorRGBA color) noexcept {
+    inline void setPixelBlend(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color);
@@ -104,7 +104,7 @@ public:
     }
 
     // Read pixel; returns transparent black when out of bounds.
-    [[nodiscard]] inline csColorRGBA getPixel(tPixelMatrixCoord x, tPixelMatrixCoord y) const noexcept {
+    [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         if (inside(x, y)) {
             return pixels_[index(x, y)];
         }
@@ -113,7 +113,7 @@ public:
 
     // Compute blended color of matrix pixel over bgColor; does not modify matrix.
     // Out-of-bounds returns bgColor unchanged.
-    [[nodiscard]] inline csColorRGBA getPixelBlend(tPixelMatrixCoord x, tPixelMatrixCoord y, csColorRGBA bgColor) const noexcept {
+    [[nodiscard]] inline csColorRGBA getPixelBlend(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA bgColor) const noexcept {
         if (inside(x, y)) {
             return csColorRGBA::sourceOverStraight(bgColor, pixels_[index(x, y)]);
         }
@@ -121,31 +121,31 @@ public:
     }
 
     // Draw another matrix over this one with clipping. Source alpha is respected and additionally scaled by 'alpha'.
-    inline void drawMatrix(tPixelMatrixCoord dst_x, tPixelMatrixCoord dst_y, const csPixelMatrix& source, uint8_t alpha = 255) noexcept {
-        const tPixelMatrixCoord start_x = max_c<tPixelMatrixCoord>(0, -dst_x);
-        const tPixelMatrixCoord start_y = max_c<tPixelMatrixCoord>(0, -dst_y);
-        const tPixelMatrixCoord end_x = min_c<tPixelMatrixCoord>(source.width(), static_cast<tPixelMatrixCoord>(width()) - dst_x);
-        const tPixelMatrixCoord end_y = min_c<tPixelMatrixCoord>(source.height(), static_cast<tPixelMatrixCoord>(height()) - dst_y);
+    inline void drawMatrix(tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
+        const tMatrixPixelsCoord start_x = max_c<tMatrixPixelsCoord>(0, -dst_x);
+        const tMatrixPixelsCoord start_y = max_c<tMatrixPixelsCoord>(0, -dst_y);
+        const tMatrixPixelsCoord end_x = min_c<tMatrixPixelsCoord>(source.width(), static_cast<tMatrixPixelsCoord>(width()) - dst_x);
+        const tMatrixPixelsCoord end_y = min_c<tMatrixPixelsCoord>(source.height(), static_cast<tMatrixPixelsCoord>(height()) - dst_y);
 
-        for (tPixelMatrixCoord sy = start_y; sy < end_y; ++sy) {
-            const tPixelMatrixCoord dy = sy + dst_y;
-            for (tPixelMatrixCoord sx = start_x; sx < end_x; ++sx) {
-                const tPixelMatrixCoord dx = sx + dst_x;
+        for (tMatrixPixelsCoord sy = start_y; sy < end_y; ++sy) {
+            const tMatrixPixelsCoord dy = sy + dst_y;
+            for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
+                const tMatrixPixelsCoord dx = sx + dst_x;
                 setPixelBlend(dx, dy, source.getPixel(sx, sy), alpha);
             }
         }
     }
 
 private:
-    tPixelMatrixSize size_x_;
-    tPixelMatrixSize size_y_;
+    tMatrixPixelsSize size_x_;
+    tMatrixPixelsSize size_y_;
     csColorRGBA* pixels_{nullptr};
 
-    [[nodiscard]] constexpr bool inside(tPixelMatrixCoord x, tPixelMatrixCoord y) const noexcept {
-        return x >= 0 && y >= 0 && x < static_cast<tPixelMatrixCoord>(size_x_) && y < static_cast<tPixelMatrixCoord>(size_y_);
+    [[nodiscard]] constexpr bool inside(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+        return x >= 0 && y >= 0 && x < static_cast<tMatrixPixelsCoord>(size_x_) && y < static_cast<tMatrixPixelsCoord>(size_y_);
     }
 
-    [[nodiscard]] constexpr size_t index(tPixelMatrixCoord x, tPixelMatrixCoord y) const noexcept {
+    [[nodiscard]] constexpr size_t index(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         return static_cast<size_t>(y) * size_x_ + static_cast<size_t>(x);
     }
 
