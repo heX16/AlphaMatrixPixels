@@ -53,6 +53,7 @@ struct CS_PACKED csColorRGBA {
 
     // Construct from packed 0xAARRGGBB or 0xRRGGBB.
     // WARN: If alpha is zero, treat input as 0xRRGGBB and force A=0xFF.
+    // This is an "opaque RGB" mode; it is not a way to create transparent ARGB with A=0.
     // Example:
     //   csColorRGBA c1{0x00010203}; // becomes 0xFF010203 (opaque RGB)
     //   csColorRGBA c2{0x7F000000}; // stays 0x7F000000 (alpha-only preserved)
