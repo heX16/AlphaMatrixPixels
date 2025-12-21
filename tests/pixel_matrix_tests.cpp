@@ -207,38 +207,38 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
 void test_fp16_basic(TestStats& stats) {
     using namespace matrix_pixels_math;
     const char* testName = "fp16_basic";
-    const fp16_t a = fp16_t::from_float(1.5f);
-    const fp16_t b = fp16_t::from_float(-0.25f);
+    const fp16_t a{1.5f};
+    const fp16_t b{-0.25f};
     expect_near_float(stats, testName, __LINE__, a.to_float(), 1.5f, 0.01f, "fp16 to_float close to 1.5");
     expect_near_float(stats, testName, __LINE__, b.to_float(), -0.25f, 0.01f, "fp16 to_float close to -0.25");
     const fp16_t c = a + b; // 1.25
     expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.02f, "fp16 add works");
     const fp16_t d = a * b; // -0.375
     expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.02f, "fp16 mul works");
-    const fp16_t e = fp16_t::from_int(2) / fp16_t::from_int(4); // 0.5
+    const fp16_t e = fp16_t{2} / fp16_t{4}; // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.02f, "fp16 div works");
 }
 
 void test_fp32_basic(TestStats& stats) {
     using namespace matrix_pixels_math;
     const char* testName = "fp32_basic";
-    const fp32_t a = fp32_t::from_float(3.25f);
-    const fp32_t b = fp32_t::from_float(0.5f);
+    const fp32_t a{3.25f};
+    const fp32_t b{0.5f};
     expect_near_float(stats, testName, __LINE__, a.to_float(), 3.25f, 0.001f, "fp32 to_float close to 3.25");
     const fp32_t c = a - b; // 2.75
     expect_near_float(stats, testName, __LINE__, c.to_float(), 2.75f, 0.001f, "fp32 sub works");
     const fp32_t d = a * b; // 1.625
     expect_near_float(stats, testName, __LINE__, d.to_float(), 1.625f, 0.001f, "fp32 mul works");
-    const fp32_t e = fp32_t::from_int(1) / fp32_t::from_int(2); // 0.5
+    const fp32_t e = fp32_t{1} / fp32_t{2}; // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.001f, "fp32 div works");
 }
 
 void test_fp_trig(TestStats& stats) {
     using namespace matrix_pixels_math;
     const char* testName = "fp_trig";
-    const fp32_t zero = fp32_t::from_int(0);
-    const fp32_t pi_over2 = fp32_t::from_float(1.57079632679f); // ~pi/2
-    const fp32_t one = fp32_t::from_int(1);
+    const fp32_t zero{0};
+    const fp32_t pi_over2{1.57079632679f}; // ~pi/2
+    const fp32_t one{1};
     const fp32_t s0 = fp32_sin(zero);
     const fp32_t c0 = fp32_cos(zero);
     const fp32_t s1 = fp32_sin(pi_over2);
@@ -249,7 +249,7 @@ void test_fp_trig(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c1.to_float(), 0.0f, 0.05f, "cos(pi/2) ~ 0");
     expect_eq_int(
         stats, testName, __LINE__,
-        static_cast<long long>(fp32_t::from_int(1).raw_value()),
+        static_cast<long long>(fp32_t{1}.raw_value()),
         static_cast<long long>(one.raw_value()),
         "fp32 comparison works (raw)"
     );

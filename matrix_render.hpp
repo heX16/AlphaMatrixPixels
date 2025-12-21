@@ -175,7 +175,7 @@ public:
     static uint8_t wave_fp(matrix_pixels_math::fp32_t phase) noexcept {
         using namespace matrix_pixels_math;
         static constexpr fp32_t half = fp32_t::float_const(0.5f);
-        static constexpr fp32_t scale255 = fp32_t::from_int(255);
+        static constexpr fp32_t scale255{255};
 
         const fp32_t s = fp32_sin(phase);
         const fp32_t norm = s * half + half;      // [-1..1] -> [0..1]
@@ -195,20 +195,22 @@ public:
         const fp32_t t = fp32_t::from_raw(t_raw);
 
         // Constants as constexpr fixed-point from float literals (compile-time).
-        static constexpr fp32_t k08 = fp32_t::float_const(0.8f);
-        static constexpr fp32_t k06 = fp32_t::float_const(0.6f);
-        static constexpr fp32_t k04 = fp32_t::float_const(0.4f);
-        static constexpr fp32_t k05 = fp32_t::float_const(0.5f);
+        static constexpr fp32_t k08 = fp32_t::float_const(0.7f);
+        static constexpr fp32_t k06 = fp32_t::float_const(0.5f);
+        static constexpr fp32_t k04 = fp32_t::float_const(0.3f);
+        static constexpr fp32_t k05 = fp32_t::float_const(0.4f);
         const int width = static_cast<int>(matrix.width());
         const int height = static_cast<int>(matrix.height());
 
         for (int y = 0; y < height; ++y) {
-            const fp32_t yf = fp32_t::from_int(y) * k04;
+            const fp32_t yf{y};
+            const fp32_t yf_scaled = yf * k04;
             for (int x = 0; x < width; ++x) {
-                const fp32_t xf = fp32_t::from_int(x) * k04;
-                const uint8_t r = wave_fp(t * k08 + xf);
-                const uint8_t g = wave_fp(t + yf);
-                const uint8_t b = wave_fp(t * k06 + xf + yf * k05);
+                const fp32_t xf{x};
+                const fp32_t xf_scaled = xf * k04;
+                const uint8_t r = wave_fp(t * k08 + xf_scaled);
+                const uint8_t g = wave_fp(t + yf_scaled);
+                const uint8_t b = wave_fp(t * k06 + xf_scaled + yf_scaled * k05);
                 matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }

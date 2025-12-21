@@ -339,19 +339,19 @@ public:
 
 // Trigonometry on fixed-point types (argument in radians, result fixed-point).
 inline fp16_t fp16_sin(fp16_t angle) noexcept {
-    return fp16_t::from_float(std::sin(angle.to_float()));
+    return fp16_t{std::sin(angle.to_float())};
 }
 
 inline fp16_t fp16_cos(fp16_t angle) noexcept {
-    return fp16_t::from_float(std::cos(angle.to_float()));
+    return fp16_t{std::cos(angle.to_float())};
 }
 
 inline fp32_t fp32_sin(fp32_t angle) noexcept {
-    return fp32_t::from_float(std::sin(angle.to_float()));
+    return fp32_t{std::sin(angle.to_float())};
 }
 
 inline fp32_t fp32_cos(fp32_t angle) noexcept {
-    return fp32_t::from_float(std::cos(angle.to_float()));
+    return fp32_t{std::cos(angle.to_float())};
 }
 
 } // namespace matrix_pixels_math
