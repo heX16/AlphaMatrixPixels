@@ -6,7 +6,7 @@
 #include <memory>
 #include "../matrix_pixels.hpp"
 #include "../color_rgba.hpp"
-#include "../matrix_effects.hpp"
+#include "../matrix_render.hpp"
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
