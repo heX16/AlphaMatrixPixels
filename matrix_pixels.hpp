@@ -76,8 +76,8 @@ public:
 
     ~csMatrixPixels() { delete[] pixels_; }
 
-    [[nodiscard]] uint16_t width() const noexcept { return size_x_; }
-    [[nodiscard]] uint16_t height() const noexcept { return size_y_; }
+    [[nodiscard]] tMatrixPixelsSize width() const noexcept { return size_x_; }
+    [[nodiscard]] tMatrixPixelsSize height() const noexcept { return size_y_; }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
     inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {

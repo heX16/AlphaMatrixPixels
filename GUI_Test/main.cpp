@@ -29,7 +29,8 @@ public:
     SDL_Event event{};
 
     csMatrixPixels matrix{0, 0};
-    std::unique_ptr<IMatrixEffect> effect{};
+    csRandGen randGen{};
+    std::unique_ptr<csMatrixRenderBase> effect{};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -84,7 +85,7 @@ public:
             }
 
             if (effect) {
-                effect->render(matrix, SDL_GetTicks());
+                effect->render(matrix, randGen, static_cast<uint16_t>(SDL_GetTicks()));
             }
             renderProc();
             SDL_Delay(16); // ~60 FPS
