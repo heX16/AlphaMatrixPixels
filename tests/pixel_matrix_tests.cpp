@@ -1,6 +1,8 @@
 #include <iostream>
+#include <cmath>
 #include <string>
 #include "matrix_pixels.hpp"
+#include "cs_math.hpp"
 
 // Minimal self-contained test runner (no external frameworks).
 struct TestStats {
@@ -17,6 +19,46 @@ struct TestStats {
             std::cerr << "FAIL [" << testName << "] " << msg << " (line " << __LINE__ << ")\n";\
         }                                                                                      \
     } while (0)
+
+#define EXPECT_EQ_INT(actual, expected, msg)                                                    \
+    do {                                                                                        \
+        const auto _a = (actual);                                                               \
+        const auto _e = (expected);                                                             \
+        if (_a == _e) {                                                                         \
+            ++stats.passed;                                                                     \
+        } else {                                                                                \
+            ++stats.failed;                                                                     \
+            std::cerr << "FAIL [" << testName << "] " << msg << " (line " << __LINE__ << ")\n"; \
+            std::cerr << "  expected: " << _e << "\n";                                          \
+            std::cerr << "  actual:   " << _a << "\n";                                          \
+        }                                                                                       \
+    } while (0)
+\n
+#define EXPECT_NEAR_FLOAT(actual, expected, eps, msg)                                            \
+    do {                                                                                        \
+        const float _a = static_cast<float>(actual);                                            \
+        const float _e = static_cast<float>(expected);                                          \
+        const float _d = std::fabs(_a - _e);                                                    \
+        if (_d <= static_cast<float>(eps)) {                                                    \
+            ++stats.passed;                                                                     \
+        } else {                                                                                \
+            ++stats.failed;                                                                     \
+            std::cerr << "FAIL [" << testName << "] " << msg << " (line " << __LINE__ << ")\n"; \
+            std::cerr << "  expected: " << _e << "\n";                                          \
+            std::cerr << "  actual:   " << _a << "\n";                                          \
+            std::cerr << "  diff:     " << _d << "\n";                                          \
+        }                                                                                       \
+    } while (0)
+
+inline void dumpFp(const char* name, matrix_pixels_math::fp16_t v) {
+    std::cerr << "  " << name << ": raw=" << static_cast<int>(v.raw_value())
+              << " float=" << v.to_float() << "\n";
+}
+
+inline void dumpFp(const char* name, matrix_pixels_math::fp32_t v) {
+    std::cerr << "  " << name << ": raw=" << static_cast<int32_t>(v.raw_value())
+              << " float=" << v.to_float() << "\n";
+}
 
 inline bool colorEq(const csColorRGBA& c, uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
     return c.a == a && c.r == r && c.g == g && c.b == b;
@@ -166,6 +208,96 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
     EXPECT_TRUE(colorEq(dst.getPixel(1, 0), expected10.a, expected10.r, expected10.g, expected10.b), "drawMatrix fills empty dst");
 }
 
+void test_fp16_basic(TestStats& stats) {
+    using namespace matrix_pixels_math;
+    const char* testName = "fp16_basic";
+    const fp16_t a = fp16_t::from_float(1.5f);
+    const fp16_t b = fp16_t::from_float(-0.25f);
+    EXPECT_NEAR_FLOAT(a.to_float(), 1.5f, 0.01f, "fp16 to_float close to 1.5");
+    EXPECT_NEAR_FLOAT(b.to_float(), -0.25f, 0.01f, "fp16 to_float close to -0.25");
+    const fp16_t c = a + b; // 1.25
+    if (std::fabs(c.to_float() - 1.25f) >= 0.02f) {
+        std::cerr << "DEBUG [" << testName << "] add\n";
+        dumpFp("a", a);
+        dumpFp("b", b);
+        dumpFp("c", c);
+    }
+    EXPECT_NEAR_FLOAT(c.to_float(), 1.25f, 0.02f, "fp16 add works");
+    const fp16_t d = a * b; // -0.375
+    if (std::fabs(d.to_float() + 0.375f) >= 0.02f) {
+        std::cerr << "DEBUG [" << testName << "] mul\n";
+        dumpFp("a", a);
+        dumpFp("b", b);
+        dumpFp("d", d);
+    }
+    EXPECT_NEAR_FLOAT(d.to_float(), -0.375f, 0.02f, "fp16 mul works");
+    const fp16_t e = fp16_t::from_int(2) / fp16_t::from_int(4); // 0.5
+    if (std::fabs(e.to_float() - 0.5f) >= 0.02f) {
+        std::cerr << "DEBUG [" << testName << "] div\n";
+        dumpFp("num", fp16_t::from_int(2));
+        dumpFp("den", fp16_t::from_int(4));
+        dumpFp("e", e);
+    }
+    EXPECT_NEAR_FLOAT(e.to_float(), 0.5f, 0.02f, "fp16 div works");
+}
+
+void test_fp32_basic(TestStats& stats) {
+    using namespace matrix_pixels_math;
+    const char* testName = "fp32_basic";
+    const fp32_t a = fp32_t::from_float(3.25f);
+    const fp32_t b = fp32_t::from_float(0.5f);
+    if (std::fabs(a.to_float() - 3.25f) >= 0.001f) {
+        std::cerr << "DEBUG [" << testName << "] a\n";
+        dumpFp("a", a);
+    }
+    EXPECT_NEAR_FLOAT(a.to_float(), 3.25f, 0.001f, "fp32 to_float close to 3.25");
+    const fp32_t c = a - b; // 2.75
+    if (std::fabs(c.to_float() - 2.75f) >= 0.001f) {
+        std::cerr << "DEBUG [" << testName << "] sub\n";
+        dumpFp("a", a);
+        dumpFp("b", b);
+        dumpFp("c", c);
+    }
+    EXPECT_NEAR_FLOAT(c.to_float(), 2.75f, 0.001f, "fp32 sub works");
+    const fp32_t d = a * b; // 1.625
+    if (std::fabs(d.to_float() - 1.625f) >= 0.001f) {
+        std::cerr << "DEBUG [" << testName << "] mul\n";
+        dumpFp("a", a);
+        dumpFp("b", b);
+        dumpFp("d", d);
+    }
+    EXPECT_NEAR_FLOAT(d.to_float(), 1.625f, 0.001f, "fp32 mul works");
+    const fp32_t e = fp32_t::from_int(1) / fp32_t::from_int(2); // 0.5
+    if (std::fabs(e.to_float() - 0.5f) >= 0.001f) {
+        std::cerr << "DEBUG [" << testName << "] div\n";
+        dumpFp("num", fp32_t::from_int(1));
+        dumpFp("den", fp32_t::from_int(2));
+        dumpFp("e", e);
+    }
+    EXPECT_NEAR_FLOAT(e.to_float(), 0.5f, 0.001f, "fp32 div works");
+}
+
+void test_fp_trig(TestStats& stats) {
+    using namespace matrix_pixels_math;
+    const char* testName = "fp_trig";
+    const fp32_t zero = fp32_t::from_int(0);
+    const fp32_t pi_over2 = fp32_t::from_float(1.57079632679f); // ~pi/2
+    const fp32_t one = fp32_t::from_int(1);
+    const fp32_t s0 = fp32_sin(zero);
+    const fp32_t c0 = fp32_cos(zero);
+    const fp32_t s1 = fp32_sin(pi_over2);
+    const fp32_t c1 = fp32_cos(pi_over2);
+    if (std::fabs(s0.to_float() - 0.0f) >= 0.001f) { std::cerr << "DEBUG [" << testName << "] sin(0)\n"; dumpFp("s0", s0); }
+    if (std::fabs(c0.to_float() - 1.0f) >= 0.001f) { std::cerr << "DEBUG [" << testName << "] cos(0)\n"; dumpFp("c0", c0); }
+    if (std::fabs(s1.to_float() - 1.0f) >= 0.01f)  { std::cerr << "DEBUG [" << testName << "] sin(pi/2)\n"; dumpFp("s1", s1); }
+    if (std::fabs(c1.to_float() - 0.0f) >= 0.05f)  { std::cerr << "DEBUG [" << testName << "] cos(pi/2)\n"; dumpFp("c1", c1); }
+    EXPECT_NEAR_FLOAT(s0.to_float(), 0.0f, 0.001f, "sin(0) ~ 0");
+    EXPECT_NEAR_FLOAT(c0.to_float(), 1.0f, 0.001f, "cos(0) ~ 1");
+    EXPECT_NEAR_FLOAT(s1.to_float(), 1.0f, 0.01f, "sin(pi/2) ~ 1");
+    EXPECT_NEAR_FLOAT(c1.to_float(), 0.0f, 0.05f, "cos(pi/2) ~ 0");
+    EXPECT_EQ_INT(fp32_t::from_int(1).raw_value(), one.raw_value(), "fp32 comparison works (raw)");
+}
+
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
@@ -184,6 +316,10 @@ int main() {
     test_matrix_getPixelBlend(stats);
     test_matrix_drawMatrix_clip(stats);
     test_matrix_drawMatrix_basic(stats);
+
+    test_fp16_basic(stats);
+    test_fp32_basic(stats);
+    test_fp_trig(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
     if (stats.failed != 0) {
