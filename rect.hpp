@@ -25,12 +25,12 @@ public:
 
     // Return intersection of two rectangles; empty rectangle when they do not overlap.
     [[nodiscard]] constexpr csRect intersect(const csRect& other) const noexcept {
-        const auto nx = max<tMatrixPixelsCoord>(x, other.x);
-        const auto ny = max<tMatrixPixelsCoord>(y, other.y);
-        const auto rx = min<tMatrixPixelsCoord>(x + static_cast<tMatrixPixelsCoord>(width),
-                                                other.x + static_cast<tMatrixPixelsCoord>(other.width));
-        const auto ry = min<tMatrixPixelsCoord>(y + static_cast<tMatrixPixelsCoord>(height),
-                                                other.y + static_cast<tMatrixPixelsCoord>(other.height));
+        const auto nx = max(x, other.x);
+        const auto ny = max(y, other.y);
+        const auto rx = min(x + to_coord(width),
+                            other.x + to_coord(other.width));
+        const auto ry = min(y + to_coord(height),
+                            other.y + to_coord(other.height));
 
         const auto w = rx - nx;
         const auto h = ry - ny;
@@ -39,7 +39,7 @@ public:
             return csRect{};
         }
 
-        return csRect{nx, ny, static_cast<tMatrixPixelsSize>(w), static_cast<tMatrixPixelsSize>(h)};
+        return csRect{nx, ny, to_size(w), to_size(h)};
     }
 };
 
