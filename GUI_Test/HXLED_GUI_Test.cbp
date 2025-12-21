@@ -12,7 +12,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-std=c++14" />
+					<Add option="-std=c++17" />
 					<Add option="-m64" />
 					<Add option="-g" />
 				</Compiler>
@@ -28,7 +28,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-Os" />
-					<Add option="-std=c++14" />
+					<Add option="-std=c++17" />
 					<Add option="-m64" />
 				</Compiler>
 				<Linker>
@@ -40,44 +40,17 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-std=c++14" />
+			<Add option="-std=c++17" />
 			<Add option="-m64" />
-			<Add directory="D:/ProgerApp/CodeBlocks/MinGW/user_lib/SDL2-devel-2.28.5-mingw/SDL2/x86_64-w64-mingw32/include" />
-			<Add directory="H:/Prj/LEDRGB_Effect_Collection/HXLED_GUI_Test" />
-			<Add directory="H:/Prj/LEDRGB_Effect_Collection/src" />
-			<Add directory="H:/Prj/LEDRGB_Effect_Collection/examples/led_efen_main_app/effect_pack" />
-			<Add directory="H:/Prj/LEDRGB_Effect_Collection/examples/led_efen_main_app/clock" />
+			<Add directory="." />
+			<Add directory=".." />
 		</Compiler>
 		<Linker>
 			<Add option="-m64" />
 			<Add option="-lSDL2main -lSDL2 -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
-			<Add directory="C:/Proger/SDL2/i686-w64-mingw32/lib" />
-			<Add directory="D:/ProgerApp/CodeBlocks/MinGW/x86_64-w64-mingw32/lib" />
-			<Add directory="D:/ProgerApp/CodeBlocks/MinGW/user_lib/SDL2-devel-2.28.5-mingw/SDL2/x86_64-w64-mingw32/lib" />
 		</Linker>
-		<Unit filename="../src/Streaming.h" />
-		<Unit filename="../src/anim_rainbow_circle.h" />
-		<Unit filename="../src/eff_animation.hpp" />
-		<Unit filename="../src/eff_fire.hpp" />
-		<Unit filename="../src/eff_matrix.hpp" />
-		<Unit filename="../src/eff_plasma.hpp" />
-		<Unit filename="../src/effect_2d.hpp" />
-		<Unit filename="../src/effects_pack.hpp" />
-		<Unit filename="../src/esp_ota.hpp" />
-		<Unit filename="../src/exeffled.h" />
-		<Unit filename="../src/gamma.h" />
-		<Unit filename="../src/led_code_fastled.hpp" />
-		<Unit filename="../src/led_core.hpp" />
-		<Unit filename="../src/led_effect.hpp" />
-		<Unit filename="../src/led_manager.hpp" />
-		<Unit filename="../src/palette_progmem.hpp" />
-		<Unit filename="../src/shuffle.h" />
-		<Unit filename="../src/utility_color.h" />
-		<Unit filename="../src/utility_funx.h" />
-		<Unit filename="../src/utility_progmem.h" />
-		<Unit filename="config.hpp" />
-		<Unit filename="fastled_code.cpp" />
-		<Unit filename="fastled_code.hpp" />
+		<Unit filename="../matrix_pixels.hpp" />
+		<Unit filename="../color_rgba.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
