@@ -22,20 +22,6 @@ inline bool colorEq(const csColorRGBA& c, uint8_t a, uint8_t r, uint8_t g, uint8
     return c.a == a && c.r == r && c.g == g && c.b == b;
 }
 
-// Reference SourceOver implementation (straight alpha) for expectations.
-inline csColorRGBA refSourceOver(csColorRGBA dst, csColorRGBA src, uint8_t global_alpha = 255) {
-    const uint8_t As = mul8(src.a, global_alpha);
-    const uint8_t invAs = static_cast<uint8_t>(255u - As);
-    const uint8_t Aout = static_cast<uint8_t>(As + mul8(dst.a, invAs));
-    if (Aout == 0) {
-        return csColorRGBA{0, 0, 0, 0};
-    }
-    const uint8_t Rout = csColorRGBA::blendChannel(src.r, dst.r, As, dst.a, invAs, Aout);
-    const uint8_t Gout = csColorRGBA::blendChannel(src.g, dst.g, As, dst.a, invAs, Aout);
-    const uint8_t Bout = csColorRGBA::blendChannel(src.b, dst.b, As, dst.a, invAs, Aout);
-    return csColorRGBA{Aout, Rout, Gout, Bout};
-}
-
 void test_color_component_ctor(TestStats& stats) {
     const char* testName = "color_component_ctor";
     csColorRGBA c{40, 10, 20, 30};
@@ -77,7 +63,8 @@ void test_color_source_over_global_alpha(TestStats& stats) {
     const csColorRGBA dst{120, 60, 80, 100};
     const csColorRGBA src{128, 200, 40, 20};
     const uint8_t global = 128;
-    const csColorRGBA expected = refSourceOver(dst, src, global);
+    // Expected manually computed: A=154, R=118, G=63, B=66.
+    const csColorRGBA expected{154, 118, 63, 66};
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src, global);
     EXPECT_TRUE(colorEq(actual, expected.a, expected.r, expected.g, expected.b), "sourceOver with global alpha matches reference");
 }
@@ -86,7 +73,8 @@ void test_color_source_over_no_global(TestStats& stats) {
     const char* testName = "color_source_over_no_global";
     const csColorRGBA dst{255, 0, 100, 200};
     const csColorRGBA src{128, 255, 0, 0};
-    const csColorRGBA expected = refSourceOver(dst, src);
+    // Expected manually computed: A=255, R=128, G=50, B=100.
+    const csColorRGBA expected{255, 128, 50, 100};
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src);
     EXPECT_TRUE(colorEq(actual, expected.a, expected.r, expected.g, expected.b), "sourceOver without global alpha matches reference");
 }
