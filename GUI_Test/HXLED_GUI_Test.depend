@@ -1,0 +1,1654 @@
+# depslib dependency file v1.0
+1706475015 source:h:\prj\ledrgb_effect_collection\hxled_gui_test\main.cpp
+	<SDL2/SDL.h>
+	<stdlib.h>
+	<math.h>
+	<stdio.h>
+	<string.h>
+	<stdint.h>
+	"config.hpp"
+	"fastled_code.hpp"
+	"small_timer.hpp"
+	"../src/led_core_header.hpp"
+	"../src/utility_funx.h"
+	"../src/shuffle.h"
+	"../src/led_core.hpp"
+	"../src/led_effect.hpp"
+	"../src/eff_matrix.hpp"
+	"../src/led_manager.hpp"
+	"../src/palette_progmem.hpp"
+	"effects_pack.hpp"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_gamecontroller.h"
+	"SDL_haptic.h"
+	"SDL_hints.h"
+	"SDL_joystick.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_shape.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<wchar.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	<sal.h>
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_config.h
+	"SDL_platform.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_platform.h
+	"AvailabilityMacros.h"
+	"TargetConditionals.h"
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\begin_code.h
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\close_code.h
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_assert.h
+	"SDL_config.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<mbarrier.h>
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	<process.h>
+	<process.h>
+	<stdlib.h>
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<altivec.h>
+	<arm_neon.h>
+	<mm3dnow.h>
+	<immintrin.h>
+	<mmintrin.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<pmmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"SDL_endian.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_sensor.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_shape.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1540998544 c:\mingw\user_lib\sdl2-2.0.9_lib\i686-w64-mingw32\include\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1548404422 h:\prj\ledrgb_effect_collection\hxled_gui_test\easy_timers_sdl.h
+
+1548400842 h:\prj\ledrgb_effect_collection\utility_funx.h
+
+1577815655 h:\prj\ledrgb_effect_collection\led_core.hpp
+
+1576061997 h:\prj\ledrgb_effect_collection\led_manager.hpp
+
+1568720255 h:\prj\ledrgb_effect_collection\shuffle.h
+
+1608581148 h:\prj\ledrgb_effect_collection\led_effect.hpp
+
+1608581182 h:\prj\ledrgb_effect_collection\eff_matrix.hpp
+
+1608581242 h:\prj\ledrgb_effect_collection\palette_progmem.hpp
+
+1608581710 h:\prj\ledrgb_effect_collection\effects_pack.hpp
+	"led_effect.hpp"
+	"eff_matrix.hpp"
+	"effect_2d.hpp"
+	"palette_progmem.hpp"
+
+1575987886 h:\prj\ledrgb_effect_collection\hxled_gui_test\small_timer.hpp
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_gamecontroller.h"
+	"SDL_haptic.h"
+	"SDL_hints.h"
+	"SDL_joystick.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_shape.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<wchar.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	<sal.h>
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_config.h
+	"SDL_platform.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_platform.h
+	"AvailabilityMacros.h"
+	"TargetConditionals.h"
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\begin_code.h
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\close_code.h
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_assert.h
+	"SDL_config.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<sys/cpuinline.h>
+	<mbarrier.h>
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	<process.h>
+	<process.h>
+	<stdlib.h>
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<altivec.h>
+	<arm_neon.h>
+	<armintr.h>
+	<arm_neon.h>
+	<armintr.h>
+	<arm_neon.h>
+	<mm3dnow.h>
+	<immintrin.h>
+	<mmintrin.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<pmmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"SDL_endian.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_sensor.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_shape.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1564029277 c:\mingw64\user_lib\sdl2\i686-w64-mingw32\include\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1608582193 h:\prj\ledrgb_effect_collection\effect_2d.hpp
+
+1706474450 h:\prj\ledrgb_effect_collection\src\utility_funx.h
+
+1671291929 h:\prj\ledrgb_effect_collection\src\shuffle.h
+
+1706474906 h:\prj\ledrgb_effect_collection\src\led_core.hpp
+	<stdint.h>
+	"led_core_header.hpp"
+	"utility_color.h"
+
+1706185397 h:\prj\ledrgb_effect_collection\src\led_effect.hpp
+
+1671291929 h:\prj\ledrgb_effect_collection\src\eff_matrix.hpp
+
+1706453197 h:\prj\ledrgb_effect_collection\src\led_manager.hpp
+	<stdint.h>
+	"led_core.hpp"
+	<small_timer.hpp>
+
+1671291929 h:\prj\ledrgb_effect_collection\src\palette_progmem.hpp
+	"utility_progmem.h"
+
+1704501133 h:\prj\ledrgb_effect_collection\src\effects_pack.hpp
+	"led_manager.hpp"
+	"led_core.hpp"
+	"led_effect.hpp"
+	"eff_matrix.hpp"
+	"effect_2d.hpp"
+	"palette_progmem.hpp"
+	"eff_animation.hpp"
+	"anim_rainbow_circle.h"
+	"anim_test.h"
+
+1706367216 h:\prj\ledrgb_effect_collection\src\effect_2d.hpp
+
+1671291929 h:\prj\ledrgb_effect_collection\src\utility_progmem.h
+
+1671291929 h:\prj\ledrgb_effect_collection\src\eff_animation.hpp
+	"utility_progmem.h"
+
+1671291929 h:\prj\ledrgb_effect_collection\src\anim_rainbow_circle.h
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_gamecontroller.h"
+	"SDL_haptic.h"
+	"SDL_hidapi.h"
+	"SDL_hints.h"
+	"SDL_joystick.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_metal.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_shape.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"SDL_locale.h"
+	"SDL_misc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<wchar.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	<sal.h>
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_config.h
+	"SDL_platform.h"
+	<winsdkver.h>
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_platform.h
+	"AvailabilityMacros.h"
+	"TargetConditionals.h"
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\begin_code.h
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\close_code.h
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_assert.h
+	"SDL_config.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<sys/cpuinline.h>
+	<mbarrier.h>
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<endian.h>
+	<endian.h>
+	<sys/endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	<process.h>
+	<process.h>
+	<stdlib.h>
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<arm_neon.h>
+	<altivec.h>
+	<arm_neon.h>
+	<armintr.h>
+	<arm_neon.h>
+	<arm64intr.h>
+	<arm64_neon.h>
+	<mm3dnow.h>
+	<immintrin.h>
+	<mmintrin.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<pmmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"SDL_endian.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_sensor.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_hidapi.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_metal.h
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_shape.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_locale.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1638246223 c:\proger\sdl2\i686-w64-mingw32\include\sdl2\sdl_misc.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1671291929 h:\prj\ledrgb_effect_collection\src\utility_color.h
+	<stdint.h>
+
+1671291929 h:\prj\ledrgb_effect_collection\src\anim_test.h
+
+1704496472 source:h:\prj\ledrgb_effect_collection\hxled_gui_test\fastled_code.cpp
+	<stdlib.h>
+	<math.h>
+	<stdio.h>
+	<string.h>
+	<stdint.h>
+	"fastled_code.hpp"
+
+1704496565 h:\prj\ledrgb_effect_collection\hxled_gui_test\fastled_code.hpp
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_gamecontroller.h"
+	"SDL_guid.h"
+	"SDL_haptic.h"
+	"SDL_hidapi.h"
+	"SDL_hints.h"
+	"SDL_joystick.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_metal.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_shape.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"SDL_locale.h"
+	"SDL_misc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<wchar.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	<sal.h>
+	"begin_code.h"
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_config.h
+	"SDL_platform.h"
+	<winsdkver.h>
+	<sdkddkver.h>
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_platform.h
+	<AvailabilityMacros.h>
+	<TargetConditionals.h>
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\begin_code.h
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\close_code.h
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_assert.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<sys/cpuinline.h>
+	<mbarrier.h>
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<endian.h>
+	<endian.h>
+	<sys/endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	<process.h>
+	<process.h>
+	<stdlib.h>
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<arm_neon.h>
+	<altivec.h>
+	<arm_neon.h>
+	<armintr.h>
+	<arm_neon.h>
+	<arm64intr.h>
+	<arm64_neon.h>
+	<mm3dnow.h>
+	<lsxintrin.h>
+	<lasxintrin.h>
+	<immintrin.h>
+	<mmintrin.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<pmmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"SDL_endian.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_guid.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_guid.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_sensor.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_hidapi.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_metal.h
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_shape.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_locale.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1698944750 d:\progerapp\codeblocks\mingw\user_lib\sdl2-devel-2.28.5-mingw\sdl2\x86_64-w64-mingw32\include\sdl2\sdl_misc.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1706446623 h:\prj\ledrgb_effect_collection\hxled_gui_test\config.hpp
+
+1706447368 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\effect_pack\effects_pack.hpp
+	"../config.hpp"
+	"../LED_EFEN/led_manager.hpp"
+	"../LED_EFEN/led_core.hpp"
+	"../LED_EFEN/led_effect.hpp"
+	"../LED_EFEN/eff_matrix.hpp"
+	"../LED_EFEN/effect_2d.hpp"
+	"../LED_EFEN/palette_progmem.hpp"
+	"../LED_EFEN/eff_bitmap_animation.hpp"
+	"led_manager.hpp"
+	"led_core.hpp"
+	"led_effect.hpp"
+	"eff_matrix.hpp"
+	"effect_2d.hpp"
+	"palette_progmem.hpp"
+	"eff_bitmap_animation.hpp"
+	"anim_rainbow_circle.h"
+	"anim_test.h"
+	"effects_pack_ver2.hpp"
+
+1706458630 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\config.hpp
+	<ESP8266WiFi.h>
+	<ESP8266mDNS.h>
+	<WiFiUdp.h>
+
+1706453197 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\led_manager.hpp
+	<stdint.h>
+	"led_core.hpp"
+	<small_timer.hpp>
+
+1706474906 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\led_core.hpp
+	<stdint.h>
+	"led_core_header.hpp"
+	"utility_color.h"
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\utility_color.h
+	<stdint.h>
+
+1706185397 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\led_effect.hpp
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\eff_matrix.hpp
+
+1706367216 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\effect_2d.hpp
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\palette_progmem.hpp
+	"utility_progmem.h"
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\utility_progmem.h
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\eff_bitmap_animation.hpp
+	"utility_progmem.h"
+
+1671291929 h:\prj\ledrgb_effect_collection\src\eff_bitmap_animation.hpp
+	"utility_progmem.h"
+
+1706367445 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\effect_pack\anim_rainbow_circle.h
+
+1671291929 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\effect_pack\anim_test.h
+
+1706447390 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\effect_pack\effects_pack_ver2.hpp
+	"../config.hpp"
+	"../LED_EFEN/eff_loader.hpp"
+	"../LED_EFEN/eff_bitmap_animation.hpp"
+	"../LED_EFEN/led_core.hpp"
+	"../LED_EFEN/led_effect.hpp"
+	"../LED_EFEN/eff_matrix.hpp"
+	"../LED_EFEN/effect_2d.hpp"
+	"../LED_EFEN/palette_progmem.hpp"
+	"../LED_EFEN/eff_bitmap_animation.hpp"
+	"eff_loader.hpp"
+	"led_manager.hpp"
+	"led_core.hpp"
+	"led_effect.hpp"
+	"eff_matrix.hpp"
+	"effect_2d.hpp"
+	"palette_progmem.hpp"
+	"eff_bitmap_animation.hpp"
+	"anim_rainbow_circle.h"
+
+1705188146 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\eff_loader.hpp
+
+1705188146 h:\prj\ledrgb_effect_collection\src\eff_loader.hpp
+
+1706474759 h:\prj\ledrgb_effect_collection\src\led_core_header.hpp
+	<stdint.h>
+
+1706474759 h:\prj\ledrgb_effect_collection\examples\led_efen_main_app\led_efen\led_core_header.hpp
+	<stdint.h>
+
