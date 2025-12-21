@@ -45,16 +45,17 @@ struct CS_PACKED csColorRGBA {
         uint32_t value;
     };
 
-    constexpr csColorRGBA() = default;
-    constexpr csColorRGBA(uint8_t r_, uint8_t g_, uint8_t b_, uint8_t a_) : r(r_), g(g_), b(b_), a(a_) {}
+    // Ensure deterministic zero-init for default ctor.
+    constexpr csColorRGBA() : value{0} {}
+    // Initialize explicit channels in declared order to avoid reorder warnings.
+    constexpr csColorRGBA(uint8_t r_, uint8_t g_, uint8_t b_, uint8_t a_) : a(a_), r(r_), g(g_), b(b_) {}
 
     // Construct from packed 0xAARRGGBB or 0xRRGGBB.
     // WARN: If alpha is zero, treat input as 0xRRGGBB and force A=0xFF.
     // Example:
     //   csColorRGBA c1{0x00010203}; // becomes 0xFF010203 (opaque RGB)
     //   csColorRGBA c2{0x7F000000}; // stays 0x7F000000 (alpha-only preserved)
-    explicit constexpr csColorRGBA(uint32_t packed) {
-        value = packed;
+    explicit constexpr csColorRGBA(uint32_t packed) : value{packed} {
         if (a == 0) {
             a = 0xFF;
         }
