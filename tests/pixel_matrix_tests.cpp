@@ -33,7 +33,7 @@ inline csColorRGBA refSourceOver(csColorRGBA dst, csColorRGBA src, uint8_t globa
     const uint8_t Rout = csColorRGBA::blendChannel(src.r, dst.r, As, dst.a, invAs, Aout);
     const uint8_t Gout = csColorRGBA::blendChannel(src.g, dst.g, As, dst.a, invAs, Aout);
     const uint8_t Bout = csColorRGBA::blendChannel(src.b, dst.b, As, dst.a, invAs, Aout);
-    return csColorRGBA{Rout, Gout, Bout, Aout};
+    return csColorRGBA{Aout, Rout, Gout, Bout};
 }
 
 void test_color_component_ctor(TestStats& stats) {
