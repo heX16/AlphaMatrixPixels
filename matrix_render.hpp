@@ -174,7 +174,7 @@ public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses std::sin internally.
     static uint8_t wave_fp(matrix_pixels_math::fp32_t phase) noexcept {
         using namespace matrix_pixels_math;
-        static constexpr fp32_t half = fp32_t::from_float_constexpr(0.5f);
+        static constexpr fp32_t half = fp32_t::float_const(0.5f);
         static constexpr fp32_t scale255 = fp32_t::from_int(255);
 
         const fp32_t s = fp32_sin(phase);
@@ -195,10 +195,10 @@ public:
         const fp32_t t = fp32_t::from_raw(t_raw);
 
         // Constants as constexpr fixed-point from float literals (compile-time).
-        static constexpr fp32_t k08 = fp32_t::from_float_constexpr(0.8f);
-        static constexpr fp32_t k06 = fp32_t::from_float_constexpr(0.6f);
-        static constexpr fp32_t k04 = fp32_t::from_float_constexpr(0.4f);
-        static constexpr fp32_t k05 = fp32_t::from_float_constexpr(0.5f);
+        static constexpr fp32_t k08 = fp32_t::float_const(0.8f);
+        static constexpr fp32_t k06 = fp32_t::float_const(0.6f);
+        static constexpr fp32_t k04 = fp32_t::float_const(0.4f);
+        static constexpr fp32_t k05 = fp32_t::float_const(0.5f);
         const int width = static_cast<int>(matrix.width());
         const int height = static_cast<int>(matrix.height());
 
