@@ -28,6 +28,7 @@ public:
     SDL_Event event{};
 
     csMatrixPixels matrix{0, 0};
+    GradientEffect effectGradient{};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -76,7 +77,7 @@ public:
                 }
             }
 
-            updateGradient(matrix, SDL_GetTicks());
+            effectGradient.render(matrix, SDL_GetTicks());
             renderProc();
             SDL_Delay(16); // ~60 FPS
         }
