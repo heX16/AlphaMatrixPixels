@@ -1,0 +1,46 @@
+#pragma once
+
+#include "matrix_pixels.hpp"
+#include "cs_math.hpp"
+
+using matrix_pixels_math::max;
+using matrix_pixels_math::min;
+
+// Axis-aligned rectangle with integer coordinates and size.
+class csRect {
+public:
+    tMatrixPixelsCoord x{0};
+    tMatrixPixelsCoord y{0};
+    tMatrixPixelsSize width{0};
+    tMatrixPixelsSize height{0};
+
+    constexpr csRect() = default;
+
+    constexpr csRect(tMatrixPixelsCoord x_, tMatrixPixelsCoord y_, tMatrixPixelsSize w_, tMatrixPixelsSize h_)
+        : x{x_}, y{y_}, width{w_}, height{h_} {}
+
+    [[nodiscard]] constexpr bool empty() const noexcept {
+        return width == 0 || height == 0;
+    }
+
+    // Return intersection of two rectangles; empty rectangle when they do not overlap.
+    [[nodiscard]] constexpr csRect intersect(const csRect& other) const noexcept {
+        const auto nx = max<tMatrixPixelsCoord>(x, other.x);
+        const auto ny = max<tMatrixPixelsCoord>(y, other.y);
+        const auto rx = min<tMatrixPixelsCoord>(x + static_cast<tMatrixPixelsCoord>(width),
+                                                other.x + static_cast<tMatrixPixelsCoord>(other.width));
+        const auto ry = min<tMatrixPixelsCoord>(y + static_cast<tMatrixPixelsCoord>(height),
+                                                other.y + static_cast<tMatrixPixelsCoord>(other.height));
+
+        const auto w = rx - nx;
+        const auto h = ry - ny;
+
+        if (w <= 0 || h <= 0) {
+            return csRect{};
+        }
+
+        return csRect{nx, ny, static_cast<tMatrixPixelsSize>(w), static_cast<tMatrixPixelsSize>(h)};
+    }
+};
+
+

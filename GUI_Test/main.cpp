@@ -5,6 +5,10 @@
 #include <cstdio>
 #include <memory>
 #include "../matrix_pixels.hpp"
+#include "../cs_math.hpp"
+
+using matrix_pixels_math::max;
+using matrix_pixels_math::min;
 #include "../color_rgba.hpp"
 #include "../matrix_render.hpp"
 
@@ -101,11 +105,11 @@ public:
         const int matrixW = static_cast<int>(matrix.width());
         const int matrixH = static_cast<int>(matrix.height());
 
-        const int availW = max_c(screenWidth - padding * 2, 1);
-        const int availH = max_c(screenHeight - padding * 2, 1);
+        const int availW = max(screenWidth - padding * 2, 1);
+        const int availH = max(screenHeight - padding * 2, 1);
 
-        const int step = max_c(1, min_c(availW / matrixW, availH / matrixH));
-        const int fill = max_c(1, step - max_c(2, step / 4)); // leave a border
+        const int step = max(1, min(availW / matrixW, availH / matrixH));
+        const int fill = max(1, step - max(2, step / 4)); // leave a border
 
         const int totalW = step * matrixW;
         const int totalH = step * matrixH;

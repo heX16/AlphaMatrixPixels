@@ -3,23 +3,16 @@
 #include <cstddef>
 #include <cstdint>
 #include "color_rgba.hpp"
+#include "cs_math.hpp"
 
 using std::size_t;
 using std::uint8_t;
 using std::uint16_t;
+using matrix_pixels_math::max;
+using matrix_pixels_math::min;
 
 using tMatrixPixelsCoord = std::int32_t;
 using tMatrixPixelsSize = std::uint16_t;
-
-template <typename T>
-constexpr T max_c(T a, T b) noexcept {
-    return (a > b) ? a : b;
-}
-
-template <typename T>
-constexpr T min_c(T a, T b) noexcept {
-    return (a < b) ? a : b;
-}
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
 // Color format: 0xAARRGGBB (A in the most significant byte).
@@ -122,10 +115,12 @@ public:
 
     // Draw another matrix over this one with clipping. Source alpha is respected and additionally scaled by 'alpha'.
     inline void drawMatrix(tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
-        const tMatrixPixelsCoord start_x = max_c<tMatrixPixelsCoord>(0, -dst_x);
-        const tMatrixPixelsCoord start_y = max_c<tMatrixPixelsCoord>(0, -dst_y);
-        const tMatrixPixelsCoord end_x = min_c<tMatrixPixelsCoord>(source.width(), static_cast<tMatrixPixelsCoord>(width()) - dst_x);
-        const tMatrixPixelsCoord end_y = min_c<tMatrixPixelsCoord>(source.height(), static_cast<tMatrixPixelsCoord>(height()) - dst_y);
+        const tMatrixPixelsCoord start_x = max(0, -dst_x);
+        const tMatrixPixelsCoord start_y = max(0, -dst_y);
+        const tMatrixPixelsCoord end_x = min(static_cast<tMatrixPixelsCoord>(source.width()),
+                                             static_cast<tMatrixPixelsCoord>(width()) - dst_x);
+        const tMatrixPixelsCoord end_y = min(static_cast<tMatrixPixelsCoord>(source.height()),
+                                             static_cast<tMatrixPixelsCoord>(height()) - dst_y);
 
         for (tMatrixPixelsCoord sy = start_y; sy < end_y; ++sy) {
             const tMatrixPixelsCoord dy = sy + dst_y;
