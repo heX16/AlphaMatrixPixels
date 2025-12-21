@@ -51,6 +51,9 @@
 			<Add option="-m64" />
 			<Add option="-lSDL2main -lSDL2 -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
 			<Add directory="C:/msys64/mingw64/lib" />
+			<Add option="-static" />
+			<Add option="-static-libstdc++" />
+			<Add option="-static-libgcc" />
 		</Linker>
 		<Unit filename="../color_rgba.hpp" />
 		<Unit filename="../matrix_pixels.hpp" />
