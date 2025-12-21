@@ -40,20 +40,26 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-std=c++17" />
 			<Add option="-m64" />
+			<Add option="-std=c++17" />
 			<Add directory="." />
 			<Add directory=".." />
+			<Add directory="C:/msys64/mingw64/include/SDL2" />
+			<Add directory="C:/msys64/mingw64/include" />
 		</Compiler>
 		<Linker>
 			<Add option="-m64" />
 			<Add option="-lSDL2main -lSDL2 -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
+			<Add directory="C:/msys64/mingw64/lib" />
 		</Linker>
-		<Unit filename="../matrix_pixels.hpp" />
 		<Unit filename="../color_rgba.hpp" />
+		<Unit filename="../matrix_pixels.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
+			<code_completion />
+			<envvars />
+			<debugger />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
