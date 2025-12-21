@@ -169,6 +169,52 @@ public:
     }
 };
 
+class GradientEffectFP final : public csMatrixRenderBase {
+public:
+    // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses std::sin internally.
+    static uint8_t wave_fp(matrix_pixels_math::fp32_t phase) noexcept {
+        using namespace matrix_pixels_math;
+        static constexpr fp32_t half = fp32_t::from_float_constexpr(0.5f);
+        static constexpr fp32_t scale255 = fp32_t::from_int(255);
+
+        const fp32_t s = fp32_sin(phase);
+        const fp32_t norm = s * half + half;      // [-1..1] -> [0..1]
+        const fp32_t scaled = norm * scale255;    // [0..255]
+        int v = scaled.round_int();
+        if (v < 0) v = 0;
+        else if (v > 255) v = 255;
+        return static_cast<uint8_t>(v);
+    }
+
+    void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
+        using namespace matrix_pixels_math;
+
+        // Convert milliseconds to seconds in 16.16 fixed-point WITHOUT float:
+        // t_raw = currTime * 65536 / 1000
+        const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * FP32_SCALE) / 1000);
+        const fp32_t t = fp32_t::from_raw(t_raw);
+
+        // Constants as constexpr fixed-point from float literals (compile-time).
+        static constexpr fp32_t k08 = fp32_t::from_float_constexpr(0.8f);
+        static constexpr fp32_t k06 = fp32_t::from_float_constexpr(0.6f);
+        static constexpr fp32_t k04 = fp32_t::from_float_constexpr(0.4f);
+        static constexpr fp32_t k05 = fp32_t::from_float_constexpr(0.5f);
+        const int width = static_cast<int>(matrix.width());
+        const int height = static_cast<int>(matrix.height());
+
+        for (int y = 0; y < height; ++y) {
+            const fp32_t yf = fp32_t::from_int(y) * k04;
+            for (int x = 0; x < width; ++x) {
+                const fp32_t xf = fp32_t::from_int(x) * k04;
+                const uint8_t r = wave_fp(t * k08 + xf);
+                const uint8_t g = wave_fp(t + yf);
+                const uint8_t b = wave_fp(t * k06 + xf + yf * k05);
+                matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
+            }
+        }
+    }
+};
+
 class PlasmaEffect final : public csMatrixRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {

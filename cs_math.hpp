@@ -104,7 +104,7 @@ private:
              : static_cast<int16_t>(v);
     }
 
-    static raw_t float_to_raw(float v) noexcept {
+    static constexpr raw_t float_to_raw_constexpr(float v) noexcept {
         const float scaled = v * static_cast<float>(FP16_SCALE);
         const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
         const int32_t raw = static_cast<int32_t>(scaled + adj);
@@ -124,11 +124,18 @@ public:
     constexpr fp16_t() = default;
     explicit constexpr fp16_t(raw_t r) : raw(r) {}
     explicit constexpr fp16_t(int32_t v) : raw(clamp_raw(v << frac_bits)) {}
-    explicit fp16_t(float v) : raw(float_to_raw(v)) {}
+    explicit fp16_t(float v) : raw(float_to_raw_constexpr(v)) {}
 
     static constexpr fp16_t from_raw(raw_t r) noexcept { return fp16_t{r}; }
     static constexpr fp16_t from_int(int32_t v) noexcept { return fp16_t{clamp_raw(v << frac_bits)}; }
-    static fp16_t from_float(float v) noexcept { return fp16_t{float_to_raw(v)}; }
+    static fp16_t from_float(float v) noexcept { return fp16_t{float_to_raw_constexpr(v)}; }
+    static constexpr fp16_t from_float_constexpr(float v) noexcept { return fp16_t{float_to_raw_constexpr(v)}; }
+    static constexpr fp16_t from_ratio(int32_t numer, int32_t denom) noexcept {
+        // round-to-nearest, ties up
+        const int64_t scaled = static_cast<int64_t>(FP16_SCALE) * static_cast<int64_t>(numer);
+        const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
+        return fp16_t{clamp_raw(static_cast<int32_t>((scaled + bias) / denom))};
+    }
 
     [[nodiscard]] constexpr raw_t raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
@@ -231,7 +238,7 @@ private:
              : static_cast<int32_t>(v);
     }
 
-    static raw_t float_to_raw(float v) noexcept {
+    static constexpr raw_t float_to_raw_constexpr(float v) noexcept {
         const float scaled = v * static_cast<float>(FP32_SCALE);
         const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
         const int64_t raw = static_cast<int64_t>(scaled + adj);
@@ -251,11 +258,18 @@ public:
     constexpr fp32_t() = default;
     // Raw constructor: takes 16.16 fixed-point value as-is.
     explicit constexpr fp32_t(raw_t r) : raw(r) {}
-    explicit fp32_t(float v) : raw(float_to_raw(v)) {}
+    explicit fp32_t(float v) : raw(float_to_raw_constexpr(v)) {}
 
     static constexpr fp32_t from_raw(raw_t r) noexcept { return fp32_t{r}; }
     static constexpr fp32_t from_int(int32_t v) noexcept { return fp32_t{clamp_raw(static_cast<int64_t>(v) << frac_bits)}; }
-    static fp32_t from_float(float v) noexcept { return fp32_t{float_to_raw(v)}; }
+    static fp32_t from_float(float v) noexcept { return fp32_t{float_to_raw_constexpr(v)}; }
+    static constexpr fp32_t from_float_constexpr(float v) noexcept { return fp32_t{float_to_raw_constexpr(v)}; }
+    static constexpr fp32_t from_ratio(int32_t numer, int32_t denom) noexcept {
+        // round-to-nearest, ties up
+        const int64_t scaled = static_cast<int64_t>(FP32_SCALE) * static_cast<int64_t>(numer);
+        const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
+        return fp32_t{clamp_raw((scaled + bias) / denom)};
+    }
 
     [[nodiscard]] constexpr raw_t raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }

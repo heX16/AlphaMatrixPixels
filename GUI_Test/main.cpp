@@ -84,6 +84,9 @@ public:
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
                         effect = new GradientEffect();
+                    } else if (event.key.keysym.sym == SDLK_e) {
+                        delete effect;
+                        effect = new GradientEffectFP();
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
                         effect = new PlasmaEffect();
