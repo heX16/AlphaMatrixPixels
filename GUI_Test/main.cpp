@@ -30,7 +30,7 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    std::unique_ptr<csMatrixRenderBase> effect{};
+    csMatrixRenderBase* effect{nullptr};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -53,7 +53,8 @@ public:
         }
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         recreateMatrix(16, 16);
-        effect = std::make_unique<GradientEffect>();
+        delete effect;
+        effect = new GradientEffect();
         return true;
     }
 
@@ -77,9 +78,11 @@ public:
                         }
                         recreateMatrix(w, h);
                     } else if (event.key.keysym.sym == SDLK_q) {
-                        effect = std::make_unique<GradientEffect>();
+                        delete effect;
+                        effect = new GradientEffect();
                     } else if (event.key.keysym.sym == SDLK_w) {
-                        effect = std::make_unique<PlasmaEffect>();
+                        delete effect;
+                        effect = new PlasmaEffect();
                     }
                 }
             }
@@ -155,6 +158,7 @@ public:
     }
 
     void done() {
+        delete effect;
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();

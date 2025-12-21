@@ -69,13 +69,47 @@ public:
 
 };
 
+class csParamsBase {
+public:
+    virtual ~csParamsBase() = default;
+
+    virtual uint16_t count() const noexcept { return 0; }
+
+    // return utf-8 constant string
+    virtual const char* getParamName(uint8_t paramNum) const noexcept {
+        (void)paramNum;
+        return nullptr;
+    }
+
+    virtual bool getInt(uint8_t paramNum, uint32_t& value) const noexcept {
+        (void)paramNum;
+        (void)value;
+        return false;
+    }
+
+    virtual void setInt(uint8_t paramNum, uint32_t value) noexcept {
+        (void)paramNum;
+        (void)value;
+    }
+
+    virtual void reset() noexcept {}
+};
+
 class csMatrixEvent {
     // Empty - WIP
 };
 
 class csMatrixRenderBase {
+protected:
+    csParamsBase* params_{nullptr};
+
+    virtual csParamsBase* createParams() const { return nullptr; }
+
 public:
-    virtual ~csMatrixRenderBase() = default;
+    csMatrixRenderBase() : params_(createParams()) {}
+    virtual ~csMatrixRenderBase() { delete params_; }
+
+    inline csParamsBase* getParams() const noexcept { return params_; }
 
     virtual void recalc(const csMatrixPixels& led, csRandGen& rand, uint16_t currTime) {
         (void)led;
