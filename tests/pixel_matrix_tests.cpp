@@ -38,7 +38,7 @@ inline csColorRGBA refSourceOver(csColorRGBA dst, csColorRGBA src, uint8_t globa
 
 void test_color_component_ctor(TestStats& stats) {
     const char* testName = "color_component_ctor";
-    csColorRGBA c{10, 20, 30, 40};
+    csColorRGBA c{40, 10, 20, 30};
     EXPECT_TRUE(colorEq(c, 40, 10, 20, 30), "component constructor keeps channels");
 }
 
@@ -57,15 +57,15 @@ void test_color_packed_preserve(TestStats& stats) {
 
 void test_color_divide(TestStats& stats) {
     const char* testName = "color_divide";
-    csColorRGBA c{200, 100, 50, 255};
+    csColorRGBA c{255, 200, 100, 50};
     c /= 2;
     EXPECT_TRUE(colorEq(c, 127, 100, 50, 25), "division applies to all channels");
 }
 
 void test_color_blend_ops(TestStats& stats) {
     const char* testName = "color_blend_ops";
-    csColorRGBA dst{50, 60, 70, 80};
-    csColorRGBA src{200, 10, 20, 255};
+    csColorRGBA dst{80, 50, 60, 70};
+    csColorRGBA src{255, 200, 10, 20};
     auto sum = dst + src;
     EXPECT_TRUE(colorEq(sum, src.a, src.r, src.g, src.b), "operator+ with opaque src returns src");
     dst += src;
@@ -74,8 +74,8 @@ void test_color_blend_ops(TestStats& stats) {
 
 void test_color_source_over_global_alpha(TestStats& stats) {
     const char* testName = "color_source_over_global_alpha";
-    const csColorRGBA dst{60, 80, 100, 120};
-    const csColorRGBA src{200, 40, 20, 128};
+    const csColorRGBA dst{120, 60, 80, 100};
+    const csColorRGBA src{128, 200, 40, 20};
     const uint8_t global = 128;
     const csColorRGBA expected = refSourceOver(dst, src, global);
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src, global);
@@ -84,8 +84,8 @@ void test_color_source_over_global_alpha(TestStats& stats) {
 
 void test_color_source_over_no_global(TestStats& stats) {
     const char* testName = "color_source_over_no_global";
-    const csColorRGBA dst{0, 100, 200, 255};
-    const csColorRGBA src{255, 0, 0, 128};
+    const csColorRGBA dst{255, 0, 100, 200};
+    const csColorRGBA src{128, 255, 0, 0};
     const csColorRGBA expected = refSourceOver(dst, src);
     const csColorRGBA actual = csColorRGBA::sourceOverStraight(dst, src);
     EXPECT_TRUE(colorEq(actual, expected.a, expected.r, expected.g, expected.b), "sourceOver without global alpha matches reference");
@@ -102,7 +102,7 @@ void test_matrix_ctor_and_clear(TestStats& stats) {
 void test_matrix_set_get_in_bounds(TestStats& stats) {
     const char* testName = "matrix_set_get_in_bounds";
     csMatrixPixels m{2, 2};
-    csColorRGBA c{10, 20, 30, 40};
+    csColorRGBA c{40, 10, 20, 30};
     m.setPixel(1, 1, c);
     EXPECT_TRUE(colorEq(m.getPixel(1, 1), 40, 10, 20, 30), "setPixel stores value");
 }
@@ -110,7 +110,7 @@ void test_matrix_set_get_in_bounds(TestStats& stats) {
 void test_matrix_out_of_bounds(TestStats& stats) {
     const char* testName = "matrix_out_of_bounds";
     csMatrixPixels m{2, 2};
-    csColorRGBA c{1, 2, 3, 4};
+    csColorRGBA c{4, 1, 2, 3};
     m.setPixel(-1, 0, c);
     m.setPixel(5, 5, c);
     EXPECT_TRUE(colorEq(m.getPixel(-1, 0), 0, 0, 0, 0), "getPixel negative returns transparent");
@@ -121,8 +121,8 @@ void test_matrix_out_of_bounds(TestStats& stats) {
 void test_matrix_setPixelBlend(TestStats& stats) {
     const char* testName = "matrix_setPixelBlend";
     csMatrixPixels m{1, 1};
-    const csColorRGBA dst{10, 20, 30, 40};
-    const csColorRGBA src{200, 100, 50, 128};
+    const csColorRGBA dst{40, 10, 20, 30};
+    const csColorRGBA src{128, 200, 100, 50};
     m.setPixel(0, 0, dst);
     m.setPixelBlend(0, 0, src);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src);
@@ -132,8 +132,8 @@ void test_matrix_setPixelBlend(TestStats& stats) {
 void test_matrix_setPixelBlend_with_global(TestStats& stats) {
     const char* testName = "matrix_setPixelBlend_with_global";
     csMatrixPixels m{1, 1};
-    const csColorRGBA dst{0, 50, 100, 200};
-    const csColorRGBA src{255, 0, 0, 128};
+    const csColorRGBA dst{200, 0, 50, 100};
+    const csColorRGBA src{128, 255, 0, 0};
     m.setPixel(0, 0, dst);
     m.setPixelBlend(0, 0, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src, 128);
@@ -143,8 +143,8 @@ void test_matrix_setPixelBlend_with_global(TestStats& stats) {
 void test_matrix_getPixelBlend(TestStats& stats) {
     const char* testName = "matrix_getPixelBlend";
     csMatrixPixels m{1, 1};
-    const csColorRGBA dst{0, 0, 255, 255};
-    const csColorRGBA fg{255, 0, 0, 128};
+    const csColorRGBA dst{255, 0, 0, 255};
+    const csColorRGBA fg{128, 255, 0, 0};
     m.setPixel(0, 0, fg);
     const csColorRGBA blended = m.getPixelBlend(0, 0, dst);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, fg);
@@ -156,8 +156,8 @@ void test_matrix_drawMatrix_clip(TestStats& stats) {
     const char* testName = "matrix_drawMatrix_clip";
     csMatrixPixels dst{3, 3};
     csMatrixPixels src{2, 2};
-    src.setPixel(0, 0, csColorRGBA{255, 0, 0, 255});     // not drawn (clipped)
-    src.setPixel(1, 1, csColorRGBA{0, 255, 0, 255});     // drawn to (0,0)
+    src.setPixel(0, 0, csColorRGBA{255, 255, 0, 0});     // not drawn (clipped)
+    src.setPixel(1, 1, csColorRGBA{255, 0, 255, 0});     // drawn to (0,0)
     dst.drawMatrix(-1, -1, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 1), 128);
     EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "clipped draw writes only overlapping pixel");
@@ -168,11 +168,11 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
     const char* testName = "matrix_drawMatrix_basic";
     csMatrixPixels dst{2, 2};
     csMatrixPixels src{2, 2};
-    src.setPixel(0, 0, csColorRGBA{0, 0, 255, 128});
-    src.setPixel(1, 0, csColorRGBA{255, 0, 0, 255});
-    dst.setPixel(0, 0, csColorRGBA{0, 255, 0, 255});
+    src.setPixel(0, 0, csColorRGBA{128, 0, 0, 255});
+    src.setPixel(1, 0, csColorRGBA{255, 255, 0, 0});
+    dst.setPixel(0, 0, csColorRGBA{255, 0, 255, 0});
     dst.drawMatrix(0, 0, src, 200);
-    csColorRGBA expected00 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 255, 0, 255}, src.getPixel(0, 0), 200);
+    csColorRGBA expected00 = csColorRGBA::sourceOverStraight(csColorRGBA{255, 0, 255, 0}, src.getPixel(0, 0), 200);
     csColorRGBA expected10 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 0), 200);
     EXPECT_TRUE(colorEq(dst.getPixel(0, 0), expected00.a, expected00.r, expected00.g, expected00.b), "drawMatrix blends with dst");
     EXPECT_TRUE(colorEq(dst.getPixel(1, 0), expected10.a, expected10.r, expected10.g, expected10.b), "drawMatrix fills empty dst");

@@ -48,7 +48,8 @@ struct CS_PACKED csColorRGBA {
     // Ensure deterministic zero-init for default ctor.
     constexpr csColorRGBA() : value{0} {}
     // Initialize explicit channels in declared order to avoid reorder warnings.
-    constexpr csColorRGBA(uint8_t r_, uint8_t g_, uint8_t b_, uint8_t a_) : a(a_), r(r_), g(g_), b(b_) {}
+    // Argument order: a, r, g, b to match internal layout.
+    constexpr csColorRGBA(uint8_t a_, uint8_t r_, uint8_t g_, uint8_t b_) : a(a_), r(r_), g(g_), b(b_) {}
 
     // Construct from packed 0xAARRGGBB or 0xRRGGBB.
     // WARN: If alpha is zero, treat input as 0xRRGGBB and force A=0xFF.
@@ -115,7 +116,7 @@ struct CS_PACKED csColorRGBA {
         const uint8_t Gout = blendChannel(src.g, dst.g, As, dst.a, invAs, Aout);
         const uint8_t Bout = blendChannel(src.b, dst.b, As, dst.a, invAs, Aout);
 
-        return csColorRGBA{Rout, Gout, Bout, Aout};
+        return csColorRGBA{Aout, Rout, Gout, Bout};
     }
 
     // Porter-Duff SourceOver with straight alpha; uses source alpha only.
@@ -132,7 +133,7 @@ struct CS_PACKED csColorRGBA {
         const uint8_t Gout = blendChannel(src.g, dst.g, src.a, dst.a, invAs, Aout);
         const uint8_t Bout = blendChannel(src.b, dst.b, src.a, dst.a, invAs, Aout);
 
-        return csColorRGBA{Rout, Gout, Bout, Aout};
+        return csColorRGBA{Aout, Rout, Gout, Bout};
     }
 };
 
