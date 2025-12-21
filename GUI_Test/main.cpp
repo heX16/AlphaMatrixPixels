@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 #include "../matrix_pixels.hpp"
 #include "../color_rgba.hpp"
 #include "../matrix_effects.hpp"
@@ -28,7 +29,7 @@ public:
     SDL_Event event{};
 
     csMatrixPixels matrix{0, 0};
-    GradientEffect effectGradient{};
+    std::unique_ptr<IMatrixEffect> effect{};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -51,6 +52,7 @@ public:
         }
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         recreateMatrix(16, 16);
+        effect = std::make_unique<GradientEffect>();
         return true;
     }
 
@@ -73,11 +75,17 @@ public:
                             h = 5;
                         }
                         recreateMatrix(w, h);
+                    } else if (event.key.keysym.sym == SDLK_q) {
+                        effect = std::make_unique<GradientEffect>();
+                    } else if (event.key.keysym.sym == SDLK_w) {
+                        effect = std::make_unique<PlasmaEffect>();
                     }
                 }
             }
 
-            effectGradient.render(matrix, SDL_GetTicks());
+            if (effect) {
+                effect->render(matrix, SDL_GetTicks());
+            }
             renderProc();
             SDL_Delay(16); // ~60 FPS
         }
