@@ -3,7 +3,7 @@
 **Название проекта:** MatrixPixels
 
 ## Назначение
-`cs_pixel_matrix.hpp` — чистая математическая 2D-матрица пикселей в формате ARGB (0xAARRGGBB) со straight-alpha и композицией Porter-Duff SourceOver. Не привязана к железу, пригодна для моделирования/рендера в памяти.
+`matrix_pixels.hpp` — чистая математическая 2D-матрица пикселей в формате ARGB (0xAARRGGBB) со straight-alpha и композицией Porter-Duff SourceOver. Не привязана к железу, пригодна для моделирования/рендера в памяти.
 
 ## Основные типы
 - `csColorRGBA` — упакованный ARGB (A в старшем байте). Размер гарантирован 4 байта (packed/pragma + static_assert).
@@ -43,7 +43,7 @@
 
 ### Пример использования
 ```cpp
-#include "cs_pixel_matrix.hpp"
+#include "matrix_pixels.hpp"
 
 csPixelMatrix m(4, 3);
 csColorRGBA red{255, 0, 0, 255};

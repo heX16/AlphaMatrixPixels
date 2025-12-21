@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "cs_color_rgba.hpp"
+#include "color_rgba.hpp"
 
 using std::size_t;
 using std::uint8_t;
