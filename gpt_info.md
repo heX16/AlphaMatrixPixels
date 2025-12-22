@@ -39,6 +39,23 @@
 Сборка и зависимости описаны в `GUI_Test/BUILD.md`.
 !!!
 
+## Arduino / Embedded toolchains (важно)
+
+Некоторые Arduino toolchain'ы (особенно старые версии GCC) могут не поддерживать часть современного C++ на уровне библиотек,
+что проявляется ошибками вида:
+- `requested alignment is not an integer constant` (часто из сторонних библиотек, например FastLED, в `alignas(...)`)
+- `enclosing class of constexpr ... is not a literal type` (если `constexpr` объявлен у метода класса с `new[]`, `union`, и т.п.)
+
+### Рекомендации
+- Для сборки под ESP8266/ESP32 используйте актуальные core-пакеты плат (через Boards Manager) и совместимую версию FastLED.
+- Если видите ошибки `alignas(...)` внутри FastLED:
+  - обновите core пакета платы (компилятор), или
+  - откатите FastLED на более старую версию, совместимую с вашим компилятором.
+
+### Примечание по AMP_CONSTEXPR
+В `fixed_point.hpp` используется макрос `AMP_CONSTEXPR` (по умолчанию `constexpr`), который на Arduino по умолчанию
+переключается в `inline`, чтобы избежать проблем старых компиляторов с `constexpr` и float math.
+
 ## Основные типы
 - `amp::csColorRGBA` — упакованный цвет ARGB; поддерживает конструктор из packed `0xAARRGGBB` и конструктор по каналам `(a,r,g,b)`. Размер гарантирован 4 байта (packed/pragma + static_assert).
 - `amp::tMatrixPixelsCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).

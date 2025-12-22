@@ -149,15 +149,15 @@ private:
     tMatrixPixelsSize size_y_;
     csColorRGBA* pixels_{nullptr};
 
-    [[nodiscard]] constexpr bool inside(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+    [[nodiscard]] inline bool inside(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         return x >= 0 && y >= 0 && x < static_cast<tMatrixPixelsCoord>(size_x_) && y < static_cast<tMatrixPixelsCoord>(size_y_);
     }
 
-    [[nodiscard]] constexpr size_t index(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+    [[nodiscard]] inline size_t index(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         return static_cast<size_t>(y) * size_x_ + static_cast<size_t>(x);
     }
 
-    [[nodiscard]] constexpr size_t count() const noexcept { return static_cast<size_t>(size_x_) * size_y_; }
+    [[nodiscard]] inline size_t count() const noexcept { return static_cast<size_t>(size_x_) * size_y_; }
 
     [[nodiscard]] static csColorRGBA* allocate(uint16_t sx, uint16_t sy) {
         const size_t n = static_cast<size_t>(sx) * static_cast<size_t>(sy);

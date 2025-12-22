@@ -22,7 +22,13 @@ Note:
  - Replacing constexpr with inline means the function is no longer a compile-time constant expression.
 */
 #ifndef AMP_CONSTEXPR
-#define AMP_CONSTEXPR constexpr
+#  if defined(ARDUINO)
+// Many Arduino toolchains are stuck on older GCC versions where `constexpr` can be buggy/slow
+// (especially with float math and some union/aggregate patterns). Default to `inline` there.
+#    define AMP_CONSTEXPR inline
+#  else
+#    define AMP_CONSTEXPR constexpr
+#  endif
 #endif
 
 // Fixed-point helpers are kept in a separate header to reduce compile time and keep math.hpp focused.
@@ -35,13 +41,8 @@ namespace math {
 
 struct csFP16 {
     using raw_t = int16_t;
-    union {
-        raw_t raw{0};
-        struct {
-            int8_t int_part;
-            uint8_t frac_part;
-        };
-    };
+
+    raw_t raw{0};
 
     static constexpr int frac_bits = 8;
     static constexpr raw_t scale = static_cast<raw_t>(1 << frac_bits); // 256
@@ -170,15 +171,13 @@ public:
     explicit operator float() const noexcept { return to_float(); }
 };
 
+
+
+
 struct csFP32 {
     using raw_t = int32_t;
-    union {
-        raw_t raw{0};
-        struct {
-            int16_t int_part;
-            uint16_t frac_part;
-        };
-    };
+
+    raw_t raw{0};
 
     static constexpr int frac_bits = 16;
     static constexpr raw_t scale = static_cast<raw_t>(1 << frac_bits); // 65536

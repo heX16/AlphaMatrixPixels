@@ -286,7 +286,7 @@ public:
 
         // Convert milliseconds to seconds in 16.16 fixed-point WITHOUT float:
         // t_raw = currTime * 65536 / 1000
-        const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * FP32_SCALE) / 1000);
+        const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * csFP32::scale) / 1000);
         const csFP32 t = csFP32::from_raw(t_raw);
 
         // Fixed-point constants.
