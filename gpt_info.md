@@ -19,7 +19,7 @@
 
 ## Именование
 
-**Название проекта:** AlphaMatrixPixels
+**Название проекта:** AlphaMatrixPixels (сокращенно "AMPix")
 
 **Namespace:** `amp`
 

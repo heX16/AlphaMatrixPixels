@@ -1,10 +1,24 @@
 #pragma once
 
+#if defined(ARDUINO)
+#  include <Arduino.h>
+#else
+#  if defined(__has_include)
+#    if __has_include(<cstdint>)
+#      include <cstdint>
+#    elif __has_include(<stdint.h>)
+#      include <stdint.h>
+#    endif
+#  else
+#    include <stdint.h>
+#  endif
+#endif
+
 #include <cmath>
-#include <cstdint>
 
 #include "color_rgba.hpp"
 #include "matrix_pixels.hpp"
+#include "rect.hpp"
 #include "math.hpp"
 
 
@@ -84,6 +98,12 @@ public:
         return nullptr;
     }
 
+    uint8_t findParamIdByName(const char* paramName) {
+        (void)paramName;
+        // TODO: WIP...
+        return 0;
+    }
+
     virtual bool getInt(uint8_t paramNum, uint32_t& value) const noexcept {
         (void)paramNum;
         (void)value;
@@ -95,7 +115,92 @@ public:
         (void)value;
     }
 
+    virtual bool getPtr(uint8_t paramNum, void*& pointer) const noexcept {
+        (void)paramNum;
+        pointer = nullptr;
+        return false;
+    }
+
     virtual void reset() noexcept {}
+};
+
+class csParamsRect : public csParamsBase {
+public:
+    csRect rect{};
+
+    uint16_t count() const noexcept override { return 4; }
+
+    const char* getParamName(uint8_t paramNum) const noexcept override {
+        switch (paramNum) {
+        case csParamsEnum::x: return "x";
+        case csParamsEnum::y: return "y";
+        case csParamsEnum::w: return "w";
+        case csParamsEnum::h: return "h";
+        default: return nullptr;
+        }
+    }
+
+    bool getInt(uint8_t paramNum, uint32_t& value) const noexcept override {
+        switch (paramNum) {
+        case csParamsEnum::x: value = static_cast<uint32_t>(rect.x); return true;
+        case csParamsEnum::y: value = static_cast<uint32_t>(rect.y); return true;
+        case csParamsEnum::w: value = static_cast<uint32_t>(rect.width); return true;
+        case csParamsEnum::h: value = static_cast<uint32_t>(rect.height); return true;
+        default: return false;
+        }
+    }
+
+    void setInt(uint8_t paramNum, uint32_t value) noexcept override {
+        switch (paramNum) {
+        case csParamsEnum::x: rect.x = to_coord(value); break;
+        case csParamsEnum::y: rect.y = to_coord(value); break;
+        case csParamsEnum::w: rect.width = to_size(value); break;
+        case csParamsEnum::h: rect.height = to_size(value); break;
+        default: break;
+        }
+    }
+
+    void reset() noexcept override { rect = csRect{}; }
+};
+
+class csParamsEnum {
+public:
+    static constexpr auto x = 1;
+    static constexpr auto y = 2;
+    static constexpr auto w = 3;
+    static constexpr auto h = 4; 
+
+    static constexpr auto x2 = 5;
+    static constexpr auto y2 = 6;
+    static constexpr auto w2 = 7;
+    static constexpr auto h2 = 8; 
+
+    static constexpr auto speed = 10;   
+    static constexpr auto dir = 11;
+
+    // colors
+    static constexpr auto color1 = 20;
+    static constexpr auto color2 = 21;
+    static constexpr auto color3 = 22;
+    static constexpr auto color4 = 23;   
+
+    // some special param
+    static constexpr auto spec1 = 32;
+    static constexpr auto spec2 = 33;
+    static constexpr auto spec3 = 34;
+    static constexpr auto spec4 = 35;
+    static constexpr auto spec5 = 36;
+    static constexpr auto spec6 = 37;
+    static constexpr auto spec7 = 38;
+    static constexpr auto spec8 = 39;
+    static constexpr auto spec9 = 40;
+    static constexpr auto spec10 = 41;
+    static constexpr auto spec11 = 42;
+    static constexpr auto spec12 = 43;
+    static constexpr auto spec13 = 44;
+    static constexpr auto spec14 = 45;
+    static constexpr auto spec15 = 46;
+    static constexpr auto spec16 = 47;     
 };
 
 class csEventBase {
@@ -106,7 +211,7 @@ class csRenderBase {
 protected:
     csParamsBase* params_{nullptr};
 
-    virtual csParamsBase* createParams() const { return nullptr; }
+    virtual csParamsBase* createParams() const { return new csParamsRect(); }
 
 public:
     csRenderBase() : params_(createParams()) {}
