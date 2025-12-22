@@ -3,8 +3,24 @@
 #include <stdint.h>
 #include <math.h>
 
-// Compile-time keyword hook for FUNCTIONS.
-// Default: constexpr. You can override it (e.g., via compiler flags) if needed.
+/*
+Compile-time keyword hook for FUNCTIONS.
+
+Default: AMP_CONSTEXPR = constexpr.
+
+Why this exists:
+ - Some older/embedded C++ toolchains (Arduino-like) have incomplete/buggy support for `constexpr`
+   in functions (especially when the function body uses float math or float->int conversions).
+ - On such compilers this may compile very slowly, produce strange errors, or fail to compile at all.
+
+If you hit compilation problems, you can switch constexpr-off for functions by overriding the macro
+ (e.g. via compiler flags or before including this header):
+   #define AMP_CONSTEXPR inline
+
+Note:
+ - This macro must be used ONLY for functions (not for variables/constants).
+ - Replacing constexpr with inline means the function is no longer a compile-time constant expression.
+*/
 #ifndef AMP_CONSTEXPR
 #define AMP_CONSTEXPR constexpr
 #endif
@@ -17,15 +33,6 @@ namespace math {
 // csFP16: signed 8.8 (int16_t)  -> scale = 256
 // csFP32: signed 16.16 (int32_t) -> scale = 65536
 
-static constexpr int FP16_FRAC_BITS = 8;
-static constexpr int FP32_FRAC_BITS = 16;
-static constexpr int32_t FP16_SCALE = 1 << FP16_FRAC_BITS;   // 256
-static constexpr int32_t FP32_SCALE = 1 << FP32_FRAC_BITS;   // 65536
-static constexpr int32_t FP16_MIN_RAW = -32768;
-static constexpr int32_t FP16_MAX_RAW = 32767;
-static constexpr int32_t FP32_MIN_RAW = -2147483648; // INT32_MIN
-static constexpr int32_t FP32_MAX_RAW = 2147483647;  // INT32_MAX
-
 struct csFP16 {
     using raw_t = int16_t;
     union {
@@ -36,48 +43,49 @@ struct csFP16 {
         };
     };
 
-    static constexpr int frac_bits = FP16_FRAC_BITS;
-    static constexpr raw_t scale = static_cast<raw_t>(FP16_SCALE);
-    static constexpr raw_t min_raw = static_cast<raw_t>(FP16_MIN_RAW);
-    static constexpr raw_t max_raw = static_cast<raw_t>(FP16_MAX_RAW);
+    static constexpr int frac_bits = 8;
+    static constexpr raw_t scale = static_cast<raw_t>(1 << frac_bits); // 256
+    static constexpr raw_t min_raw = static_cast<raw_t>(-32768);
+    static constexpr raw_t max_raw = static_cast<raw_t>(32767);
 
 private:
     // Clamp helpers for intermediate math.
     static AMP_CONSTEXPR raw_t clamp_raw(int32_t v) noexcept {
-        return v > FP16_MAX_RAW ? static_cast<raw_t>(FP16_MAX_RAW)
-             : v < FP16_MIN_RAW ? static_cast<raw_t>(FP16_MIN_RAW)
+        return v > static_cast<int32_t>(max_raw) ? max_raw
+             : v < static_cast<int32_t>(min_raw) ? min_raw
              : static_cast<raw_t>(v);
     }
 
     static AMP_CONSTEXPR raw_t mul_raw(raw_t a, raw_t b) noexcept {
-        return static_cast<raw_t>((static_cast<int32_t>(a) * static_cast<int32_t>(b)) >> FP16_FRAC_BITS);
+        return static_cast<raw_t>((static_cast<int32_t>(a) * static_cast<int32_t>(b)) >> frac_bits);
     }
 
     static AMP_CONSTEXPR raw_t div_raw(raw_t num, raw_t den) noexcept {
         return den == 0 ? static_cast<raw_t>(0)
-                        : static_cast<raw_t>((static_cast<int32_t>(num) << FP16_FRAC_BITS) / den);
+                        : static_cast<raw_t>((static_cast<int32_t>(num) << frac_bits) / den);
     }
 
     static AMP_CONSTEXPR int16_t saturate_raw(int32_t v) noexcept {
-        return v > FP16_MAX_RAW ? static_cast<int16_t>(FP16_MAX_RAW)
-             : v < FP16_MIN_RAW ? static_cast<int16_t>(FP16_MIN_RAW)
+        return v > static_cast<int32_t>(max_raw) ? static_cast<int16_t>(max_raw)
+             : v < static_cast<int32_t>(min_raw) ? static_cast<int16_t>(min_raw)
              : static_cast<int16_t>(v);
     }
 
     static AMP_CONSTEXPR raw_t float_to_raw_constexpr(float v) noexcept {
         return saturate_raw(static_cast<int32_t>(
-            (v * static_cast<float>(FP16_SCALE)) +
-            ((v * static_cast<float>(FP16_SCALE)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
+            (v * static_cast<float>(scale)) +
+            ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
     }
 
 
     static float raw_to_float(raw_t v) noexcept {
-        return static_cast<float>(v) / static_cast<float>(FP16_SCALE);
+        return static_cast<float>(v) / static_cast<float>(scale);
     }
 
     static inline int32_t round_raw_to_int(raw_t v) noexcept {
-        const int32_t bias = (v >= 0) ? (FP16_SCALE / 2) : -(FP16_SCALE / 2);
-        return static_cast<int32_t>(v + bias) >> FP16_FRAC_BITS;
+        const int32_t half = static_cast<int32_t>(scale) / 2;
+        const int32_t bias = (v >= 0) ? half : -half;
+        return static_cast<int32_t>(v + bias) >> frac_bits;
     }
 
 public:
@@ -94,7 +102,7 @@ public:
     static inline csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP16 from_ratio(int32_t numer, int32_t denom) noexcept {
         // round-to-nearest, ties up
-        const int64_t scaled = static_cast<int64_t>(FP16_SCALE) * static_cast<int64_t>(numer);
+        const int64_t scaled = static_cast<int64_t>(scale) * static_cast<int64_t>(numer);
         const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
         return from_raw(clamp_raw(static_cast<int32_t>((scaled + bias) / denom)));
     }
@@ -125,7 +133,7 @@ public:
     }
 
     [[nodiscard]] inline csFP16 absVal() const noexcept {
-        return (raw >= 0) ? *this : from_raw(static_cast<raw_t>(raw == FP16_MIN_RAW ? FP16_MAX_RAW : -raw));
+        return (raw >= 0) ? *this : from_raw(static_cast<raw_t>(raw == min_raw ? max_raw : -raw));
     }
 
     // Arithmetic
@@ -172,48 +180,49 @@ struct csFP32 {
         };
     };
 
-    static constexpr int frac_bits = FP32_FRAC_BITS;
-    static constexpr raw_t scale = static_cast<raw_t>(FP32_SCALE);
-    static constexpr raw_t min_raw = static_cast<raw_t>(FP32_MIN_RAW);
-    static constexpr raw_t max_raw = static_cast<raw_t>(FP32_MAX_RAW);
+    static constexpr int frac_bits = 16;
+    static constexpr raw_t scale = static_cast<raw_t>(1 << frac_bits); // 65536
+    static constexpr raw_t min_raw = static_cast<raw_t>(-2147483647 - 1);
+    static constexpr raw_t max_raw = static_cast<raw_t>(2147483647);
 
 private:
     // Clamp helpers for intermediate math.
     static AMP_CONSTEXPR raw_t clamp_raw(int64_t v) noexcept {
-        return v > FP32_MAX_RAW ? static_cast<raw_t>(FP32_MAX_RAW)
-             : v < static_cast<int64_t>(FP32_MIN_RAW) ? static_cast<raw_t>(FP32_MIN_RAW)
+        return v > static_cast<int64_t>(max_raw) ? max_raw
+             : v < static_cast<int64_t>(min_raw) ? min_raw
              : static_cast<raw_t>(v);
     }
 
     static AMP_CONSTEXPR raw_t mul_raw(raw_t a, raw_t b) noexcept {
-        return static_cast<raw_t>((static_cast<int64_t>(a) * static_cast<int64_t>(b)) >> FP32_FRAC_BITS);
+        return static_cast<raw_t>((static_cast<int64_t>(a) * static_cast<int64_t>(b)) >> frac_bits);
     }
 
     static AMP_CONSTEXPR raw_t div_raw(raw_t num, raw_t den) noexcept {
         return den == 0 ? static_cast<raw_t>(0)
-                        : static_cast<raw_t>((static_cast<int64_t>(num) << FP32_FRAC_BITS) / den);
+                        : static_cast<raw_t>((static_cast<int64_t>(num) << frac_bits) / den);
     }
 
     static AMP_CONSTEXPR int32_t saturate_raw(int64_t v) noexcept {
-        return v > FP32_MAX_RAW ? FP32_MAX_RAW
-             : v < static_cast<int64_t>(FP32_MIN_RAW) ? FP32_MIN_RAW
+        return v > static_cast<int64_t>(max_raw) ? max_raw
+             : v < static_cast<int64_t>(min_raw) ? min_raw
              : static_cast<int32_t>(v);
     }
 
     static inline raw_t float_to_raw_constexpr(float v) noexcept {
-        const float scaled = v * static_cast<float>(FP32_SCALE);
+        const float scaled = v * static_cast<float>(scale);
         const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
         const int64_t raw = static_cast<int64_t>(scaled + adj);
         return saturate_raw(raw);
     }
 
     static float raw_to_float(raw_t v) noexcept {
-        return static_cast<float>(v) / static_cast<float>(FP32_SCALE);
+        return static_cast<float>(v) / static_cast<float>(scale);
     }
 
     static inline int32_t round_raw_to_int(raw_t v) noexcept {
-        const int32_t bias = (v >= 0) ? (FP32_SCALE / 2) : -(FP32_SCALE / 2);
-        return (v + bias) >> FP32_FRAC_BITS;
+        const int32_t half = scale / 2;
+        const int32_t bias = (v >= 0) ? half : -half;
+        return (v + bias) >> frac_bits;
     }
 
 public:
@@ -230,7 +239,7 @@ public:
     static inline csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP32 from_ratio(int32_t numer, int32_t denom) noexcept {
         // round-to-nearest, ties up
-        const int64_t scaled = static_cast<int64_t>(FP32_SCALE) * static_cast<int64_t>(numer);
+        const int64_t scaled = static_cast<int64_t>(scale) * static_cast<int64_t>(numer);
         const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
         return from_raw(clamp_raw((scaled + bias) / denom));
     }
@@ -261,7 +270,7 @@ public:
     }
 
     [[nodiscard]] inline csFP32 absVal() const noexcept {
-        return (raw >= 0) ? *this : from_raw(raw == FP32_MIN_RAW ? FP32_MAX_RAW : -raw);
+        return (raw >= 0) ? *this : from_raw(raw == min_raw ? max_raw : -raw);
     }
 
     // Arithmetic
