@@ -44,8 +44,6 @@ public:
     using fp_type = int16_t;
     // Helper type for intermediate calculations (wider than fp_type).
     using fp_type2 = int32_t;
-    // Helper type for extra-wide intermediate calculations (e.g. ratio conversion).
-    using fp_type_quad = int64_t;
 
     fp_type raw{0};
 
@@ -108,9 +106,10 @@ public:
     static inline csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP16 from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
         // round-to-nearest, ties up
-        const fp_type_quad scaled = static_cast<fp_type_quad>(scale) * static_cast<fp_type_quad>(numer);
-        const fp_type_quad bias = (scaled >= 0) ? (static_cast<fp_type_quad>(denom) / 2) : -(static_cast<fp_type_quad>(denom) / 2);
-        return from_raw(clamp_raw(static_cast<fp_type2>((scaled + bias) / denom)));
+        // Note: intermediate math uses fp_type2 (int32_t). Large numer/denom may overflow.
+        const fp_type2 scaled = static_cast<fp_type2>(scale) * static_cast<fp_type2>(numer);
+        const fp_type2 bias = (scaled >= 0) ? (static_cast<fp_type2>(denom) / 2) : -(static_cast<fp_type2>(denom) / 2);
+        return from_raw(clamp_raw((scaled + bias) / denom));
     }
 
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
@@ -183,8 +182,6 @@ public:
     using fp_type = int32_t;
     // Helper type for intermediate calculations (wider than fp_type).
     using fp_type2 = int64_t;
-    // Helper type for integer conversions (keeps signatures readable).
-    using int_type = int32_t;
 
     fp_type raw{0};
 
@@ -210,10 +207,10 @@ private:
                         : static_cast<fp_type>((static_cast<fp_type2>(num) << frac_bits) / den);
     }
 
-    static AMP_CONSTEXPR int_type saturate_raw(fp_type2 v) noexcept {
+    static AMP_CONSTEXPR fp_type saturate_raw(fp_type2 v) noexcept {
         return v > static_cast<fp_type2>(max_raw) ? max_raw
              : v < static_cast<fp_type2>(min_raw) ? min_raw
-             : static_cast<int_type>(v);
+             : static_cast<fp_type>(v);
     }
 
     static inline fp_type float_to_raw_constexpr(float v) noexcept {
@@ -227,7 +224,7 @@ private:
         return static_cast<float>(v) / static_cast<float>(scale);
     }
 
-    static inline int_type round_raw_to_int(fp_type v) noexcept {
+    static inline fp_type round_raw_to_int(fp_type v) noexcept {
         const fp_type half = scale / 2;
         const fp_type bias = (v >= 0) ? half : -half;
         return (v + bias) >> frac_bits;
@@ -242,10 +239,10 @@ public:
         out.raw = r;
         return out;
     }
-    static inline csFP32 from_int(int_type v) noexcept { return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits)); }
+    static inline csFP32 from_int(fp_type v) noexcept { return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits)); }
     static csFP32 from_float(float v) noexcept { return csFP32(v); }
     static inline csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
-    static inline csFP32 from_ratio(int_type numer, int_type denom) noexcept {
+    static inline csFP32 from_ratio(fp_type numer, fp_type denom) noexcept {
         // round-to-nearest, ties up
         const fp_type2 scaled = static_cast<fp_type2>(scale) * static_cast<fp_type2>(numer);
         const fp_type2 bias = (scaled >= 0) ? (static_cast<fp_type2>(denom) / 2) : -(static_cast<fp_type2>(denom) / 2);
@@ -254,27 +251,27 @@ public:
 
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
-    [[nodiscard]] AMP_CONSTEXPR int_type int_trunc() const noexcept { return static_cast<int_type>(raw >> frac_bits); }
+    [[nodiscard]] AMP_CONSTEXPR fp_type int_trunc() const noexcept { return static_cast<fp_type>(raw >> frac_bits); }
     [[nodiscard]] AMP_CONSTEXPR uint16_t frac_raw() const noexcept { return static_cast<uint16_t>(raw & (scale - 1)); }
 
-    [[nodiscard]] inline int_type round_int() const noexcept { return round_raw_to_int(raw); }
+    [[nodiscard]] inline fp_type round_int() const noexcept { return round_raw_to_int(raw); }
 
-    [[nodiscard]] inline int_type floor_int() const noexcept {
+    [[nodiscard]] inline fp_type floor_int() const noexcept {
         if (raw >= 0) {
-            return static_cast<int_type>(raw >> frac_bits);
+            return static_cast<fp_type>(raw >> frac_bits);
         }
         const fp_type mask = static_cast<fp_type>(scale - 1);
         const fp_type r = raw;
         return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
     }
 
-    [[nodiscard]] inline int_type ceil_int() const noexcept {
+    [[nodiscard]] inline fp_type ceil_int() const noexcept {
         if (raw >= 0) {
             const fp_type mask = static_cast<fp_type>(scale - 1);
             const fp_type r = raw;
             return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
         }
-        return static_cast<int_type>(raw >> frac_bits);
+        return static_cast<fp_type>(raw >> frac_bits);
     }
 
     [[nodiscard]] inline csFP32 absVal() const noexcept {
