@@ -68,9 +68,9 @@ constexpr EOrder cLedRgbOrder = BRG;
 #define LED_CHIPSET SM16716
 constexpr EOrder cLedRgbOrder = RGB;
 // #define LED_INIT_MODE 3 - fail
-#define LED_INIT_MODE 1
-constexpr uint8_t cDataPin = D7;    // GPIO13 (SPI MOSI)
-constexpr uint8_t cClockPin = D5;   // GPIO14 (SPI SCLK)
+#define LED_INIT_MODE 2
+constexpr uint8_t cDataPin = 13;    // GPIO13 (SPI MOSI)
+constexpr uint8_t cClockPin = 14;   // GPIO14 (SPI SCLK)
 
 #else
 #error "LED_CFG invalid config number"
