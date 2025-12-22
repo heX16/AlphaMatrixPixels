@@ -76,7 +76,6 @@ private:
 
 public:
     csFP16() = default;
-    explicit csFP16(int32_t v) : raw(clamp_raw(v << frac_bits)) {}
     explicit csFP16(float v) : raw(float_to_raw_constexpr(v)) {}
 
     static inline csFP16 from_raw(raw_t r) noexcept {
@@ -84,8 +83,8 @@ public:
         out.raw = r;
         return out;
     }
-    static inline csFP16 from_int(int32_t v) noexcept { return csFP16{v}; }
-    static csFP16 from_float(float v) noexcept { return csFP16{v}; }
+    static inline csFP16 from_int(int32_t v) noexcept { return from_raw(clamp_raw(v << frac_bits)); }
+    static csFP16 from_float(float v) noexcept { return csFP16(v); }
     static inline csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP16 from_ratio(int32_t numer, int32_t denom) noexcept {
         // round-to-nearest, ties up
@@ -213,7 +212,6 @@ private:
 
 public:
     csFP32() = default;
-    explicit csFP32(int32_t v) : raw(clamp_raw(static_cast<int64_t>(v) << frac_bits)) {}
     explicit csFP32(float v) : raw(float_to_raw_constexpr(v)) {}
 
     static inline csFP32 from_raw(raw_t r) noexcept {
@@ -221,7 +219,7 @@ public:
         out.raw = r;
         return out;
     }
-    static inline csFP32 from_int(int32_t v) noexcept { return csFP32(v); }
+    static inline csFP32 from_int(int32_t v) noexcept { return from_raw(clamp_raw(static_cast<int64_t>(v) << frac_bits)); }
     static csFP32 from_float(float v) noexcept { return csFP32(v); }
     static inline csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP32 from_ratio(int32_t numer, int32_t denom) noexcept {

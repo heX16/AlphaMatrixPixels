@@ -225,7 +225,7 @@ void test_fp16_basic(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.02f, "fp16 add works");
     const csFP16 d = a * b; // -0.375
     expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.02f, "fp16 mul works");
-    const csFP16 e = csFP16{2} / csFP16{4}; // 0.5
+    const csFP16 e = csFP16::from_int(2) / csFP16::from_int(4); // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.02f, "fp16 div works");
 }
 
@@ -239,7 +239,7 @@ void test_fp32_basic(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c.to_float(), 2.75f, 0.001f, "fp32 sub works");
     const csFP32 d = a * b; // 1.625
     expect_near_float(stats, testName, __LINE__, d.to_float(), 1.625f, 0.001f, "fp32 mul works");
-    const csFP32 e = csFP32{1} / csFP32{2}; // 0.5
+    const csFP32 e = csFP32::from_int(1) / csFP32::from_int(2); // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.001f, "fp32 div works");
 }
 
@@ -259,7 +259,7 @@ void test_fp_trig(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c1.to_float(), 0.0f, 0.05f, "cos(pi/2) ~ 0");
     expect_eq_int(
         stats, testName, __LINE__,
-        static_cast<long long>(csFP32{1}.raw_value()),
+        static_cast<long long>(csFP32::from_int(1).raw_value()),
         static_cast<long long>(one.raw_value()),
         "fp32 comparison works (raw)"
     );
