@@ -298,10 +298,10 @@ public:
         const int height = static_cast<int>(matrix.height());
 
         for (int y = 0; y < height; ++y) {
-            const csFP32 yf{y};
+            const csFP32 yf = csFP32::from_int(y);
             const csFP32 yf_scaled = yf * k04;
             for (int x = 0; x < width; ++x) {
-                const csFP32 xf{x};
+                const csFP32 xf = csFP32::from_int(x);
                 const csFP32 xf_scaled = xf * k04;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
