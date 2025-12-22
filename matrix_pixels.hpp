@@ -1,20 +1,21 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 #include "color_rgba.hpp"
 #include "math.hpp"
 
 namespace amp {
 
-using std::size_t;
-using std::uint8_t;
-using std::uint16_t;
+using ::size_t;
+using ::int32_t;
+using ::uint8_t;
+using ::uint16_t;
 using math::max;
 using math::min;
 
-using tMatrixPixelsCoord = std::int32_t;
-using tMatrixPixelsSize = std::uint16_t;
+using tMatrixPixelsCoord = int32_t;
+using tMatrixPixelsSize = uint16_t;
 
 template <typename T>
 constexpr tMatrixPixelsCoord to_coord(T v) noexcept {
@@ -127,8 +128,8 @@ public:
 
     // Draw another matrix over this one with clipping. Source alpha is respected and additionally scaled by 'alpha'.
     inline void drawMatrix(tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
-        const tMatrixPixelsCoord start_x = max(0, -dst_x);
-        const tMatrixPixelsCoord start_y = max(0, -dst_y);
+        const tMatrixPixelsCoord start_x = max(to_coord(0), -dst_x);
+        const tMatrixPixelsCoord start_y = max(to_coord(0), -dst_y);
         const tMatrixPixelsCoord end_x = min(to_coord(source.width()),
                                              to_coord(width()) - dst_x);
         const tMatrixPixelsCoord end_y = min(to_coord(source.height()),

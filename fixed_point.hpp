@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <cmath>
+#include <stdint.h>
+#include <math.h>
 
 // Fixed-point helpers are kept in a separate header to reduce compile time and keep math.hpp focused.
 namespace amp {
@@ -58,7 +58,7 @@ private:
              : static_cast<int16_t>(v);
     }
 
-    static constexpr raw_t float_to_raw_constexpr(float v) noexcept {
+    static inline raw_t float_to_raw_constexpr(float v) noexcept {
         const float scaled = v * static_cast<float>(FP16_SCALE);
         const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
         const int32_t raw = static_cast<int32_t>(scaled + adj);
@@ -69,25 +69,25 @@ private:
         return static_cast<float>(v) / static_cast<float>(FP16_SCALE);
     }
 
-    static constexpr int32_t round_raw_to_int(raw_t v) noexcept {
+    static inline int32_t round_raw_to_int(raw_t v) noexcept {
         const int32_t bias = (v >= 0) ? (FP16_SCALE / 2) : -(FP16_SCALE / 2);
         return static_cast<int32_t>(v + bias) >> FP16_FRAC_BITS;
     }
 
 public:
-    constexpr csFP16() = default;
-    explicit constexpr csFP16(int32_t v) : raw(clamp_raw(v << frac_bits)) {}
+    csFP16() = default;
+    explicit csFP16(int32_t v) : raw(clamp_raw(v << frac_bits)) {}
     explicit csFP16(float v) : raw(float_to_raw_constexpr(v)) {}
 
-    static constexpr csFP16 from_raw(raw_t r) noexcept {
+    static inline csFP16 from_raw(raw_t r) noexcept {
         csFP16 out{};
         out.raw = r;
         return out;
     }
-    static constexpr csFP16 from_int(int32_t v) noexcept { return csFP16{v}; }
+    static inline csFP16 from_int(int32_t v) noexcept { return csFP16{v}; }
     static csFP16 from_float(float v) noexcept { return csFP16{v}; }
-    static constexpr csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
-    static constexpr csFP16 from_ratio(int32_t numer, int32_t denom) noexcept {
+    static inline csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
+    static inline csFP16 from_ratio(int32_t numer, int32_t denom) noexcept {
         // round-to-nearest, ties up
         const int64_t scaled = static_cast<int64_t>(FP16_SCALE) * static_cast<int64_t>(numer);
         const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
@@ -99,9 +99,9 @@ public:
     [[nodiscard]] constexpr int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
     [[nodiscard]] constexpr uint8_t frac_raw() const noexcept { return static_cast<uint8_t>(raw & (scale - 1)); }
 
-    [[nodiscard]] constexpr int32_t round_int() const noexcept { return round_raw_to_int(raw); }
+    [[nodiscard]] inline int32_t round_int() const noexcept { return round_raw_to_int(raw); }
 
-    [[nodiscard]] constexpr int32_t floor_int() const noexcept {
+    [[nodiscard]] inline int32_t floor_int() const noexcept {
         if (raw >= 0) {
             return static_cast<int32_t>(raw) >> frac_bits;
         }
@@ -110,7 +110,7 @@ public:
         return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
     }
 
-    [[nodiscard]] constexpr int32_t ceil_int() const noexcept {
+    [[nodiscard]] inline int32_t ceil_int() const noexcept {
         if (raw >= 0) {
             const int32_t mask = static_cast<int32_t>(scale - 1);
             const int32_t r = static_cast<int32_t>(raw);
@@ -119,21 +119,21 @@ public:
         return static_cast<int32_t>(raw) >> frac_bits;
     }
 
-    [[nodiscard]] constexpr csFP16 abs() const noexcept {
+    [[nodiscard]] inline csFP16 absVal() const noexcept {
         return (raw >= 0) ? *this : from_raw(static_cast<raw_t>(raw == FP16_MIN_RAW ? FP16_MAX_RAW : -raw));
     }
 
     // Arithmetic
-    [[nodiscard]] constexpr csFP16 operator+(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP16 operator+(csFP16 rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<int32_t>(raw) + static_cast<int32_t>(rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP16 operator-(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP16 operator-(csFP16 rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<int32_t>(raw) - static_cast<int32_t>(rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP16 operator*(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP16 operator*(csFP16 rhs) const noexcept {
         return from_raw(clamp_raw(mul_raw(raw, rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP16 operator/(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP16 operator/(csFP16 rhs) const noexcept {
         if (rhs.raw == 0) {
             return from_raw(static_cast<raw_t>(0));
         }
@@ -195,7 +195,7 @@ private:
              : static_cast<int32_t>(v);
     }
 
-    static constexpr raw_t float_to_raw_constexpr(float v) noexcept {
+    static inline raw_t float_to_raw_constexpr(float v) noexcept {
         const float scaled = v * static_cast<float>(FP32_SCALE);
         const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
         const int64_t raw = static_cast<int64_t>(scaled + adj);
@@ -206,25 +206,25 @@ private:
         return static_cast<float>(v) / static_cast<float>(FP32_SCALE);
     }
 
-    static constexpr int32_t round_raw_to_int(raw_t v) noexcept {
+    static inline int32_t round_raw_to_int(raw_t v) noexcept {
         const int32_t bias = (v >= 0) ? (FP32_SCALE / 2) : -(FP32_SCALE / 2);
         return (v + bias) >> FP32_FRAC_BITS;
     }
 
 public:
-    constexpr csFP32() = default;
-    explicit constexpr csFP32(int32_t v) : raw(clamp_raw(static_cast<int64_t>(v) << frac_bits)) {}
+    csFP32() = default;
+    explicit csFP32(int32_t v) : raw(clamp_raw(static_cast<int64_t>(v) << frac_bits)) {}
     explicit csFP32(float v) : raw(float_to_raw_constexpr(v)) {}
 
-    static constexpr csFP32 from_raw(raw_t r) noexcept {
+    static inline csFP32 from_raw(raw_t r) noexcept {
         csFP32 out{};
         out.raw = r;
         return out;
     }
-    static constexpr csFP32 from_int(int32_t v) noexcept { return csFP32{v}; }
-    static csFP32 from_float(float v) noexcept { return csFP32{v}; }
-    static constexpr csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
-    static constexpr csFP32 from_ratio(int32_t numer, int32_t denom) noexcept {
+    static inline csFP32 from_int(int32_t v) noexcept { return csFP32(v); }
+    static csFP32 from_float(float v) noexcept { return csFP32(v); }
+    static inline csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
+    static inline csFP32 from_ratio(int32_t numer, int32_t denom) noexcept {
         // round-to-nearest, ties up
         const int64_t scaled = static_cast<int64_t>(FP32_SCALE) * static_cast<int64_t>(numer);
         const int64_t bias = (scaled >= 0) ? (static_cast<int64_t>(denom) / 2) : -(static_cast<int64_t>(denom) / 2);
@@ -236,9 +236,9 @@ public:
     [[nodiscard]] constexpr int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
     [[nodiscard]] constexpr uint16_t frac_raw() const noexcept { return static_cast<uint16_t>(raw & (scale - 1)); }
 
-    [[nodiscard]] constexpr int32_t round_int() const noexcept { return round_raw_to_int(raw); }
+    [[nodiscard]] inline int32_t round_int() const noexcept { return round_raw_to_int(raw); }
 
-    [[nodiscard]] constexpr int32_t floor_int() const noexcept {
+    [[nodiscard]] inline int32_t floor_int() const noexcept {
         if (raw >= 0) {
             return static_cast<int32_t>(raw) >> frac_bits;
         }
@@ -247,7 +247,7 @@ public:
         return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
     }
 
-    [[nodiscard]] constexpr int32_t ceil_int() const noexcept {
+    [[nodiscard]] inline int32_t ceil_int() const noexcept {
         if (raw >= 0) {
             const int32_t mask = static_cast<int32_t>(scale - 1);
             const int32_t r = static_cast<int32_t>(raw);
@@ -256,21 +256,21 @@ public:
         return static_cast<int32_t>(raw) >> frac_bits;
     }
 
-    [[nodiscard]] constexpr csFP32 abs() const noexcept {
+    [[nodiscard]] inline csFP32 absVal() const noexcept {
         return (raw >= 0) ? *this : from_raw(raw == FP32_MIN_RAW ? FP32_MAX_RAW : -raw);
     }
 
     // Arithmetic
-    [[nodiscard]] constexpr csFP32 operator+(csFP32 rhs) const noexcept {
+    [[nodiscard]] inline csFP32 operator+(csFP32 rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<int64_t>(raw) + static_cast<int64_t>(rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP32 operator-(csFP32 rhs) const noexcept {
+    [[nodiscard]] inline csFP32 operator-(csFP32 rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<int64_t>(raw) - static_cast<int64_t>(rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP32 operator*(csFP32 rhs) const noexcept {
+    [[nodiscard]] inline csFP32 operator*(csFP32 rhs) const noexcept {
         return from_raw(clamp_raw(mul_raw(raw, rhs.raw)));
     }
-    [[nodiscard]] constexpr csFP32 operator/(csFP32 rhs) const noexcept {
+    [[nodiscard]] inline csFP32 operator/(csFP32 rhs) const noexcept {
         return rhs.raw == 0 ? from_raw(0) : from_raw(clamp_raw(div_raw(raw, rhs.raw)));
     }
 
@@ -293,19 +293,19 @@ public:
 
 // Trigonometry on fixed-point types (argument in radians, result fixed-point).
 inline csFP16 fp16_sin(csFP16 angle) noexcept {
-    return csFP16{std::sin(angle.to_float())};
+    return csFP16(static_cast<float>(sin(angle.to_float())));
 }
 
 inline csFP16 fp16_cos(csFP16 angle) noexcept {
-    return csFP16{std::cos(angle.to_float())};
+    return csFP16(static_cast<float>(cos(angle.to_float())));
 }
 
 inline csFP32 fp32_sin(csFP32 angle) noexcept {
-    return csFP32{std::sin(angle.to_float())};
+    return csFP32(static_cast<float>(sin(angle.to_float())));
 }
 
 inline csFP32 fp32_cos(csFP32 angle) noexcept {
-    return csFP32{std::cos(angle.to_float())};
+    return csFP32(static_cast<float>(cos(angle.to_float())));
 }
 
 } // namespace math

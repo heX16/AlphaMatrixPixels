@@ -1,20 +1,7 @@
 #pragma once
 
-#if defined(ARDUINO)
-#  include <Arduino.h>
-#else
-#  if defined(__has_include)
-#    if __has_include(<cstdint>)
-#      include <cstdint>
-#    elif __has_include(<stdint.h>)
-#      include <stdint.h>
-#    endif
-#  else
-#    include <stdint.h>
-#  endif
-#endif
-
-#include <cmath>
+#include <stdint.h>
+#include <math.h>
 
 #include "color_rgba.hpp"
 #include "matrix_pixels.hpp"
@@ -124,6 +111,47 @@ public:
     virtual void reset() noexcept {}
 };
 
+
+class csParamsEnum {
+public:
+    static constexpr auto x = 1;
+    static constexpr auto y = 2;
+    static constexpr auto w = 3;
+    static constexpr auto h = 4;
+
+    static constexpr auto x2 = 5;
+    static constexpr auto y2 = 6;
+    static constexpr auto w2 = 7;
+    static constexpr auto h2 = 8;
+
+    static constexpr auto speed = 10;
+    static constexpr auto dir = 11;
+
+    // colors
+    static constexpr auto color1 = 20;
+    static constexpr auto color2 = 21;
+    static constexpr auto color3 = 22;
+    static constexpr auto color4 = 23;
+
+    // some special param
+    static constexpr auto spec1 = 32;
+    static constexpr auto spec2 = 33;
+    static constexpr auto spec3 = 34;
+    static constexpr auto spec4 = 35;
+    static constexpr auto spec5 = 36;
+    static constexpr auto spec6 = 37;
+    static constexpr auto spec7 = 38;
+    static constexpr auto spec8 = 39;
+    static constexpr auto spec9 = 40;
+    static constexpr auto spec10 = 41;
+    static constexpr auto spec11 = 42;
+    static constexpr auto spec12 = 43;
+    static constexpr auto spec13 = 44;
+    static constexpr auto spec14 = 45;
+    static constexpr auto spec15 = 46;
+    static constexpr auto spec16 = 47;
+};
+
 class csParamsRect : public csParamsBase {
 public:
     csRect rect{};
@@ -161,46 +189,6 @@ public:
     }
 
     void reset() noexcept override { rect = csRect{}; }
-};
-
-class csParamsEnum {
-public:
-    static constexpr auto x = 1;
-    static constexpr auto y = 2;
-    static constexpr auto w = 3;
-    static constexpr auto h = 4; 
-
-    static constexpr auto x2 = 5;
-    static constexpr auto y2 = 6;
-    static constexpr auto w2 = 7;
-    static constexpr auto h2 = 8; 
-
-    static constexpr auto speed = 10;   
-    static constexpr auto dir = 11;
-
-    // colors
-    static constexpr auto color1 = 20;
-    static constexpr auto color2 = 21;
-    static constexpr auto color3 = 22;
-    static constexpr auto color4 = 23;   
-
-    // some special param
-    static constexpr auto spec1 = 32;
-    static constexpr auto spec2 = 33;
-    static constexpr auto spec3 = 34;
-    static constexpr auto spec4 = 35;
-    static constexpr auto spec5 = 36;
-    static constexpr auto spec6 = 37;
-    static constexpr auto spec7 = 38;
-    static constexpr auto spec8 = 39;
-    static constexpr auto spec9 = 40;
-    static constexpr auto spec10 = 41;
-    static constexpr auto spec11 = 42;
-    static constexpr auto spec12 = 43;
-    static constexpr auto spec13 = 44;
-    static constexpr auto spec14 = 45;
-    static constexpr auto spec15 = 46;
-    static constexpr auto spec16 = 47;     
 };
 
 class csEventBase {
@@ -257,7 +245,7 @@ public:
         const float t = static_cast<float>(currTime) * 0.001f;
 
         auto wave = [](float v) -> uint8_t {
-            return static_cast<uint8_t>((std::sin(v) * 0.5f + 0.5f) * 255.0f);
+            return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
         };
 
         const int width = static_cast<int>(matrix.width());
@@ -278,11 +266,11 @@ public:
 
 class csRenderGradientFP final : public csRenderBase {
 public:
-    // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses std::sin internally.
+    // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
     static uint8_t wave_fp(math::csFP32 phase) noexcept {
         using namespace math;
-        static constexpr csFP32 half = csFP32::float_const(0.5f);
-        static constexpr csFP32 scale255{255};
+        static const csFP32 half = csFP32::float_const(0.5f);
+        static const csFP32 scale255{255};
 
         const csFP32 s = fp32_sin(phase);
         const csFP32 norm = s * half + half;      // [-1..1] -> [0..1]
@@ -301,11 +289,11 @@ public:
         const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * FP32_SCALE) / 1000);
         const csFP32 t = csFP32::from_raw(t_raw);
 
-        // Constants as constexpr fixed-point from float literals (compile-time).
-        static constexpr csFP32 k08 = csFP32::float_const(0.7f);
-        static constexpr csFP32 k06 = csFP32::float_const(0.5f);
-        static constexpr csFP32 k04 = csFP32::float_const(0.3f);
-        static constexpr csFP32 k05 = csFP32::float_const(0.4f);
+        // Fixed-point constants.
+        static const csFP32 k08 = csFP32::float_const(0.7f);
+        static const csFP32 k06 = csFP32::float_const(0.5f);
+        static const csFP32 k04 = csFP32::float_const(0.3f);
+        static const csFP32 k05 = csFP32::float_const(0.4f);
         const int width = static_cast<int>(matrix.width());
         const int height = static_cast<int>(matrix.height());
 
@@ -335,11 +323,11 @@ public:
             for (int x = 0; x < width; ++x) {
                 const float xf = static_cast<float>(x);
                 const float yf = static_cast<float>(y);
-                const float v = std::sin(xf * 0.35f + t) + std::sin(yf * 0.35f - t) + std::sin((xf + yf) * 0.25f + t * 0.5f);
+                const float v = sin(xf * 0.35f + t) + sin(yf * 0.35f - t) + sin((xf + yf) * 0.25f + t * 0.5f);
                 const float norm = (v + 3.0f) / 6.0f; // bring into [0..1]
                 const uint8_t r = static_cast<uint8_t>(norm * 255.0f);
                 const uint8_t g = static_cast<uint8_t>((1.0f - norm) * 255.0f);
-                const uint8_t b = static_cast<uint8_t>((0.5f + 0.5f * std::sin(t + xf * 0.1f)) * 255.0f);
+                const uint8_t b = static_cast<uint8_t>((0.5f + 0.5f * sin(t + xf * 0.1f)) * 255.0f);
                 matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }

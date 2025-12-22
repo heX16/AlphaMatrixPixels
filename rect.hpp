@@ -26,7 +26,7 @@ public:
     }
 
     // Return intersection of two rectangles; empty rectangle when they do not overlap.
-    [[nodiscard]] constexpr csRect intersect(const csRect& other) const noexcept {
+    [[nodiscard]] inline csRect intersect(const csRect& other) const noexcept {
         const auto nx = max(x, other.x);
         const auto ny = max(y, other.y);
         const auto rx = min(x + to_coord(width),
