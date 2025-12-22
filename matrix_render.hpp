@@ -9,6 +9,8 @@
 
 
 
+namespace amp {
+
 // Special random generator
 class csRandGen {
 public:
@@ -144,7 +146,7 @@ public:
     }
 };
 
-class GradientEffect final : public csMatrixRenderBase {
+class csGradientEffect final : public csMatrixRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
         const float t = static_cast<float>(currTime) * 0.001f;
@@ -169,17 +171,17 @@ public:
     }
 };
 
-class GradientEffectFP final : public csMatrixRenderBase {
+class csGradientEffectFP final : public csMatrixRenderBase {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses std::sin internally.
-    static uint8_t wave_fp(matrix_pixels_math::fp32_t phase) noexcept {
-        using namespace matrix_pixels_math;
-        static constexpr fp32_t half = fp32_t::float_const(0.5f);
-        static constexpr fp32_t scale255{255};
+    static uint8_t wave_fp(math::csFP32 phase) noexcept {
+        using namespace math;
+        static constexpr csFP32 half = csFP32::float_const(0.5f);
+        static constexpr csFP32 scale255{255};
 
-        const fp32_t s = fp32_sin(phase);
-        const fp32_t norm = s * half + half;      // [-1..1] -> [0..1]
-        const fp32_t scaled = norm * scale255;    // [0..255]
+        const csFP32 s = fp32_sin(phase);
+        const csFP32 norm = s * half + half;      // [-1..1] -> [0..1]
+        const csFP32 scaled = norm * scale255;    // [0..255]
         int v = scaled.round_int();
         if (v < 0) v = 0;
         else if (v > 255) v = 255;
@@ -187,27 +189,27 @@ public:
     }
 
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
-        using namespace matrix_pixels_math;
+        using namespace math;
 
         // Convert milliseconds to seconds in 16.16 fixed-point WITHOUT float:
         // t_raw = currTime * 65536 / 1000
         const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * FP32_SCALE) / 1000);
-        const fp32_t t = fp32_t::from_raw(t_raw);
+        const csFP32 t = csFP32::from_raw(t_raw);
 
         // Constants as constexpr fixed-point from float literals (compile-time).
-        static constexpr fp32_t k08 = fp32_t::float_const(0.7f);
-        static constexpr fp32_t k06 = fp32_t::float_const(0.5f);
-        static constexpr fp32_t k04 = fp32_t::float_const(0.3f);
-        static constexpr fp32_t k05 = fp32_t::float_const(0.4f);
+        static constexpr csFP32 k08 = csFP32::float_const(0.7f);
+        static constexpr csFP32 k06 = csFP32::float_const(0.5f);
+        static constexpr csFP32 k04 = csFP32::float_const(0.3f);
+        static constexpr csFP32 k05 = csFP32::float_const(0.4f);
         const int width = static_cast<int>(matrix.width());
         const int height = static_cast<int>(matrix.height());
 
         for (int y = 0; y < height; ++y) {
-            const fp32_t yf{y};
-            const fp32_t yf_scaled = yf * k04;
+            const csFP32 yf{y};
+            const csFP32 yf_scaled = yf * k04;
             for (int x = 0; x < width; ++x) {
-                const fp32_t xf{x};
-                const fp32_t xf_scaled = xf * k04;
+                const csFP32 xf{x};
+                const csFP32 xf_scaled = xf * k04;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
                 const uint8_t b = wave_fp(t * k06 + xf_scaled + yf_scaled * k05);
@@ -217,7 +219,7 @@ public:
     }
 };
 
-class PlasmaEffect final : public csMatrixRenderBase {
+class csPlasmaEffect final : public csMatrixRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
         const float t = static_cast<float>(currTime) * 0.0025f;
@@ -238,4 +240,6 @@ public:
         }
     }
 };
+
+} // namespace amp
 

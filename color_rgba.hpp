@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+namespace amp {
+
 using std::uint8_t;
 using std::uint16_t;
 using std::uint32_t;
@@ -142,5 +144,7 @@ struct CS_PACKED csColorRGBA {
 #  pragma pack(pop)
 #endif
 
-static_assert(sizeof(csColorRGBA) == 4, "csColorRGBA must be tightly packed to 4 bytes");
+} // namespace amp
+
+static_assert(sizeof(amp::csColorRGBA) == 4, "csColorRGBA must be tightly packed to 4 bytes");
 

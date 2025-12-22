@@ -5,11 +5,13 @@
 #include "color_rgba.hpp"
 #include "math.hpp"
 
+namespace amp {
+
 using std::size_t;
 using std::uint8_t;
 using std::uint16_t;
-using matrix_pixels_math::max;
-using matrix_pixels_math::min;
+using math::max;
+using math::min;
 
 using tMatrixPixelsCoord = std::int32_t;
 using tMatrixPixelsSize = std::uint16_t;
@@ -182,4 +184,6 @@ private:
     }
 };
 
+
+} // namespace amp
 

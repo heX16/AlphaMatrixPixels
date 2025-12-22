@@ -7,10 +7,19 @@
 #include "../matrix_pixels.hpp"
 #include "../math.hpp"
 
-using matrix_pixels_math::max;
-using matrix_pixels_math::min;
 #include "../color_rgba.hpp"
 #include "../matrix_render.hpp"
+
+using amp::csColorRGBA;
+using amp::csMatrixPixels;
+using amp::csMatrixRenderBase;
+using amp::csRandGen;
+using amp::tMatrixPixelsSize;
+using amp::math::max;
+using amp::math::min;
+using amp::csGradientEffect;
+using amp::csGradientEffectFP;
+using amp::csPlasmaEffect;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -58,7 +67,7 @@ public:
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         recreateMatrix(16, 16);
         delete effect;
-        effect = new GradientEffect();
+        effect = new csGradientEffect();
         return true;
     }
 
@@ -83,13 +92,13 @@ public:
                         recreateMatrix(w, h);
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
-                        effect = new GradientEffect();
+                        effect = new csGradientEffect();
                     } else if (event.key.keysym.sym == SDLK_e) {
                         delete effect;
-                        effect = new GradientEffectFP();
+                        effect = new csGradientEffectFP();
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
-                        effect = new PlasmaEffect();
+                        effect = new csPlasmaEffect();
                     }
                 }
             }

@@ -12,7 +12,8 @@
 #endif
 
 // Lightweight math helpers for Arduino-friendly builds (no <algorithm> dependency).
-namespace matrix_pixels_math {
+namespace amp {
+namespace math {
 
 inline constexpr int32_t max(int32_t a, int32_t b) noexcept {
     return (a > b) ? a : b;
@@ -54,6 +55,7 @@ inline constexpr float min(float a, float b) noexcept {
     return (a < b) ? a : b;
 }
 
-} // namespace matrix_pixels_math
+} // namespace math
+} // namespace amp
 
 

@@ -3,8 +3,10 @@
 #include "matrix_pixels.hpp"
 #include "math.hpp"
 
-using matrix_pixels_math::max;
-using matrix_pixels_math::min;
+namespace amp {
+
+using math::max;
+using math::min;
 
 // Axis-aligned rectangle with integer coordinates and size.
 class csRect {
@@ -43,4 +45,6 @@ public:
     }
 };
 
+
+} // namespace amp
 

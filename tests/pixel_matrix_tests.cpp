@@ -4,6 +4,10 @@
 #include "matrix_pixels.hpp"
 #include "math.hpp"
 
+using amp::csColorRGBA;
+using amp::csMatrixPixels;
+using namespace amp::math;
+
 // Minimal self-contained test runner (no external frameworks).
 struct TestStats {
     int passed{0};
@@ -46,12 +50,12 @@ inline void expect_near_float(TestStats& stats, const char* testName, int line, 
     std::cerr << "  diff:     " << d << "\n";
 }
 
-inline void dumpFp(const char* name, matrix_pixels_math::fp16_t v) {
+inline void dumpFp(const char* name, csFP16 v) {
     std::cerr << "  " << name << ": raw=" << static_cast<int>(v.raw_value())
               << " float=" << v.to_float() << "\n";
 }
 
-inline void dumpFp(const char* name, matrix_pixels_math::fp32_t v) {
+inline void dumpFp(const char* name, csFP32 v) {
     std::cerr << "  " << name << ": raw=" << static_cast<int32_t>(v.raw_value())
               << " float=" << v.to_float() << "\n";
 }
@@ -205,51 +209,51 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
 }
 
 void test_fp16_basic(TestStats& stats) {
-    using namespace matrix_pixels_math;
+    using namespace amp::math;
     const char* testName = "fp16_basic";
-    const fp16_t a{1.5f};
-    const fp16_t b{-0.25f};
+    const csFP16 a{1.5f};
+    const csFP16 b{-0.25f};
     expect_near_float(stats, testName, __LINE__, a.to_float(), 1.5f, 0.01f, "fp16 to_float close to 1.5");
     expect_near_float(stats, testName, __LINE__, b.to_float(), -0.25f, 0.01f, "fp16 to_float close to -0.25");
-    const fp16_t c = a + b; // 1.25
+    const csFP16 c = a + b; // 1.25
     expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.02f, "fp16 add works");
-    const fp16_t d = a * b; // -0.375
+    const csFP16 d = a * b; // -0.375
     expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.02f, "fp16 mul works");
-    const fp16_t e = fp16_t{2} / fp16_t{4}; // 0.5
+    const csFP16 e = csFP16{2} / csFP16{4}; // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.02f, "fp16 div works");
 }
 
 void test_fp32_basic(TestStats& stats) {
-    using namespace matrix_pixels_math;
+    using namespace amp::math;
     const char* testName = "fp32_basic";
-    const fp32_t a{3.25f};
-    const fp32_t b{0.5f};
+    const csFP32 a{3.25f};
+    const csFP32 b{0.5f};
     expect_near_float(stats, testName, __LINE__, a.to_float(), 3.25f, 0.001f, "fp32 to_float close to 3.25");
-    const fp32_t c = a - b; // 2.75
+    const csFP32 c = a - b; // 2.75
     expect_near_float(stats, testName, __LINE__, c.to_float(), 2.75f, 0.001f, "fp32 sub works");
-    const fp32_t d = a * b; // 1.625
+    const csFP32 d = a * b; // 1.625
     expect_near_float(stats, testName, __LINE__, d.to_float(), 1.625f, 0.001f, "fp32 mul works");
-    const fp32_t e = fp32_t{1} / fp32_t{2}; // 0.5
+    const csFP32 e = csFP32{1} / csFP32{2}; // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.001f, "fp32 div works");
 }
 
 void test_fp_trig(TestStats& stats) {
-    using namespace matrix_pixels_math;
+    using namespace amp::math;
     const char* testName = "fp_trig";
-    const fp32_t zero{0};
-    const fp32_t pi_over2{1.57079632679f}; // ~pi/2
-    const fp32_t one{1};
-    const fp32_t s0 = fp32_sin(zero);
-    const fp32_t c0 = fp32_cos(zero);
-    const fp32_t s1 = fp32_sin(pi_over2);
-    const fp32_t c1 = fp32_cos(pi_over2);
+    const csFP32 zero{0};
+    const csFP32 pi_over2{1.57079632679f}; // ~pi/2
+    const csFP32 one{1};
+    const csFP32 s0 = fp32_sin(zero);
+    const csFP32 c0 = fp32_cos(zero);
+    const csFP32 s1 = fp32_sin(pi_over2);
+    const csFP32 c1 = fp32_cos(pi_over2);
     expect_near_float(stats, testName, __LINE__, s0.to_float(), 0.0f, 0.001f, "sin(0) ~ 0");
     expect_near_float(stats, testName, __LINE__, c0.to_float(), 1.0f, 0.001f, "cos(0) ~ 1");
     expect_near_float(stats, testName, __LINE__, s1.to_float(), 1.0f, 0.01f, "sin(pi/2) ~ 1");
     expect_near_float(stats, testName, __LINE__, c1.to_float(), 0.0f, 0.05f, "cos(pi/2) ~ 0");
     expect_eq_int(
         stats, testName, __LINE__,
-        static_cast<long long>(fp32_t{1}.raw_value()),
+        static_cast<long long>(csFP32{1}.raw_value()),
         static_cast<long long>(one.raw_value()),
         "fp32 comparison works (raw)"
     );

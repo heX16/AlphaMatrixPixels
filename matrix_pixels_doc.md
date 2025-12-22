@@ -1,14 +1,18 @@
-# Документация `MatrixPixels`
+# Документация `AlphaMatrixPixels`
 
-**Название проекта:** MatrixPixels
+**Название проекта:** AlphaMatrixPixels
+
+**Namespace:** `amp`
+
+**Примечание:** на текущем этапе имена файлов и `#include`-пути не менялись; изменились только C++ символы (типы/неймспейсы).
 
 ## Назначение
 `matrix_pixels.hpp` — чистая математическая 2D-матрица пикселей в формате ARGB (0xAARRGGBB) со straight-alpha и композицией Porter-Duff SourceOver. Не привязана к железу, пригодна для моделирования/рендера в памяти.
 
 ## Основные типы
-- `csColorRGBA` — упакованный ARGB (A в старшем байте). Размер гарантирован 4 байта (packed/pragma + static_assert).
-- `tMatrixPixelsCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).
-- `tMatrixPixelsSize` (`uint16_t`) — размеры матрицы.
+- `amp::csColorRGBA` — упакованный ARGB (A в старшем байте). Размер гарантирован 4 байта (packed/pragma + static_assert).
+- `amp::tMatrixPixelsCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).
+- `amp::tMatrixPixelsSize` (`uint16_t`) — размеры матрицы.
 
 ### Особенности `csColorRGBA`
 - Конструктор из `uint32_t packed`:
@@ -26,7 +30,7 @@
   - `sourceOverStraight(dst, src, global_alpha)` — SourceOver со глобальной альфой-множителем.
   - `sourceOverStraight(dst, src)` — SourceOver, используя только `src.a`.
 
-## Класс `csMatrixPixels`
+## Класс `amp::csMatrixPixels`
 Хранит буфер `width * height` (динамический `new[]`), операции вне границ — тихо игнорируются (геттер возвращает прозрачный чёрный).
 
 ### Конструкторы/присваивания
@@ -46,23 +50,23 @@
 ```cpp
 #include "matrix_pixels.hpp"
 
-csMatrixPixels m(4, 3);
-csColorRGBA red{255, 0, 0, 255};
-csColorRGBA semi{0, 0, 255, 128}; // полупрозрачный синий
+amp::csMatrixPixels m(4, 3);
+amp::csColorRGBA red{255, 0, 0, 255};
+amp::csColorRGBA semi{0, 0, 255, 128}; // полупрозрачный синий
 
 m.setPixel(1, 1, red);
 m.setPixelBlend(1, 1, semi);          // синее поверх красного, учтёт alpha пикселя
 m.setPixelBlend(2, 1, semi, 64);      // дополнительно ослабит источник
 
-csColorRGBA bg{0x202020};             // 0xFF202020 из-за автоподнятия альфы
-csColorRGBA blended = m.getPixelBlend(1, 1, bg);
+amp::csColorRGBA bg{0x202020};             // 0xFF202020 из-за автоподнятия альфы
+amp::csColorRGBA blended = m.getPixelBlend(1, 1, bg);
 ```
 
 ### Пример `drawMatrix` с клиппингом
 ```cpp
-csMatrixPixels dest(8, 8);
-csMatrixPixels src(4, 4);
-src.setPixel(0, 0, csColorRGBA{255,255,0,128});
+amp::csMatrixPixels dest(8, 8);
+amp::csMatrixPixels src(4, 4);
+src.setPixel(0, 0, amp::csColorRGBA{255,255,0,128});
 dest.drawMatrix(-1, -1, src, 200); // частично выйдет за границы, будет обрезано
 ```
 
