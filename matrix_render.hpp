@@ -98,19 +98,19 @@ public:
     virtual void reset() noexcept {}
 };
 
-class csMatrixEvent {
+class csEventBase {
     // Empty - WIP
 };
 
-class csMatrixRenderBase {
+class csRenderBase {
 protected:
     csParamsBase* params_{nullptr};
 
     virtual csParamsBase* createParams() const { return nullptr; }
 
 public:
-    csMatrixRenderBase() : params_(createParams()) {}
-    virtual ~csMatrixRenderBase() { delete params_; }
+    csRenderBase() : params_(createParams()) {}
+    virtual ~csRenderBase() { delete params_; }
 
     inline csParamsBase* getParams() const noexcept { return params_; }
 
@@ -130,7 +130,7 @@ public:
     virtual bool getEvent(const csMatrixPixels& led,
                           csRandGen& rand,
                           uint16_t currTime,
-                          csMatrixEvent& event,
+                          csEventBase& event,
                           uint16_t eventNum) const {
         (void)led;
         (void)rand;
@@ -141,12 +141,12 @@ public:
     }
 
     // receive one event from external object
-    virtual void receiveEvent(const csMatrixEvent& event) {
+    virtual void receiveEvent(const csEventBase& event) {
         (void)event;
     }
 };
 
-class csGradientEffect final : public csMatrixRenderBase {
+class csRenderGradient final : public csRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
         const float t = static_cast<float>(currTime) * 0.001f;
@@ -171,7 +171,7 @@ public:
     }
 };
 
-class csGradientEffectFP final : public csMatrixRenderBase {
+class csRenderGradientFP final : public csRenderBase {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses std::sin internally.
     static uint8_t wave_fp(math::csFP32 phase) noexcept {
@@ -219,7 +219,7 @@ public:
     }
 };
 
-class csPlasmaEffect final : public csMatrixRenderBase {
+class csRenderPlasma final : public csRenderBase {
 public:
     void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
         const float t = static_cast<float>(currTime) * 0.0025f;

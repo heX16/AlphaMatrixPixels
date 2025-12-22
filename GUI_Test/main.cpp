@@ -12,14 +12,14 @@
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
-using amp::csMatrixRenderBase;
+using amp::csRenderBase;
 using amp::csRandGen;
 using amp::tMatrixPixelsSize;
 using amp::math::max;
 using amp::math::min;
-using amp::csGradientEffect;
-using amp::csGradientEffectFP;
-using amp::csPlasmaEffect;
+using amp::csRenderGradient;
+using amp::csRenderGradientFP;
+using amp::csRenderPlasma;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -43,7 +43,7 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    csMatrixRenderBase* effect{nullptr};
+    csRenderBase* effect{nullptr};
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -67,7 +67,7 @@ public:
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         recreateMatrix(16, 16);
         delete effect;
-        effect = new csGradientEffect();
+        effect = new csRenderGradient();
         return true;
     }
 
@@ -92,13 +92,13 @@ public:
                         recreateMatrix(w, h);
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
-                        effect = new csGradientEffect();
+                        effect = new csRenderGradient();
                     } else if (event.key.keysym.sym == SDLK_e) {
                         delete effect;
-                        effect = new csGradientEffectFP();
+                        effect = new csRenderGradientFP();
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
-                        effect = new csPlasmaEffect();
+                        effect = new csRenderPlasma();
                     }
                 }
             }

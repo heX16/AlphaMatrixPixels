@@ -14,6 +14,27 @@
 - `amp::tMatrixPixelsCoord` (`int32_t`) — координаты (допускает отрицательные смещения для клиппинга).
 - `amp::tMatrixPixelsSize` (`uint16_t`) — размеры матрицы.
 
+## API: перечень классов/структур
+
+### `namespace amp`
+- `csColorRGBA` (struct) — ARGB цвет (0xAARRGGBB) + операции SourceOver (straight alpha).
+- `csMatrixPixels` (class) — матрица пикселей RGBA в памяти + клиппинг/блендинг.
+- `csRect` (class) — прямоугольник (x, y, width, height) + пересечение `intersect()`.
+- `csRandGen` (class) — простой генератор псевдослучайных чисел (8-bit) для эффектов.
+- `csParamsBase` (class) — базовый интерфейс параметров эффекта (WIP/расширяемый).
+- `csEventBase` (class) — базовый тип события для обмена с внешними системами (WIP).
+- `csRenderBase` (class) — базовый интерфейс рендера/эффекта (recalc/render + события).
+- `csRenderGradient` (class) — градиентный эффект на float.
+- `csRenderGradientFP` (class) — градиентный эффект на fixed-point (`amp::math::csFP32`).
+- `csRenderPlasma` (class) — “plasma” эффект на float.
+
+### `namespace amp::math`
+- `csFP16` (struct) — signed 8.8 fixed-point.
+- `csFP32` (struct) — signed 16.16 fixed-point.
+
+### Важно
+- Классы/структуры из `GUI_Test/` и `tests/` (например `csMainProgramSDL`, `TestStats`) **не являются частью библиотеки** — это демо и тестовый код.
+
 ### Особенности `csColorRGBA`
 - Конструктор из `uint32_t packed`:
   - Если альфа = 0, вход трактуется как `0xRRGGBB` и альфа принудительно становится `0xFF`.
