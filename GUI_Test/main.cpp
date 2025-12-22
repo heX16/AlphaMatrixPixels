@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <memory>
 #include "../matrix_pixels.hpp"
-#include "../cs_math.hpp"
+#include "../math.hpp"
 
 using matrix_pixels_math::max;
 using matrix_pixels_math::min;

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "color_rgba.hpp"
-#include "cs_math.hpp"
+#include "math.hpp"
 
 using std::size_t;
 using std::uint8_t;

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <string>
 #include "matrix_pixels.hpp"
-#include "cs_math.hpp"
+#include "math.hpp"
 
 // Minimal self-contained test runner (no external frameworks).
 struct TestStats {
