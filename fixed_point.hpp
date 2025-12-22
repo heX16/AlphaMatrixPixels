@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <math.h>
 
+// Compile-time keyword hook for FUNCTIONS.
+// Default: constexpr. You can override it (e.g., via compiler flags) if needed.
+#ifndef AMP_CONSTEXPR
+#define AMP_CONSTEXPR constexpr
+#endif
+
 // Fixed-point helpers are kept in a separate header to reduce compile time and keep math.hpp focused.
 namespace amp {
 namespace math {
@@ -37,33 +43,33 @@ struct csFP16 {
 
 private:
     // Clamp helpers for intermediate math.
-    static constexpr raw_t clamp_raw(int32_t v) noexcept {
+    static AMP_CONSTEXPR raw_t clamp_raw(int32_t v) noexcept {
         return v > FP16_MAX_RAW ? static_cast<raw_t>(FP16_MAX_RAW)
              : v < FP16_MIN_RAW ? static_cast<raw_t>(FP16_MIN_RAW)
              : static_cast<raw_t>(v);
     }
 
-    static constexpr raw_t mul_raw(raw_t a, raw_t b) noexcept {
+    static AMP_CONSTEXPR raw_t mul_raw(raw_t a, raw_t b) noexcept {
         return static_cast<raw_t>((static_cast<int32_t>(a) * static_cast<int32_t>(b)) >> FP16_FRAC_BITS);
     }
 
-    static constexpr raw_t div_raw(raw_t num, raw_t den) noexcept {
+    static AMP_CONSTEXPR raw_t div_raw(raw_t num, raw_t den) noexcept {
         return den == 0 ? static_cast<raw_t>(0)
                         : static_cast<raw_t>((static_cast<int32_t>(num) << FP16_FRAC_BITS) / den);
     }
 
-    static constexpr int16_t saturate_raw(int32_t v) noexcept {
+    static AMP_CONSTEXPR int16_t saturate_raw(int32_t v) noexcept {
         return v > FP16_MAX_RAW ? static_cast<int16_t>(FP16_MAX_RAW)
              : v < FP16_MIN_RAW ? static_cast<int16_t>(FP16_MIN_RAW)
              : static_cast<int16_t>(v);
     }
 
-    static inline raw_t float_to_raw_constexpr(float v) noexcept {
-        const float scaled = v * static_cast<float>(FP16_SCALE);
-        const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
-        const int32_t raw = static_cast<int32_t>(scaled + adj);
-        return saturate_raw(raw);
+    static AMP_CONSTEXPR raw_t float_to_raw_constexpr(float v) noexcept {
+        return saturate_raw(static_cast<int32_t>(
+            (v * static_cast<float>(FP16_SCALE)) +
+            ((v * static_cast<float>(FP16_SCALE)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
     }
+
 
     static float raw_to_float(raw_t v) noexcept {
         return static_cast<float>(v) / static_cast<float>(FP16_SCALE);
@@ -93,10 +99,10 @@ public:
         return from_raw(clamp_raw(static_cast<int32_t>((scaled + bias) / denom)));
     }
 
-    [[nodiscard]] constexpr raw_t raw_value() const noexcept { return raw; }
+    [[nodiscard]] AMP_CONSTEXPR raw_t raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
-    [[nodiscard]] constexpr int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
-    [[nodiscard]] constexpr uint8_t frac_raw() const noexcept { return static_cast<uint8_t>(raw & (scale - 1)); }
+    [[nodiscard]] AMP_CONSTEXPR int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
+    [[nodiscard]] AMP_CONSTEXPR uint8_t frac_raw() const noexcept { return static_cast<uint8_t>(raw & (scale - 1)); }
 
     [[nodiscard]] inline int32_t round_int() const noexcept { return round_raw_to_int(raw); }
 
@@ -145,14 +151,14 @@ public:
     csFP16& operator/=(csFP16 rhs) noexcept { return *this = *this / rhs; }
 
     // Comparisons
-    [[nodiscard]] constexpr bool operator==(csFP16 rhs) const noexcept { return raw == rhs.raw; }
-    [[nodiscard]] constexpr bool operator!=(csFP16 rhs) const noexcept { return raw != rhs.raw; }
-    [[nodiscard]] constexpr bool operator<(csFP16 rhs) const noexcept { return raw < rhs.raw; }
-    [[nodiscard]] constexpr bool operator<=(csFP16 rhs) const noexcept { return raw <= rhs.raw; }
-    [[nodiscard]] constexpr bool operator>(csFP16 rhs) const noexcept { return raw > rhs.raw; }
-    [[nodiscard]] constexpr bool operator>=(csFP16 rhs) const noexcept { return raw >= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP16 rhs) const noexcept { return raw == rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP16 rhs) const noexcept { return raw != rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP16 rhs) const noexcept { return raw < rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP16 rhs) const noexcept { return raw <= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP16 rhs) const noexcept { return raw > rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP16 rhs) const noexcept { return raw >= rhs.raw; }
 
-    explicit constexpr operator raw_t() const noexcept { return raw; }
+    explicit AMP_CONSTEXPR operator raw_t() const noexcept { return raw; }
     explicit operator float() const noexcept { return to_float(); }
 };
 
@@ -173,22 +179,22 @@ struct csFP32 {
 
 private:
     // Clamp helpers for intermediate math.
-    static constexpr raw_t clamp_raw(int64_t v) noexcept {
+    static AMP_CONSTEXPR raw_t clamp_raw(int64_t v) noexcept {
         return v > FP32_MAX_RAW ? static_cast<raw_t>(FP32_MAX_RAW)
              : v < static_cast<int64_t>(FP32_MIN_RAW) ? static_cast<raw_t>(FP32_MIN_RAW)
              : static_cast<raw_t>(v);
     }
 
-    static constexpr raw_t mul_raw(raw_t a, raw_t b) noexcept {
+    static AMP_CONSTEXPR raw_t mul_raw(raw_t a, raw_t b) noexcept {
         return static_cast<raw_t>((static_cast<int64_t>(a) * static_cast<int64_t>(b)) >> FP32_FRAC_BITS);
     }
 
-    static constexpr raw_t div_raw(raw_t num, raw_t den) noexcept {
+    static AMP_CONSTEXPR raw_t div_raw(raw_t num, raw_t den) noexcept {
         return den == 0 ? static_cast<raw_t>(0)
                         : static_cast<raw_t>((static_cast<int64_t>(num) << FP32_FRAC_BITS) / den);
     }
 
-    static constexpr int32_t saturate_raw(int64_t v) noexcept {
+    static AMP_CONSTEXPR int32_t saturate_raw(int64_t v) noexcept {
         return v > FP32_MAX_RAW ? FP32_MAX_RAW
              : v < static_cast<int64_t>(FP32_MIN_RAW) ? FP32_MIN_RAW
              : static_cast<int32_t>(v);
@@ -229,10 +235,10 @@ public:
         return from_raw(clamp_raw((scaled + bias) / denom));
     }
 
-    [[nodiscard]] constexpr raw_t raw_value() const noexcept { return raw; }
+    [[nodiscard]] AMP_CONSTEXPR raw_t raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
-    [[nodiscard]] constexpr int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
-    [[nodiscard]] constexpr uint16_t frac_raw() const noexcept { return static_cast<uint16_t>(raw & (scale - 1)); }
+    [[nodiscard]] AMP_CONSTEXPR int32_t int_trunc() const noexcept { return static_cast<int32_t>(raw) >> frac_bits; }
+    [[nodiscard]] AMP_CONSTEXPR uint16_t frac_raw() const noexcept { return static_cast<uint16_t>(raw & (scale - 1)); }
 
     [[nodiscard]] inline int32_t round_int() const noexcept { return round_raw_to_int(raw); }
 
@@ -278,14 +284,14 @@ public:
     csFP32& operator/=(csFP32 rhs) noexcept { return *this = *this / rhs; }
 
     // Comparisons
-    [[nodiscard]] constexpr bool operator==(csFP32 rhs) const noexcept { return raw == rhs.raw; }
-    [[nodiscard]] constexpr bool operator!=(csFP32 rhs) const noexcept { return raw != rhs.raw; }
-    [[nodiscard]] constexpr bool operator<(csFP32 rhs) const noexcept { return raw < rhs.raw; }
-    [[nodiscard]] constexpr bool operator<=(csFP32 rhs) const noexcept { return raw <= rhs.raw; }
-    [[nodiscard]] constexpr bool operator>(csFP32 rhs) const noexcept { return raw > rhs.raw; }
-    [[nodiscard]] constexpr bool operator>=(csFP32 rhs) const noexcept { return raw >= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP32 rhs) const noexcept { return raw == rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP32 rhs) const noexcept { return raw != rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP32 rhs) const noexcept { return raw < rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP32 rhs) const noexcept { return raw <= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP32 rhs) const noexcept { return raw > rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP32 rhs) const noexcept { return raw >= rhs.raw; }
 
-    explicit constexpr operator raw_t() const noexcept { return raw; }
+    explicit AMP_CONSTEXPR operator raw_t() const noexcept { return raw; }
     explicit operator float() const noexcept { return to_float(); }
 };
 
