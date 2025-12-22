@@ -53,6 +53,10 @@ struct CS_PACKED csColorRGBA {
     // Argument order: a, r, g, b to match internal layout.
     constexpr csColorRGBA(uint8_t a_, uint8_t r_, uint8_t g_, uint8_t b_) : a(a_), r(r_), g(g_), b(b_) {}
 
+    // Construct opaque RGB (alpha forced to 0xFF).
+    // Argument order: r, g, b.
+    constexpr csColorRGBA(uint8_t r_, uint8_t g_, uint8_t b_) : a(0xFF), r(r_), g(g_), b(b_) {}
+
     // Construct from packed 0xAARRGGBB or 0xRRGGBB.
     // WARN: If alpha is zero, treat input as 0xRRGGBB and force A=0xFF.
     // This is an "opaque RGB" mode; it is not a way to create transparent ARGB with A=0.

@@ -70,6 +70,12 @@ void test_color_component_ctor(TestStats& stats) {
     expect_true(stats, testName, __LINE__, colorEq(c, 40, 10, 20, 30), "component constructor keeps channels");
 }
 
+void test_color_rgb_ctor(TestStats& stats) {
+    const char* testName = "color_rgb_ctor";
+    csColorRGBA c{10, 20, 30}; // r,g,b
+    expect_true(stats, testName, __LINE__, colorEq(c, 0xFF, 10, 20, 30), "RGB ctor forces alpha to 0xFF");
+}
+
 void test_color_packed_alpha_promote(TestStats& stats) {
     const char* testName = "color_packed_alpha_promote";
     // Packed as 0xAARRGGBB; here AA==0 -> should be promoted to 0xFF.
@@ -262,6 +268,7 @@ void test_fp_trig(TestStats& stats) {
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
+    test_color_rgb_ctor(stats);
     test_color_packed_alpha_promote(stats);
     test_color_packed_preserve(stats);
     test_color_divide(stats);
