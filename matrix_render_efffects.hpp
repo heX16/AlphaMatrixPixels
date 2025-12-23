@@ -147,8 +147,26 @@ public:
     uint8_t symbolIndex = 0;
     csColorRGBA symbolColor{255, 255, 255, 255};
     csColorRGBA backgroundColor{255, 0, 0, 0};
-    tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(FONT_WIDTH);
-    tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(FONT_HEIGHT);
+
+    // Runtime font selection.
+    // nullptr means "no font selected" (render will draw only background).
+    const csFontBase* font = nullptr;
+
+    // Cached font dimensions for UI/introspection.
+    tMatrixPixelsSize fontWidth = 0;
+    tMatrixPixelsSize fontHeight = 0;
+
+    void setFont(const csFontBase& f) noexcept {
+        font = &f;
+        fontWidth = static_cast<tMatrixPixelsSize>(font->width());
+        fontHeight = static_cast<tMatrixPixelsSize>(font->height());
+        if (renderRectAutosize) {
+            updateRenderRect();
+        }
+        if (symbolIndex >= font->count()) {
+            symbolIndex = static_cast<uint8_t>((font->count() == 0) ? 0 : (font->count() - 1));
+        }
+    }
 
     uint8_t getParamsCount() const override {
         return paramFontHeight;
@@ -193,26 +211,29 @@ public:
 
     void paramChanged(uint8_t paramNum) override {
         csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramSymbolIndex && symbolIndex >= FONT_COUNT) {
-            symbolIndex = static_cast<uint8_t>(FONT_COUNT - 1);
+        if (!font) {
+            return;
+        }
+        if (paramNum == paramSymbolIndex && symbolIndex >= font->count()) {
+            symbolIndex = static_cast<uint8_t>((font->count() == 0) ? 0 : (font->count() - 1));
         }
     }
 
     void updateRenderRect() override {
-        if (!matrix || !renderRectAutosize) {
+        if (!matrix || !renderRectAutosize || !font) {
             return;
         }
         const csRect mrect = matrix->getRect();
         rect = csRect{
             mrect.x,
             mrect.y,
-            static_cast<tMatrixPixelsSize>(FONT_WIDTH),
-            static_cast<tMatrixPixelsSize>(FONT_HEIGHT)
+            static_cast<tMatrixPixelsSize>(font->width()),
+            static_cast<tMatrixPixelsSize>(font->height())
         };
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix) {
+        if (!matrix || !font) {
             return;
         }
 
@@ -229,8 +250,8 @@ public:
             }
         }
 
-        const tMatrixPixelsSize glyphWidth = math::min(rect.width, static_cast<tMatrixPixelsSize>(FONT_WIDTH));
-        const tMatrixPixelsSize glyphHeight = math::min(rect.height, static_cast<tMatrixPixelsSize>(FONT_HEIGHT));
+        const tMatrixPixelsSize glyphWidth = math::min(rect.width, static_cast<tMatrixPixelsSize>(font->width()));
+        const tMatrixPixelsSize glyphHeight = math::min(rect.height, static_cast<tMatrixPixelsSize>(font->height()));
         if (glyphWidth == 0 || glyphHeight == 0) {
             return;
         }
@@ -238,12 +259,14 @@ public:
         const tMatrixPixelsCoord offsetX = rect.x + to_coord((rect.width - glyphWidth) / 2);
         const tMatrixPixelsCoord offsetY = rect.y + to_coord((rect.height - glyphHeight) / 2);
 
-        const uint8_t safeIndex = (symbolIndex < FONT_COUNT) ? symbolIndex : static_cast<uint8_t>(FONT_COUNT - 1);
+        const uint16_t safeIndex = (symbolIndex < font->count())
+            ? static_cast<uint16_t>(symbolIndex)
+            : static_cast<uint16_t>((font->count() == 0) ? 0 : (font->count() - 1));
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
-            const TFontBitLine glyphRow = LedFont[safeIndex][row];
+            const uint32_t glyphRow = font->rowBits(safeIndex, static_cast<uint16_t>(row));
             for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
-                const TFontBitLine mask = static_cast<TFontBitLine>(1 << (7u - static_cast<unsigned>(col)));
-                if ((glyphRow & mask) == 0) {
+                const uint32_t mask = 1u << (31u - static_cast<uint32_t>(col));
+                if ((glyphRow & mask) == 0u) {
                     continue;
                 }
                 const tMatrixPixelsCoord px = offsetX + to_coord(col);

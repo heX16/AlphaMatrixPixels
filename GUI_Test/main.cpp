@@ -60,12 +60,13 @@ public:
         glyph.symbolColor = csColorRGBA{255, 255, 255, 255};
         glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
         glyph.symbolIndex = 0;
+        glyph.setFont(amp::font3x5Digits());
         glyph.renderRectAutosize = false;
         glyph.rect = amp::csRect{
             2,
             2,
-            static_cast<amp::tMatrixPixelsSize>(FONT_WIDTH + 2),
-            static_cast<amp::tMatrixPixelsSize>(FONT_HEIGHT + 2)
+            static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().width() + 2),
+            static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().height() + 2)
         };
     }
 
