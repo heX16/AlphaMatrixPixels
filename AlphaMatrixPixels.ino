@@ -3,6 +3,13 @@
 #include "color_rgba.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
+#include "gamma8_lut.hpp"
+
+// Output gamma correction (applied to FastLED output buffer right before show()).
+// Set AMP_ENABLE_GAMMA to 0 to disable.
+#ifndef AMP_ENABLE_GAMMA
+#define AMP_ENABLE_GAMMA 1
+#endif
 
 constexpr uint8_t WIDTH = 8;
 constexpr uint8_t HEIGHT = 8;
@@ -12,6 +19,7 @@ CRGB leds[NUM_LEDS];
 
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
 amp::csRenderPlasma plasma;
+amp::csRenderGlyph glyph;
 amp::csRandGen rng;
 
 // Map 2D coordinates into serpentine 1D index.
@@ -43,6 +51,20 @@ void setup() {
     FastLED.clear(true);
 
     plasma.setMatrix(canvas);
+    glyph.setMatrix(canvas);
+
+    // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
+    glyph.symbolColor = amp::csColorRGBA{255, 255, 255, 255};
+    glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
+    glyph.symbolIndex = 0;
+    glyph.setFont(amp::font3x5Digits());
+    glyph.renderRectAutosize = false;
+    glyph.rect = amp::csRect{
+        1,
+        1,
+        static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().width()),
+        static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().height())
+    };
 
     amp::wifi_ota::setup();
 }
@@ -56,6 +78,16 @@ static void copyCanvasToLeds() {
     }
 }
 
+#if AMP_ENABLE_GAMMA
+static inline void applyGammaToLeds(CRGB* buf, uint16_t count) {
+    for (uint16_t i = 0; i < count; ++i) {
+        buf[i].r = amp_gamma_correct8(buf[i].r);
+        buf[i].g = amp_gamma_correct8(buf[i].g);
+        buf[i].b = amp_gamma_correct8(buf[i].b);
+    }
+}
+#endif
+
 void loop() {
     amp::wifi_ota::handle();
 
@@ -66,7 +98,13 @@ void loop() {
 
     const uint16_t t = static_cast<uint16_t>(millis());
     plasma.render(rng, t);
+    // Show one digit (0..9), switching once per second (same rule as GUI_Test).
+    glyph.symbolIndex = static_cast<uint8_t>((millis() / 1000u) % 10u);
+    glyph.render(rng, t); // Overlay over plasma
     copyCanvasToLeds();
+#if AMP_ENABLE_GAMMA
+    applyGammaToLeds(leds, NUM_LEDS);
+#endif
     FastLED.show();
     delay(16); // ~60 FPS
 }
