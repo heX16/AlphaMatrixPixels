@@ -1,3 +1,5 @@
 *.exe
 *.o
 *.depend
+/exmples_tmp/*
+/hided_code/*

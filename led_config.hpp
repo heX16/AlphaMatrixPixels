@@ -68,12 +68,56 @@ constexpr EOrder cLedRgbOrder = BRG;
 #define LED_CHIPSET SM16716
 constexpr EOrder cLedRgbOrder = RGB;
 // #define LED_INIT_MODE 3 - fail
-#define LED_INIT_MODE 2
-constexpr uint8_t cDataPin = 13;    // GPIO13 (SPI MOSI)
-constexpr uint8_t cClockPin = 14;   // GPIO14 (SPI SCLK)
+#define LED_INIT_MODE 1
+constexpr uint8_t cDataPin = 5;    // D1 GPIO_05
+constexpr uint8_t cClockPin = 4;   // D2 GPIO_04
+// constexpr uint8_t cDataPin = 13;    // GPIO13 (SPI MOSI)
+// constexpr uint8_t cClockPin = 14;   // GPIO14 (SPI SCLK)
 
 #else
 #error "LED_CFG invalid config number"
 #endif
 
+
+// ---------------------------
+// WiFi + OTA configuration
+// ---------------------------
+//
+// This section is intentionally board-agnostic (no ESP headers here),
+// so the project can still compile for boards without WiFi (e.g. Arduino Nano).
+//
+// To enable OTA on ESP8266/ESP32:
+// - Set AMP_WIFI_SSID / AMP_WIFI_PASSWORD
+// - Optionally set AMP_OTA_HOSTNAME / AMP_OTA_PASSWORD
+//
+// The implementation is in `wifi_ota.hpp`.
+
+#ifndef AMP_ENABLE_WIFI_OTA
+#define AMP_ENABLE_WIFI_OTA 1
+#endif
+
+// WiFi credentials (ESP8266/ESP32 only). Leave empty to disable WiFi/OTA.
+//#ifndef AMP_WIFI_SSID
+//#define AMP_WIFI_SSID ""
+//#endif
+
+//#ifndef AMP_WIFI_PASSWORD
+//#define AMP_WIFI_PASSWORD ""
+//#endif
+
+#ifndef AMP_WIFI_PASSWORD
+#include "hided_code/mywifipass.hpp"
+#endif
+
+// OTA settings (ESP8266/ESP32 only).
+#ifndef AMP_OTA_HOSTNAME
+#define AMP_OTA_HOSTNAME "alphamatrix"
+#endif
+
+// Note: AMP_OTA_HOSTNAME is also used as the WiFi device hostname (DHCP name in your router).
+
+// Leave empty for no OTA password (not recommended on shared networks).
+#ifndef AMP_OTA_PASSWORD
+#define AMP_OTA_PASSWORD ""
+#endif
 

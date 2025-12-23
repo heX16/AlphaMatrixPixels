@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include "matrix_render.hpp"
 #include "led_config.hpp"
+#include "wifi_ota.hpp"
 
 constexpr uint8_t WIDTH = 8;
 constexpr uint8_t HEIGHT = 8;
@@ -21,6 +22,12 @@ uint16_t xyToIndex(uint8_t x, uint8_t y) {
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
 
+#if defined(ARDUINO_ARCH_ESP8266)
+    // ESP8266 LoLin/NodeMCU built-in LED is typically on D4 (GPIO2) and is active-low.
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+#endif
+
 #if (LED_INIT_MODE == 1)
     FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cLedCount);
 #elif (LED_INIT_MODE == 2)
@@ -33,6 +40,8 @@ void setup() {
 
     FastLED.setBrightness(180);
     FastLED.clear(true);
+
+    amp::wifi_ota::setup();
 }
 
 static void copyCanvasToLeds() {
@@ -45,6 +54,13 @@ static void copyCanvasToLeds() {
 }
 
 void loop() {
+    amp::wifi_ota::handle();
+
+    // Blink built-in LED: (millis() / 500) % 2, no timers/state.
+#if defined(ARDUINO_ARCH_ESP8266)
+    digitalWrite(LED_BUILTIN, ((millis() / 500u) % 2u) == 0u ? LOW : HIGH);
+#endif
+
     const uint16_t t = static_cast<uint16_t>(millis());
     plasma.render(canvas, rng, t);
     copyCanvasToLeds();
