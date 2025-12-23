@@ -63,7 +63,7 @@
 - `csRandGen` (class) — простой генератор псевдослучайных чисел (8-bit) для эффектов.
 - `csEventBase` (class) — базовый тип события для обмена с внешними системами (WIP).
 - `ParamType` (enum class) — тип параметра для внешней интроспекции (WIP).
-- `csRenderBase` (class) — базовый интерфейс рендера/эффекта: интроспекция параметров + `paramChanged/recalc/render` + события (WIP).
+- `csEffectBase` (class) — базовый интерфейс рендера/эффекта: интроспекция параметров + `paramChanged/recalc/render` + события (WIP).
 - `csRenderMatrixBase` (class) — базовый класс для эффектов, которые рисуют в `csMatrixPixels` (см. ниже).
 - `csRenderGradient` (class) — градиентный эффект на float.
 - `csRenderGradientFP` (class) — градиентный эффект на fixed-point (`amp::math::csFP32`).
@@ -150,7 +150,7 @@ Cout = (Aout == 0) ? 0 : div255(out_p, Aout)
 
 ### Иерархия классов
 
-- `csRenderBase` — абстрактный интерфейс (параметры, render, события)
+- `csEffectBase` — абстрактный интерфейс (параметры, render, события)
 - `csRenderMatrixBase` — база для эффектов, рисующих в `csMatrixPixels`
 - Конкретные эффекты: `csRenderGradient`, `csRenderGradientFP`, `csRenderPlasma`
 
@@ -190,6 +190,6 @@ plasma.render(rng, (uint16_t)millis());
 | Что | Где |
 |-----|-----|
 | `ParamType` enum | `matrix_render.hpp`, начало файла |
-| Методы `csRenderBase` | `matrix_render.hpp`, класс `csRenderBase` |
+| Методы `csEffectBase` | `matrix_render.hpp`, класс `csEffectBase` |
 | Поля/параметры `csRenderMatrixBase` | `matrix_render.hpp`, класс `csRenderMatrixBase` |
 | Реализации эффектов | `matrix_render.hpp`, классы `csRenderGradient`, `csRenderPlasma` и др. |

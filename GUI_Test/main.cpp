@@ -13,7 +13,7 @@
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
-using amp::csRenderBase;
+using amp::csEffectBase;
 using amp::csRandGen;
 using amp::tMatrixPixelsSize;
 using amp::math::max;
@@ -45,7 +45,7 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    csRenderBase* effect{nullptr};
+    csEffectBase* effect{nullptr};
 
     void bindEffectMatrix() {
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(effect)) {

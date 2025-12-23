@@ -108,10 +108,10 @@ class csEventBase {
 };
 
 // Base class for all render/effect implementations
-class csRenderBase {
+class csEffectBase {
 public:
 
-    virtual ~csRenderBase() = default;
+    virtual ~csEffectBase() = default;
 
     // Parameter introspection: returns number of exposed parameters
     // NOTE: parameter indices start at 1 (not 0).
@@ -167,7 +167,7 @@ public:
 
 // Base class for matrix-based renderers.
 // All fields are public by design for direct access/performance.
-class csRenderMatrixBase : public csRenderBase {
+class csRenderMatrixBase : public csEffectBase {
 public:
     csMatrixPixels* matrix = nullptr;
 
@@ -214,9 +214,7 @@ public:
                 info.ptr = &matrix;
                 break;
             default:
-                info.type = ParamType::None;
-                info.name = nullptr;
-                info.ptr = nullptr;
+                csEffectBase::getParamInfo(paramNum, info);
                 break;
         }
     }

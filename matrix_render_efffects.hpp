@@ -155,11 +155,6 @@ public:
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        if (paramNum <= csRenderMatrixBase::getParamsCount()) {
-            csRenderMatrixBase::getParamInfo(paramNum, info);
-            return;
-        }
-
         info.readOnly = false;
         info.disabled = false;
         switch (paramNum) {
@@ -191,9 +186,7 @@ public:
                 info.readOnly = true;
                 break;
             default:
-                info.type = ParamType::None;
-                info.name = nullptr;
-                info.ptr = nullptr;
+                csRenderMatrixBase::getParamInfo(paramNum, info);
                 break;
         }
     }
