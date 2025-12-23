@@ -259,10 +259,7 @@ public:
             return;
         }
 
-        rect.x = 0;
-        rect.y = 0;
-        rect.width = matrix->width();
-        rect.height = matrix->height();
+        rect = matrix->getRect();
     }
 };
 
@@ -279,11 +276,15 @@ public:
             return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
         };
 
-        const auto width = matrix->width();
-        const auto height = matrix->height();
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
 
-        for (tMatrixPixelsSize y = 0; y < height; ++y) {
-            for (tMatrixPixelsSize x = 0; x < width; ++x) {
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const float xf = static_cast<float>(x) * 0.4f;
                 const float yf = static_cast<float>(y) * 0.4f;
                 const uint8_t r = wave(t * 0.8f + xf);
@@ -328,13 +329,17 @@ public:
         static const csFP32 k06 = csFP32::float_const(0.5f);
         static const csFP32 k04 = csFP32::float_const(0.3f);
         static const csFP32 k05 = csFP32::float_const(0.4f);
-        const auto width = matrix->width();
-        const auto height = matrix->height();
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
 
-        for (tMatrixPixelsSize y = 0; y < height; ++y) {
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             const csFP32 yf = csFP32::from_int(y);
             const csFP32 yf_scaled = yf * k04;
-            for (tMatrixPixelsSize x = 0; x < width; ++x) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const csFP32 xf = csFP32::from_int(x);
                 const csFP32 xf_scaled = xf * k04;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
@@ -353,11 +358,15 @@ public:
             return;
         }
         const float t = static_cast<float>(currTime) * 0.0025f;
-        const auto width = matrix->width();
-        const auto height = matrix->height();
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
 
-        for (tMatrixPixelsSize y = 0; y < height; ++y) {
-            for (tMatrixPixelsSize x = 0; x < width; ++x) {
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const float xf = static_cast<float>(x);
                 const float yf = static_cast<float>(y);
                 const float v = sin(xf * 0.35f + t) + sin(yf * 0.35f - t) + sin((xf + yf) * 0.25f + t * 0.5f);

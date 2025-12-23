@@ -1,6 +1,6 @@
 #pragma once
 
-#include "matrix_pixels.hpp"
+#include "matrix_types.hpp"
 #include "math.hpp"
 
 namespace amp {

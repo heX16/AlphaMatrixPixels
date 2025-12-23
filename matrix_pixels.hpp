@@ -3,29 +3,16 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "color_rgba.hpp"
+#include "matrix_types.hpp"
+#include "rect.hpp"
 #include "math.hpp"
 
 namespace amp {
 
 using ::size_t;
-using ::int32_t;
 using ::uint8_t;
-using ::uint16_t;
 using math::max;
 using math::min;
-
-using tMatrixPixelsCoord = int32_t;
-using tMatrixPixelsSize = uint16_t;
-
-template <typename T>
-constexpr tMatrixPixelsCoord to_coord(T v) noexcept {
-    return static_cast<tMatrixPixelsCoord>(v);
-}
-
-template <typename T>
-constexpr tMatrixPixelsSize to_size(T v) noexcept {
-    return static_cast<tMatrixPixelsSize>(v);
-}
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
 // Color format: 0xAARRGGBB (A in the most significant byte).
@@ -84,6 +71,9 @@ public:
 
     [[nodiscard]] tMatrixPixelsSize width() const noexcept { return size_x_; }
     [[nodiscard]] tMatrixPixelsSize height() const noexcept { return size_y_; }
+
+    // Return full matrix bounds as a rectangle: (0, 0, width, height).
+    [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
     inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
