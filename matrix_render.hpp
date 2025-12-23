@@ -142,10 +142,13 @@ public:
 
     virtual ~csRenderBase() = default;
 
+    // NOTE: parameter indices start at 1 (not 0).
+    // If `getParamsCount()==1`, call `getParamInfo(1, ...)`.
     virtual uint8_t getParamsCount() const {
         return 0;
     }
 
+    // NOTE: parameter indices start at 1 (not 0).
     virtual void getParamInfo(uint8_t paramNum,
                               ParamType& paramType,
                               const char*& paramName,
@@ -154,6 +157,10 @@ public:
         paramType = ParamType::None;
         paramName = nullptr;
         ptr = nullptr;
+    }
+
+    virtual void paramChanged(uint8_t paramNum) {
+        (void)paramNum;
     }
 
     virtual void recalc(csRandGen& rand, uint16_t currTime) {
@@ -189,17 +196,21 @@ protected:
     csMatrixPixels* matrix = nullptr;
 
     csRect rect;
+
+    bool renderRectAutosize = true;
+
 public:
     virtual ~csRenderMatrixBase() = default;
 
     void setMatrix(csMatrixPixels* m) noexcept { matrix = m; }
     void setMatrix(csMatrixPixels& m) noexcept { matrix = &m; }
 
+    static constexpr uint8_t paramRenderRectAutosize = 3;
     static constexpr uint8_t paramRenderRect = 1;
     static constexpr uint8_t paramMatrixDest = 2;
 
     uint8_t getParamsCount() const override {
-        return 2;
+        return 3;
     }
 
     void getParamInfo(uint8_t paramNum,
@@ -207,12 +218,17 @@ public:
                       const char*& paramName,
                       paramPtr& ptr) override {
         switch (paramNum) {
-            case 1:
+            case paramRenderRectAutosize:
+                paramType = ParamType::Bool;
+                paramName = "Render rect autosize";
+                ptr = &renderRectAutosize;
+                break;
+            case paramRenderRect:
                 paramType = ParamType::Rect;
                 paramName = "Render rect";
                 ptr = &rect;
                 break;
-            case 2:
+            case paramMatrixDest:
                 paramType = ParamType::Matrix;
                 paramName = "Matrix dest";
                 ptr = &matrix;
@@ -223,6 +239,30 @@ public:
                 ptr = nullptr;
                 break;
         }
+    }
+
+    virtual void paramChanged(uint8_t paramNum) {
+        switch (paramNum) {
+            case paramRenderRectAutosize:
+            case paramMatrixDest:
+                if (renderRectAutosize) {
+                    updateRenderRect();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void updateRenderRect() {
+        if (!matrix) {
+            return;
+        }
+
+        rect.x = 0;
+        rect.y = 0;
+        rect.width = matrix->width();
+        rect.height = matrix->height();
     }
 };
 
