@@ -148,6 +148,25 @@ struct CS_PACKED csColorRGBA {
 #  pragma pack(pop)
 #endif
 
+// TODO: OPTIMIZE!!! - `uint8_t`
+// Linear interpolation of two channels with t in [0..255]; t=0 -> a, t=255 -> b.
+inline constexpr uint8_t lerp8(uint8_t a, uint8_t b, uint8_t t) noexcept {
+    const int32_t delta = static_cast<int32_t>(b) - static_cast<int32_t>(a);
+    const int32_t scaled = (delta * static_cast<int32_t>(t) + 127) / 255;
+    return static_cast<uint8_t>(static_cast<int32_t>(a) + scaled);
+}
+
+// Linear interpolation of two colors; t in [0..255] (fixed-point 8.8 style).
+// t=0 -> left, t=255 -> right.
+inline csColorRGBA lerp(csColorRGBA left, csColorRGBA right, uint8_t t) noexcept {
+    return csColorRGBA{
+        lerp8(left.a, right.a, t),
+        lerp8(left.r, right.r, t),
+        lerp8(left.g, right.g, t),
+        lerp8(left.b, right.b, t)
+    };
+}
+
 } // namespace amp
 
 static_assert(sizeof(amp::csColorRGBA) == 4, "csColorRGBA must be tightly packed to 4 bytes");

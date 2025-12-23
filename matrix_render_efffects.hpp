@@ -255,7 +255,7 @@ public:
 };
 
 // Effect: draw a filled circle inscribed into rect.
-class csRenderCircle final : public csRenderMatrixBase {
+class csRenderCircle : public csRenderMatrixBase {
 public:
     static constexpr uint8_t paramCircleColor = 4;
     static constexpr uint8_t paramBackgroundColor = 5;
@@ -342,6 +342,186 @@ public:
                     const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
                     matrix->setPixel(x, y, circleColor, coverageAlpha);
                 }
+            }
+        }
+    }
+};
+
+// Optimized circle renderer: per-scanline chord computation, optional AA on edges.
+class csRenderCircleFast final : public csRenderCircle {
+public:
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (!matrix) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const float cx = static_cast<float>(target.x) + static_cast<float>(target.width) * 0.5f;
+        const float cy = static_cast<float>(target.y) + static_cast<float>(target.height) * 0.5f;
+        const float radius = static_cast<float>(math::min(target.width, target.height)) * 0.5f;
+        if (radius <= 0.0f) {
+            return;
+        }
+
+        const float radiusSq = radius * radius;
+        const float aaWidth = 1.0f; // ~1px anti-aliased ramp
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            const float py = static_cast<float>(y) + 0.5f;
+            const float dy = py - cy;
+            const float dySq = dy * dy;
+
+            // If the entire scanline is outside the AA band, fill with background and continue.
+            if (dySq > radiusSq + aaWidth * aaWidth) {
+                for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                    matrix->setPixel(x, y, backgroundColor);
+                }
+                continue;
+            }
+
+            float chord = radiusSq - dySq;
+            if (chord < 0.0f) {
+                chord = 0.0f;
+            }
+            const float dx = sqrtf(chord);
+
+            const float leftF = cx - dx;
+            const float rightF = cx + dx;
+            const tMatrixPixelsCoord xLeft = static_cast<tMatrixPixelsCoord>(floorf(leftF));
+            const tMatrixPixelsCoord xRight = static_cast<tMatrixPixelsCoord>(floorf(rightF));
+
+            // Lay down background first (alpha-aware).
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                matrix->setPixel(x, y, backgroundColor);
+            }
+
+            // Solid interior (no AA).
+            for (tMatrixPixelsCoord x = xLeft + 1; x < xRight; ++x) {
+                if (x < target.x || x >= endX) {
+                    continue;
+                }
+                matrix->setPixel(x, y, circleColor);
+            }
+
+            if (!smoothEdges) {
+                // Hard edges: fill boundary pixels if inside bounds.
+                if (xLeft >= target.x && xLeft < endX) {
+                    matrix->setPixel(xLeft, y, circleColor);
+                }
+                if (xRight >= target.x && xRight < endX && xRight != xLeft) {
+                    matrix->setPixel(xRight, y, circleColor);
+                }
+                continue;
+            }
+
+            // Anti-aliased edges on the two boundary columns.
+            auto blendEdge = [&](tMatrixPixelsCoord x, float distToEdge) {
+                if (x < target.x || x >= endX) {
+                    return;
+                }
+                float coverage = aaWidth - distToEdge;
+                if (coverage <= 0.0f) {
+                    return;
+                }
+                if (coverage > 1.0f) {
+                    coverage = 1.0f;
+                }
+                const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
+                matrix->setPixel(x, y, circleColor, coverageAlpha);
+            };
+
+            const float leftPixelCenter = static_cast<float>(xLeft) + 0.5f;
+            const float rightPixelCenter = static_cast<float>(xRight) + 0.5f;
+
+            blendEdge(xLeft, fabsf(leftPixelCenter - leftF));
+            blendEdge(xRight, fabsf(rightF - rightPixelCenter));
+        }
+    }
+};
+
+// Radial gradient circle: interpolates from circleColor (center) to backgroundColor (edge).
+class csRenderCircleGradient final : public csRenderCircle {
+public:
+    static constexpr uint8_t paramGradientOffset = 7;
+
+    // Offset of gradient start from center, normalized: 0..255 -> 0..1 of radius.
+    uint8_t gradientOffset = 0;
+
+    uint8_t getParamsCount() const override {
+        return paramGradientOffset;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        info.readOnly = false;
+        info.disabled = false;
+        if (paramNum == paramGradientOffset) {
+            info.type = ParamType::UInt8;
+            info.name = "Gradient offset";
+            info.ptr = &gradientOffset;
+            return;
+        }
+        csRenderCircle::getParamInfo(paramNum, info);
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (!matrix) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const float cx = static_cast<float>(target.x) + static_cast<float>(target.width) * 0.5f;
+        const float cy = static_cast<float>(target.y) + static_cast<float>(target.height) * 0.5f;
+        const float radius = static_cast<float>(math::min(target.width, target.height)) * 0.5f;
+        if (radius <= 0.0f) {
+            return;
+        }
+
+        const float radiusSq = radius * radius;
+        const float offsetNorm = static_cast<float>(gradientOffset) / 255.0f;
+        const float startR = radius * offsetNorm; // inner radius where gradient starts (t=0)
+        const float span = radius - startR;
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            const float py = static_cast<float>(y) + 0.5f;
+            const float dy = py - cy;
+            const float dySq = dy * dy;
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                const float px = static_cast<float>(x) + 0.5f;
+                const float dx = px - cx;
+                const float distSq = dx * dx + dySq;
+
+                // Outside circle: just background.
+                if (distSq > radiusSq) {
+                    matrix->setPixel(x, y, backgroundColor);
+                    continue;
+                }
+
+                const float dist = sqrtf(distSq);
+                float t = 0.0f;
+                if (span > 0.0f) {
+                    // Clamp: t=0 inside startR; t=1 at radius.
+                    if (dist > startR) {
+                        t = math::max(0.0f, math::min(1.0f, (dist - startR) / span));
+                    }
+                }
+
+                // Linear interpolation between circleColor (center) and backgroundColor (edge).
+                const uint8_t t8 = static_cast<uint8_t>(t * 255.0f + 0.5f);
+                const csColorRGBA gradColor = lerp(circleColor, backgroundColor, t8);
+
+                matrix->setPixel(x, y, gradColor);
             }
         }
     }

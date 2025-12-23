@@ -69,6 +69,8 @@
 - `csRenderGradientFP` (class) — градиентный эффект на fixed-point (`amp::math::csFP32`).
 - `csRenderPlasma` (class) — “plasma” эффект на float.
 - `csRenderCircle` (class) — закрашенный круг, вписанный в `rect`, опционально с сглаженной границей.
+- `csRenderCircleFast` (class) — быстрый круг по хордам строк: заполняет фон строкой, вычисляет левый/правый пиксели через sqrt(1/строка), AA только на двух краях.
+- `csRenderCircleGradient` (class) — радиальный градиент круга (центр=`Circle color`, край=`Background color`), без сглаживания; имеет параметр `Gradient offset` (0..255 => 0..1 радиуса) для смещения начала градиента от центра.
 
 ### `namespace amp::math`
 - `csFP16` (struct) — signed 8.8 fixed-point.
@@ -151,7 +153,10 @@ Cout = (Aout == 0) ? 0 : div255(out_p, Aout)
 - `csEffectBase` — абстрактный интерфейс (параметры, render, события)
 - `csRenderMatrixBase` — база для эффектов, рисующих в `csMatrixPixels`
 - Конкретные эффекты: `csRenderGradient`, `csRenderGradientFP`, `csRenderPlasma`
-- Новый эффект круга: `csRenderCircle` — закрашенный круг, вписанный в текущий `rect`, цвета задаются `Circle color` / `Background color`, сглаживание включается параметром `Smooth edges`.
+- Эффекты круга:
+  - `csRenderCircle` — простой круг, вписанный в текущий `rect`, цвета задаются `Circle color` / `Background color`, сглаживание включает `Smooth edges`.
+  - `csRenderCircleFast` — оптимизированная версия: на каждую строку считает хорду (1 sqrt на строку), заливает фон строкой, середину — сплошняком, AA только на двух крайних пикселях.
+  - `csRenderCircleGradient` — радиальный градиент: t=(dist - offset)/span, `offset` задаётся `Gradient offset` (0..255 => 0..1 радиуса), интерполяция между `Circle color` (центр/offset) и `Background color` (край); без сглаживания.
 
 ### Область рендера (`rect`)
 

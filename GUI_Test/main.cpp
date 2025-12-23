@@ -23,6 +23,7 @@ using amp::csRenderGradientFP;
 using amp::csRenderPlasma;
 using amp::csRenderGlyph;
 using amp::csRenderCircle;
+using amp::csRenderCircleGradient;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -68,9 +69,11 @@ public:
         };
     }
 
-    void initCircleDefaults(csRenderCircle& circle) const noexcept {
-        circle.circleColor = csColorRGBA{255, 0, 0, 255};
+    void initCircleDefaults(csRenderCircleGradient& circle) const noexcept {
+        // circle.circleColor = csColorRGBA{255, 0, 0, 255};
+        circle.circleColor = csColorRGBA{255, 255, 255, 255};
         circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
+        circle.gradientOffset = 127;
         circle.renderRectAutosize = true; // использовать весь rect матрицы
     }
 
@@ -142,7 +145,8 @@ public:
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_t) {
                         delete effect2;
-                        auto* circle = new csRenderCircle();
+                        // auto* circle = new csRenderCircle();
+                        auto* circle = new csRenderCircleGradient();
                         initCircleDefaults(*circle);
                         effect2 = circle;
                         bindEffectMatrix(effect2);
