@@ -254,4 +254,97 @@ public:
     }
 };
 
+// Effect: draw a filled circle inscribed into rect.
+class csRenderCircle final : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t paramCircleColor = 4;
+    static constexpr uint8_t paramBackgroundColor = 5;
+    static constexpr uint8_t paramSmoothEdges = 6;
+
+    csColorRGBA circleColor{255, 255, 255, 255};
+    csColorRGBA backgroundColor{0, 0, 0, 0};
+    bool smoothEdges = true;
+
+    uint8_t getParamsCount() const override {
+        return paramSmoothEdges;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        info.readOnly = false;
+        info.disabled = false;
+        switch (paramNum) {
+            case paramCircleColor:
+                info.type = ParamType::Color;
+                info.name = "Circle color";
+                info.ptr = &circleColor;
+                break;
+            case paramBackgroundColor:
+                info.type = ParamType::Color;
+                info.name = "Background color";
+                info.ptr = &backgroundColor;
+                break;
+            case paramSmoothEdges:
+                info.type = ParamType::Bool;
+                info.name = "Smooth edges";
+                info.ptr = &smoothEdges;
+                break;
+            default:
+                csRenderMatrixBase::getParamInfo(paramNum, info);
+                break;
+        }
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (!matrix) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+
+        const float cx = static_cast<float>(target.x) + static_cast<float>(target.width) * 0.5f;
+        const float cy = static_cast<float>(target.y) + static_cast<float>(target.height) * 0.5f;
+        const float radius = static_cast<float>(math::min(target.width, target.height)) * 0.5f;
+        const float radiusSq = radius * radius;
+        const float aaHalfPixel = 0.5f; // simple 1px-wide anti-aliasing ramp
+
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            const float py = static_cast<float>(y) + 0.5f;
+            const float dy = py - cy;
+            const float dySq = dy * dy;
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                const float px = static_cast<float>(x) + 0.5f;
+                const float dx = px - cx;
+                const float distSq = dx * dx + dySq;
+                if (!smoothEdges) {
+                    const csColorRGBA color = (distSq <= radiusSq) ? circleColor : backgroundColor;
+                    matrix->setPixel(x, y, color);
+                    continue;
+                }
+
+                // Smooth: compute coverage in [0..1] using linear ramp over ~1px border.
+                const float dist = sqrtf(distSq);
+                float coverage = radius + aaHalfPixel - dist;
+                if (coverage <= 0.0f) {
+                    coverage = 0.0f;
+                } else if (coverage >= 1.0f) {
+                    coverage = 1.0f;
+                }
+
+                // First lay down background (blended over existing content), then blend circle with coverage-scaled alpha.
+                matrix->setPixel(x, y, backgroundColor);
+                if (coverage > 0.0f) {
+                    const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
+                    matrix->setPixel(x, y, circleColor, coverageAlpha);
+                }
+            }
+        }
+    }
+};
+
 } // namespace amp

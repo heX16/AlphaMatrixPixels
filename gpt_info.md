@@ -68,6 +68,7 @@
 - `csRenderGradient` (class) — градиентный эффект на float.
 - `csRenderGradientFP` (class) — градиентный эффект на fixed-point (`amp::math::csFP32`).
 - `csRenderPlasma` (class) — “plasma” эффект на float.
+- `csRenderCircle` (class) — закрашенный круг, вписанный в `rect`, опционально с сглаженной границей.
 
 ### `namespace amp::math`
 - `csFP16` (struct) — signed 8.8 fixed-point.
@@ -101,10 +102,7 @@
   amp::csColorRGBA c{255, 200, 100, 50};
   c /= 2; // -> {a=127, r=100, g=50, b=25}
   ```
-- Статические методы:
-  - `blendChannel` — смешивает один канал с учётом premult и итоговой альфы.
-  - `sourceOverStraight(dst, src, global_alpha)` — SourceOver со глобальной альфой-множителем.
-  - `sourceOverStraight(dst, src)` — SourceOver, используя только `src.a`.
+
 
 
 ### Алгоритм смешивания (для одного канала, нормализовано к 0..255)
@@ -153,6 +151,7 @@ Cout = (Aout == 0) ? 0 : div255(out_p, Aout)
 - `csEffectBase` — абстрактный интерфейс (параметры, render, события)
 - `csRenderMatrixBase` — база для эффектов, рисующих в `csMatrixPixels`
 - Конкретные эффекты: `csRenderGradient`, `csRenderGradientFP`, `csRenderPlasma`
+- Новый эффект круга: `csRenderCircle` — закрашенный круг, вписанный в текущий `rect`, цвета задаются `Circle color` / `Background color`, сглаживание включается параметром `Smooth edges`.
 
 ### Область рендера (`rect`)
 

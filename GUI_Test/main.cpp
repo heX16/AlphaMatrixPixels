@@ -22,6 +22,7 @@ using amp::csRenderGradient;
 using amp::csRenderGradientFP;
 using amp::csRenderPlasma;
 using amp::csRenderGlyph;
+using amp::csRenderCircle;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -65,6 +66,12 @@ public:
             static_cast<amp::tMatrixPixelsSize>(FONT_WIDTH + 2),
             static_cast<amp::tMatrixPixelsSize>(FONT_HEIGHT + 2)
         };
+    }
+
+    void initCircleDefaults(csRenderCircle& circle) const noexcept {
+        circle.circleColor = csColorRGBA{255, 0, 0, 255};
+        circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
+        circle.renderRectAutosize = true; // использовать весь rect матрицы
     }
 
     bool initSDL() {
@@ -132,6 +139,12 @@ public:
                         auto* glyph = new csRenderGlyph();
                         initGlyphDefaults(*glyph);
                         effect2 = glyph;
+                        bindEffectMatrix(effect2);
+                    } else if (event.key.keysym.sym == SDLK_t) {
+                        delete effect2;
+                        auto* circle = new csRenderCircle();
+                        initCircleDefaults(*circle);
+                        effect2 = circle;
                         bindEffectMatrix(effect2);
                     }
                 }
