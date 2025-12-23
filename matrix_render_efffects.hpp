@@ -141,13 +141,17 @@ public:
     static constexpr uint8_t paramSymbolIndex = 4;
     static constexpr uint8_t paramSymbolColor = 5;
     static constexpr uint8_t paramBackgroundColor = 6;
+    static constexpr uint8_t paramFontWidth = 7;
+    static constexpr uint8_t paramFontHeight = 8;
 
     uint8_t symbolIndex = 0;
     csColorRGBA symbolColor{255, 255, 255, 255};
     csColorRGBA backgroundColor{255, 0, 0, 0};
+    tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(FONT_WIDTH);
+    tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(FONT_HEIGHT);
 
     uint8_t getParamsCount() const override {
-        return paramBackgroundColor;
+        return paramFontHeight;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
@@ -173,6 +177,18 @@ public:
                 info.type = ParamType::Color;
                 info.name = "Background color";
                 info.ptr = &backgroundColor;
+                break;
+            case paramFontWidth:
+                info.type = ParamType::UInt16;
+                info.name = "Font width";
+                info.ptr = &fontWidth;
+                info.readOnly = true;
+                break;
+            case paramFontHeight:
+                info.type = ParamType::UInt16;
+                info.name = "Font height";
+                info.ptr = &fontHeight;
+                info.readOnly = true;
                 break;
             default:
                 info.type = ParamType::None;
