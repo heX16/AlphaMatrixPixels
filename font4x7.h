@@ -1,4 +1,4 @@
-﻿
+
 // высота шрифта
 #define FONT_HEIGHT (7)
 

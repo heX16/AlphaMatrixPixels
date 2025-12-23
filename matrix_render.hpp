@@ -30,7 +30,16 @@ enum class ParamType : uint8_t {
     Bool = 10,
     Ptr = 11,
     Matrix = 12,
-    Rect = 13
+    Rect = 13,
+    Color
+};
+
+struct csParamInfo {
+    ParamType type = ParamType::None;
+    paramPtr ptr = nullptr;
+    const char* name = nullptr;
+    bool readOnly = false;
+    bool disabled = false;
 };
 
 // Special random generator
@@ -113,16 +122,9 @@ public:
 
     // Parameter introspection: returns parameter metadata (type/name/pointer)
     // NOTE: parameter indices start at 1 (not 0).
-    virtual void getParamInfo(uint8_t paramNum,
-                              ParamType& paramType,
-                              paramPtr& ptr,
-                              const char*& paramName,
-                              bool& paramDisabled) {
+    virtual void getParamInfo(uint8_t paramNum, csParamInfo& info) {
         (void)paramNum;
-        paramType = ParamType::None;
-        paramName = nullptr;
-        ptr = nullptr;
-        paramDisabled = false;
+        info = csParamInfo{};
     }
 
     // Notification hook.
@@ -192,32 +194,29 @@ public:
         return 3;
     }
 
-    void getParamInfo(uint8_t paramNum,
-                      ParamType& paramType,
-                      paramPtr& ptr,
-                      const char*& paramName,
-                      bool& paramDisabled) override {
-        paramDisabled = false;
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        info.readOnly = false;
+        info.disabled = false;
         switch (paramNum) {
             case paramRenderRectAutosize:
-                paramType = ParamType::Bool;
-                paramName = "Render rect autosize";
-                ptr = &renderRectAutosize;
+                info.type = ParamType::Bool;
+                info.name = "Render rect autosize";
+                info.ptr = &renderRectAutosize;
                 break;
             case paramRenderRect:
-                paramType = ParamType::Rect;
-                paramName = "Render rect";
-                ptr = &rect;
+                info.type = ParamType::Rect;
+                info.name = "Render rect";
+                info.ptr = &rect;
                 break;
             case paramMatrixDest:
-                paramType = ParamType::Matrix;
-                paramName = "Matrix dest";
-                ptr = &matrix;
+                info.type = ParamType::Matrix;
+                info.name = "Matrix dest";
+                info.ptr = &matrix;
                 break;
             default:
-                paramType = ParamType::None;
-                paramName = nullptr;
-                ptr = nullptr;
+                info.type = ParamType::None;
+                info.name = nullptr;
+                info.ptr = nullptr;
                 break;
         }
     }

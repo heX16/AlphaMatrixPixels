@@ -8,6 +8,7 @@
 #include "rect.hpp"
 #include "math.hpp"
 #include "matrix_render.hpp"
+#include "font3x5.h"
 
 
 
@@ -129,6 +130,100 @@ public:
                 const uint8_t g = static_cast<uint8_t>((1.0f - norm) * 255.0f);
                 const uint8_t b = static_cast<uint8_t>((0.5f + 0.5f * sin(t + xf * 0.1f)) * 255.0f);
                 matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
+            }
+        }
+    }
+};
+
+// Effect: draw a single digit glyph using the 3x5 font.
+class csRenderGlyph final : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t paramSymbolIndex = 4;
+    static constexpr uint8_t paramSymbolColor = 5;
+    static constexpr uint8_t paramBackgroundColor = 6;
+
+    uint8_t symbolIndex = 0;
+    csColorRGBA symbolColor{255, 255, 255, 255};
+    csColorRGBA backgroundColor{255, 0, 0, 0};
+
+    uint8_t getParamsCount() const override {
+        return paramBackgroundColor;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        if (paramNum <= csRenderMatrixBase::getParamsCount()) {
+            csRenderMatrixBase::getParamInfo(paramNum, info);
+            return;
+        }
+
+        info.readOnly = false;
+        info.disabled = false;
+        switch (paramNum) {
+            case paramSymbolIndex:
+                info.type = ParamType::UInt8;
+                info.name = "Glyph index";
+                info.ptr = &symbolIndex;
+                break;
+            case paramSymbolColor:
+                info.type = ParamType::Color;
+                info.name = "Symbol color";
+                info.ptr = &symbolColor;
+                break;
+            case paramBackgroundColor:
+                info.type = ParamType::Color;
+                info.name = "Background color";
+                info.ptr = &backgroundColor;
+                break;
+            default:
+                info.type = ParamType::None;
+                info.name = nullptr;
+                info.ptr = nullptr;
+                break;
+        }
+    }
+
+    void paramChanged(uint8_t paramNum) override {
+        csRenderMatrixBase::paramChanged(paramNum);
+        if (paramNum == paramSymbolIndex && symbolIndex >= FONT_COUNT) {
+            symbolIndex = static_cast<uint8_t>(FONT_COUNT - 1);
+        }
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (!matrix) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                matrix->setPixel(x, y, backgroundColor);
+            }
+        }
+
+        const tMatrixPixelsSize glyphWidth = math::min(rect.width, static_cast<tMatrixPixelsSize>(FONT_WIDTH));
+        const tMatrixPixelsSize glyphHeight = math::min(rect.height, static_cast<tMatrixPixelsSize>(FONT_HEIGHT));
+        if (glyphWidth == 0 || glyphHeight == 0) {
+            return;
+        }
+
+        const uint8_t safeIndex = (symbolIndex < FONT_COUNT) ? symbolIndex : static_cast<uint8_t>(FONT_COUNT - 1);
+        for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
+            const TFontBitLine glyphRow = LedFont[safeIndex][row];
+            for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
+                const TFontBitLine mask = static_cast<TFontBitLine>(1 << (7u - static_cast<unsigned>(col)));
+                if ((glyphRow & mask) == 0) {
+                    continue;
+                }
+                const tMatrixPixelsCoord px = rect.x + to_coord(col);
+                const tMatrixPixelsCoord py = rect.y + to_coord(row);
+                matrix->setPixel(px, py, symbolColor);
             }
         }
     }
