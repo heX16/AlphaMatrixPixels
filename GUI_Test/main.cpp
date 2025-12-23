@@ -46,21 +46,22 @@ public:
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
     csEffectBase* effect{nullptr};
+    csEffectBase* effect2{nullptr};
 
-    void bindEffectMatrix() {
-        if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(effect)) {
+    void bindEffectMatrix(csEffectBase* eff) {
+        if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
             m->setMatrix(matrix);
         }
     }
 
     void initGlyphDefaults(csRenderGlyph& glyph) const noexcept {
         glyph.symbolColor = csColorRGBA{255, 255, 255, 255};
-        glyph.backgroundColor = csColorRGBA{255, 0, 0, 0};
+        glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
         glyph.symbolIndex = 0;
         glyph.renderRectAutosize = false;
         glyph.rect = amp::csRect{
-            0,
-            0,
+            2,
+            2,
             static_cast<amp::tMatrixPixelsSize>(FONT_WIDTH + 2),
             static_cast<amp::tMatrixPixelsSize>(FONT_HEIGHT + 2)
         };
@@ -89,7 +90,7 @@ public:
         recreateMatrix(16, 16);
         delete effect;
         effect = new csRenderGradient();
-        bindEffectMatrix();
+        bindEffectMatrix(effect);
         return true;
     }
 
@@ -112,25 +113,26 @@ public:
                             h = 5;
                         }
                         recreateMatrix(w, h);
-                        bindEffectMatrix();
+                        bindEffectMatrix(effect);
+                        bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
                         effect = new csRenderGradient();
-                        bindEffectMatrix();
+                        bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_e) {
                         delete effect;
                         effect = new csRenderGradientFP();
-                        bindEffectMatrix();
+                        bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
                         effect = new csRenderPlasma();
-                        bindEffectMatrix();
+                        bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_r) {
-                        delete effect;
+                        delete effect2;
                         auto* glyph = new csRenderGlyph();
                         initGlyphDefaults(*glyph);
-                        effect = glyph;
-                        bindEffectMatrix();
+                        effect2 = glyph;
+                        bindEffectMatrix(effect2);
                     }
                 }
             }
@@ -142,6 +144,15 @@ public:
                     glyph->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect->render(randGen, static_cast<uint16_t>(ticks));
+                }
+            }
+            if (effect2) {
+                const uint32_t ticks = SDL_GetTicks();
+                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
+                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
+                    glyph->render(randGen, static_cast<uint16_t>(ticks));
+                } else {
+                    effect2->render(randGen, static_cast<uint16_t>(ticks));
                 }
             }
             renderProc();
@@ -213,6 +224,7 @@ public:
 
     void done() {
         delete effect;
+        delete effect2;
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();

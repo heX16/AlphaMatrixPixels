@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "color_rgba.hpp"
 #include "matrix_types.hpp"
 #include "rect.hpp"
@@ -76,7 +77,7 @@ public:
     [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
+    inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
         if (inside(x, y)) {
             pixels_[index(x, y)] = color;
         }
@@ -84,7 +85,7 @@ public:
 
     // Blend source color over destination pixel using SourceOver (straight alpha).
     // 'alpha' is an extra global multiplier for the source alpha channel.
-    inline void setPixelBlend(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color, alpha);
@@ -92,7 +93,7 @@ public:
     }
 
     // Blend source color over destination pixel using SourceOver with only the pixel's own alpha.
-    inline void setPixelBlend(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color);
@@ -129,10 +130,36 @@ public:
             const tMatrixPixelsCoord dy = sy + dst_y;
             for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
                 const tMatrixPixelsCoord dx = sx + dst_x;
-                setPixelBlend(dx, dy, source.getPixel(sx, sy), alpha);
+                setPixel(dx, dy, source.getPixel(sx, sy), alpha);
             }
         }
     }
+
+    // Clear matrix to transparent black.
+    inline void clear() noexcept {
+        const size_t bytes = count() * sizeof(csColorRGBA);
+        if (bytes != 0 && pixels_) {
+            // Fast zero-fill; csColorRGBA is 4 bytes (see static_assert in color_rgba.hpp).
+            memset(static_cast<void*>(pixels_), 0, bytes);
+        }
+    }
+
+    /*
+    TODO:
+
+    `void getScanLine(csRect area, offset_x, offset_y, OUT &* ptrLineOfColors, OUT & lineLen)`
+
+    `void fill(csRect area, color)`
+
+    // slow and nice
+    `bool drawMatrixScale(csRect src, csRect dst, const csMatrixPixels& source)`
+
+    // overwrite dst area. fast.
+    `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
+
+    // calc average color of area. fast.
+    `csColorRGBA getAreaColor(csRect area)`
+    */
 
 private:
     tMatrixPixelsSize size_x_;
