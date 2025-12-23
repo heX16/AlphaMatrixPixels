@@ -33,11 +33,11 @@
 - Запуск из MSYS2 Bash: `./run_tests.sh`
 - Скрипт компилирует и запускает `tests/pixel_matrix_tests.cpp` и печатает `Passed/Failed`.
 
-!!!
-
 ### Демо GUI (SDL2)
 Сборка и зависимости описаны в `GUI_Test/BUILD.md`.
-!!!
+
+### Arduino (FastLED)
+Скетч `AlphaMatrixPixels.ino` демонстрирует работу с LED-матрицей через FastLED.
 
 ## Arduino / Embedded toolchains (важно)
 
@@ -61,9 +61,10 @@
 - `csMatrixPixels` (class) — матрица пикселей RGBA в памяти + клиппинг/блендинг.
 - `csRect` (class) — прямоугольник (x, y, width, height) + пересечение `intersect()`.
 - `csRandGen` (class) — простой генератор псевдослучайных чисел (8-bit) для эффектов.
-- `csParamsBase` (class) — базовый интерфейс параметров эффекта (WIP/расширяемый).
 - `csEventBase` (class) — базовый тип события для обмена с внешними системами (WIP).
-- `csRenderBase` (class) — базовый интерфейс рендера/эффекта (recalc/render + события).
+- `ParamType` (enum class) — тип параметра для внешней интроспекции (WIP).
+- `csRenderBase` (class) — базовый интерфейс рендера/эффекта: интроспекция параметров + `paramChanged/recalc/render` + события (WIP).
+- `csRenderMatrixBase` (class) — базовый класс для эффектов, которые рисуют в `csMatrixPixels` (см. ниже).
 - `csRenderGradient` (class) — градиентный эффект на float.
 - `csRenderGradientFP` (class) — градиентный эффект на fixed-point (`amp::math::csFP32`).
 - `csRenderPlasma` (class) — “plasma” эффект на float.
@@ -121,46 +122,74 @@ Cout = (Aout == 0) ? 0 : div255(out_p, Aout)
 
 
 
-## Класс `amp::csMatrixPixels`
-`csMatrixPixels` — чистая математическая 2D-матрица пикселей в формате ARGB (0xAARRGGBB) со straight-alpha и композицией Porter-Duff SourceOver. Не привязана к железу, пригодна для моделирования/рендера в памяти.
+## Класс `csMatrixPixels`
 
-Хранит буфер `width * height` (динамический `new[]`), операции вне границ — тихо игнорируются (геттер возвращает прозрачный чёрный).
-Записи вне границ (`setPixel*`) — тихо игнорируются.
-Чтение вне границ (`getPixel`) — возвращает прозрачный чёрный `{0,0,0,0}`.
+**Исходник:** `matrix_pixels.hpp`
 
-### Конструкторы/присваивания
-- `amp::csMatrixPixels(w, h)` — инициализация нулями.
-- Копирование/перемещение и соответствующие операторы поддерживаются (глубокая копия или перенос буфера).
+2D-матрица пикселей ARGB (0xAARRGGBB) со straight-alpha и композицией Porter-Duff SourceOver.
 
-### Методы
-- `width(), height()` — размеры.
-- `setPixel(x, y, color)` — запись без смешивания.
-- `setPixelBlend(x, y, color, alpha)` — SourceOver, альфа источника умножена на `alpha`.
-- `setPixelBlend(x, y, color)` — SourceOver, только альфа пикселя.
-- `getPixel(x, y)` — цвет или {0,0,0,0} вне границ.
-- `getPixelBlend(x, y, bg)` — возвращает результат SourceOver( bg, pixel(x,y) ), вне границ вернёт `bg`.
-- `drawMatrix(dx, dy, source, alpha=255)` — рисует `source` поверх с клиппингом, альфа-множитель общий.
+### Ключевые особенности
 
-### Пример использования
+- **Безопасные границы:** запись вне границ игнорируется, чтение возвращает `{0,0,0,0}`.
+- **Глубокое копирование:** copy/move конструкторы и операторы работают корректно.
+- **Метод `getRect()`:** возвращает `csRect{0,0,width,height}` — используется для клиппинга в рендерах.
+- **Метод `drawMatrix()`:** композиция матриц с автоклиппингом.
+
+
+---
+
+## Система рендеринга
+
+**Исходник:** `matrix_render.hpp`
+
+### Ключевые принципы
+
+1. **Публичные поля** — все данные в `csRender*` классах `public`, без get/set. Это сознательное решение для производительности и простоты.
+
+2. **Индексация параметров с 1** — `getParamsCount()==3` означает параметры 1, 2, 3 (не 0, 1, 2). Это важно для внешней интроспекции.
+
+### Иерархия классов
+
+- `csRenderBase` — абстрактный интерфейс (параметры, render, события)
+- `csRenderMatrixBase` — база для эффектов, рисующих в `csMatrixPixels`
+- Конкретные эффекты: `csRenderGradient`, `csRenderGradientFP`, `csRenderPlasma`
+
+### Область рендера (`rect`)
+
+Каждый рендер, наследующий `csRenderMatrixBase`, имеет поле `rect` типа `csRect`. Эффект рисует **только внутри этого прямоугольника**.
+
+**Режим autosize (по умолчанию):**
+- `renderRectAutosize = true`
+- `rect` автоматически равен размеру матрицы
+- При вызове `setMatrix(...)` прямоугольник обновляется
+
+**Ручной режим:**
+- `renderRectAutosize = false`
+- `rect` задаётся вручную: `plasma.rect = csRect{x, y, w, h};`
+- Это позволяет рисовать эффект в произвольной области матрицы (смещение, уменьшенный размер)
+
 ```cpp
-#include "matrix_pixels.hpp"
-
-amp::csMatrixPixels m(4, 3);
-amp::csColorRGBA red{255, 255, 0, 0};
-amp::csColorRGBA semi{128, 0, 0, 255}; // полупрозрачный синий
-
-m.setPixel(1, 1, red);
-m.setPixelBlend(1, 1, semi);          // синее поверх красного, учтёт alpha пикселя
-m.setPixelBlend(2, 1, semi, 64);      // дополнительно ослабит источник
-
-amp::csColorRGBA bg{0x202020};             // 0xFF202020 из-за автоподнятия альфы
-amp::csColorRGBA blended = m.getPixelBlend(1, 1, bg);
+plasma.renderRectAutosize = false;
+plasma.rect = csRect{2, 2, 4, 4};  // рисовать только в квадрате 4×4 со смещением (2,2)
 ```
 
-### Пример `drawMatrix` с клиппингом
+### Минимальный пример
+
 ```cpp
-amp::csMatrixPixels dest(8, 8);
-amp::csMatrixPixels src(4, 4);
-src.setPixel(0, 0, amp::csColorRGBA{255,255,0,128});
-dest.drawMatrix(-1, -1, src, 200); // частично выйдет за границы, будет обрезано
+amp::csMatrixPixels canvas(8, 8);
+amp::csRenderPlasma plasma;
+amp::csRandGen rng;
+
+plasma.setMatrix(canvas);  // важно: устанавливает matrix И обновляет rect
+
+plasma.render(rng, (uint16_t)millis());
 ```
+
+### Где смотреть детали
+
+| Что | Где |
+|-----|-----|
+| `ParamType` enum | `matrix_render.hpp`, начало файла |
+| Методы `csRenderBase` | `matrix_render.hpp`, класс `csRenderBase` |
+| Поля/параметры `csRenderMatrixBase` | `matrix_render.hpp`, класс `csRenderMatrixBase` |
+| Реализации эффектов | `matrix_render.hpp`, классы `csRenderGradient`, `csRenderPlasma` и др. |
