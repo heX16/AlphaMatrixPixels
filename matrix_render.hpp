@@ -94,60 +94,24 @@ public:
 
 };
 
-class csParamsBase {
-public:
-    virtual ~csParamsBase() = default;
-
-    virtual uint16_t count() const noexcept { return 0; }
-
-    // return utf-8 constant string
-    virtual const char* getParamName(uint8_t paramNum) const noexcept {
-        (void)paramNum;
-        return nullptr;
-    }
-
-    uint8_t findParamIdByName(const char* paramName) {
-        (void)paramName;
-        // TODO: WIP...
-        return 0;
-    }
-
-    virtual bool getInt(uint8_t paramNum, uint32_t& value) const noexcept {
-        (void)paramNum;
-        (void)value;
-        return false;
-    }
-
-    virtual void setInt(uint8_t paramNum, uint32_t value) noexcept {
-        (void)paramNum;
-        (void)value;
-    }
-
-    virtual bool getPtr(uint8_t paramNum, void*& pointer) const noexcept {
-        (void)paramNum;
-        pointer = nullptr;
-        return false;
-    }
-
-    virtual void reset() noexcept {}
-};
-
-
 class csEventBase {
     // Empty - WIP
 };
 
+// Base class for all render/effect implementations
 class csRenderBase {
 public:
 
     virtual ~csRenderBase() = default;
 
+    // Parameter introspection: returns number of exposed parameters
     // NOTE: parameter indices start at 1 (not 0).
     // If `getParamsCount()==1`, call `getParamInfo(1, ...)`.
     virtual uint8_t getParamsCount() const {
         return 0;
     }
 
+    // Parameter introspection: returns parameter metadata (type/name/pointer)
     // NOTE: parameter indices start at 1 (not 0).
     virtual void getParamInfo(uint8_t paramNum,
                               ParamType& paramType,
@@ -159,20 +123,25 @@ public:
         ptr = nullptr;
     }
 
+    // Notification hook.
+    // Must be called when a parameter value changes
     virtual void paramChanged(uint8_t paramNum) {
         (void)paramNum;
     }
 
+    // Precomputation step
     virtual void recalc(csRandGen& rand, uint16_t currTime) {
         (void)rand;
         (void)currTime;
     }
 
+    // Render one frame
     virtual void render(csRandGen& rand, uint16_t currTime) const {
         (void)rand;
         (void)currTime;
     }
 
+    // Event generation hook
     // generate one event to external object
     virtual bool getEvent(csRandGen& rand,
                           uint16_t currTime,
@@ -185,21 +154,23 @@ public:
         return false;
     }
 
+    // Event receive hook
     // receive one event from external object
     virtual void receiveEvent(const csEventBase& event) {
         (void)event;
     }
 };
 
+// Base class for matrix-based renderers.
+// All fields are public by design for direct access/performance.
 class csRenderMatrixBase : public csRenderBase {
-protected:
+public:
     csMatrixPixels* matrix = nullptr;
 
     csRect rect;
 
     bool renderRectAutosize = true;
 
-public:
     virtual ~csRenderMatrixBase() = default;
 
     void setMatrix(csMatrixPixels* m) noexcept {
@@ -271,7 +242,7 @@ public:
     }
 };
 
-
+// Simple animated RGB gradient (float).
 class csRenderGradient final : public csRenderMatrixBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
@@ -304,6 +275,7 @@ public:
     }
 };
 
+// Animated RGB gradient using fixed-point for time/phase.
 class csRenderGradientFP final : public csRenderMatrixBase {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
@@ -359,6 +331,7 @@ public:
     }
 };
 
+// Simple sinusoidal plasma effect (float).
 class csRenderPlasma final : public csRenderMatrixBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
