@@ -12,6 +12,27 @@
 
 namespace amp {
 
+// Generic parameter pointer type for render parameter introspection (WIP).
+using paramPtr = void*;
+
+// Parameter type for render parameter introspection (WIP).
+enum class ParamType : uint8_t {
+    None = 0,
+    UInt8 = 1,
+    UInt16 = 2,
+    UInt32 = 3,
+    Int8 = 4,
+    Int16 = 5,
+    Int32 = 6,
+    FP16 = 7,
+    FP32 = 8,
+    Str = 9,
+    Bool = 10,
+    Ptr = 11,
+    Matrix = 12,
+    Rect = 13
+};
+
 // Special random generator
 class csRandGen {
 public:
@@ -112,120 +133,44 @@ public:
 };
 
 
-class csParamsEnum {
-public:
-    static constexpr auto x = 1;
-    static constexpr auto y = 2;
-    static constexpr auto w = 3;
-    static constexpr auto h = 4;
-
-    static constexpr auto x2 = 5;
-    static constexpr auto y2 = 6;
-    static constexpr auto w2 = 7;
-    static constexpr auto h2 = 8;
-
-    static constexpr auto speed = 10;
-    static constexpr auto dir = 11;
-
-    // colors
-    static constexpr auto color1 = 20;
-    static constexpr auto color2 = 21;
-    static constexpr auto color3 = 22;
-    static constexpr auto color4 = 23;
-
-    // some special param
-    static constexpr auto spec1 = 32;
-    static constexpr auto spec2 = 33;
-    static constexpr auto spec3 = 34;
-    static constexpr auto spec4 = 35;
-    static constexpr auto spec5 = 36;
-    static constexpr auto spec6 = 37;
-    static constexpr auto spec7 = 38;
-    static constexpr auto spec8 = 39;
-    static constexpr auto spec9 = 40;
-    static constexpr auto spec10 = 41;
-    static constexpr auto spec11 = 42;
-    static constexpr auto spec12 = 43;
-    static constexpr auto spec13 = 44;
-    static constexpr auto spec14 = 45;
-    static constexpr auto spec15 = 46;
-    static constexpr auto spec16 = 47;
-};
-
-class csParamsRect : public csParamsBase {
-public:
-    csRect rect{};
-
-    uint16_t count() const noexcept override { return 4; }
-
-    const char* getParamName(uint8_t paramNum) const noexcept override {
-        switch (paramNum) {
-        case csParamsEnum::x: return "x";
-        case csParamsEnum::y: return "y";
-        case csParamsEnum::w: return "w";
-        case csParamsEnum::h: return "h";
-        default: return nullptr;
-        }
-    }
-
-    bool getInt(uint8_t paramNum, uint32_t& value) const noexcept override {
-        switch (paramNum) {
-        case csParamsEnum::x: value = static_cast<uint32_t>(rect.x); return true;
-        case csParamsEnum::y: value = static_cast<uint32_t>(rect.y); return true;
-        case csParamsEnum::w: value = static_cast<uint32_t>(rect.width); return true;
-        case csParamsEnum::h: value = static_cast<uint32_t>(rect.height); return true;
-        default: return false;
-        }
-    }
-
-    void setInt(uint8_t paramNum, uint32_t value) noexcept override {
-        switch (paramNum) {
-        case csParamsEnum::x: rect.x = to_coord(value); break;
-        case csParamsEnum::y: rect.y = to_coord(value); break;
-        case csParamsEnum::w: rect.width = to_size(value); break;
-        case csParamsEnum::h: rect.height = to_size(value); break;
-        default: break;
-        }
-    }
-
-    void reset() noexcept override { rect = csRect{}; }
-};
-
 class csEventBase {
     // Empty - WIP
 };
 
 class csRenderBase {
-protected:
-    csParamsBase* params_{nullptr};
-
-    virtual csParamsBase* createParams() const { return new csParamsRect(); }
-
 public:
-    csRenderBase() : params_(createParams()) {}
-    virtual ~csRenderBase() { delete params_; }
 
-    inline csParamsBase* getParams() const noexcept { return params_; }
+    virtual ~csRenderBase() = default;
 
-    virtual void recalc(const csMatrixPixels& led, csRandGen& rand, uint16_t currTime) {
-        (void)led;
+    virtual uint8_t getParamsCount() const {
+        return 0;
+    }
+
+    virtual void getParamInfo(uint8_t paramNum,
+                              ParamType& paramType,
+                              const char*& paramName,
+                              paramPtr& ptr) {
+        (void)paramNum;
+        paramType = ParamType::None;
+        paramName = nullptr;
+        ptr = nullptr;
+    }
+
+    virtual void recalc(csRandGen& rand, uint16_t currTime) {
         (void)rand;
         (void)currTime;
     }
 
-    virtual void render(csMatrixPixels& led, csRandGen& rand, uint16_t currTime) const {
-        (void)led;
+    virtual void render(csRandGen& rand, uint16_t currTime) const {
         (void)rand;
         (void)currTime;
     }
 
     // generate one event to external object
-    virtual bool getEvent(const csMatrixPixels& led,
-                          csRandGen& rand,
+    virtual bool getEvent(csRandGen& rand,
                           uint16_t currTime,
                           csEventBase& event,
                           uint16_t eventNum) const {
-        (void)led;
         (void)rand;
         (void)currTime;
         (void)event;
@@ -239,32 +184,78 @@ public:
     }
 };
 
-class csRenderGradient final : public csRenderBase {
+class csRenderMatrixBase : public csRenderBase {
+protected:
+    csMatrixPixels* matrix = nullptr;
+
+    csRect rect;
 public:
-    void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
+    virtual ~csRenderMatrixBase() = default;
+
+    void setMatrix(csMatrixPixels* m) noexcept { matrix = m; }
+    void setMatrix(csMatrixPixels& m) noexcept { matrix = &m; }
+
+    static constexpr uint8_t paramRenderRect = 1;
+    static constexpr uint8_t paramMatrixDest = 2;
+
+    uint8_t getParamsCount() const override {
+        return 2;
+    }
+
+    void getParamInfo(uint8_t paramNum,
+                      ParamType& paramType,
+                      const char*& paramName,
+                      paramPtr& ptr) override {
+        switch (paramNum) {
+            case 1:
+                paramType = ParamType::Rect;
+                paramName = "Render rect";
+                ptr = &rect;
+                break;
+            case 2:
+                paramType = ParamType::Matrix;
+                paramName = "Matrix dest";
+                ptr = &matrix;
+                break;
+            default:
+                paramType = ParamType::None;
+                paramName = nullptr;
+                ptr = nullptr;
+                break;
+        }
+    }
+};
+
+
+class csRenderGradient final : public csRenderMatrixBase {
+public:
+    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+        if (!matrix) {
+            return;
+        }
         const float t = static_cast<float>(currTime) * 0.001f;
 
         auto wave = [](float v) -> uint8_t {
             return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
         };
 
-        const int width = static_cast<int>(matrix.width());
-        const int height = static_cast<int>(matrix.height());
+        const auto width = matrix->width();
+        const auto height = matrix->height();
 
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
+        for (tMatrixPixelsSize y = 0; y < height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < width; ++x) {
                 const float xf = static_cast<float>(x) * 0.4f;
                 const float yf = static_cast<float>(y) * 0.4f;
                 const uint8_t r = wave(t * 0.8f + xf);
                 const uint8_t g = wave(t * 1.0f + yf);
                 const uint8_t b = wave(t * 0.6f + xf + yf * 0.5f);
-                matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }
 };
 
-class csRenderGradientFP final : public csRenderBase {
+class csRenderGradientFP final : public csRenderMatrixBase {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
     static uint8_t wave_fp(math::csFP32 phase) noexcept {
@@ -281,7 +272,10 @@ public:
         return static_cast<uint8_t>(v);
     }
 
-    void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
+    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+        if (!matrix) {
+            return;
+        }
         using namespace math;
 
         // Convert milliseconds to seconds in 16.16 fixed-point WITHOUT float:
@@ -294,33 +288,36 @@ public:
         static const csFP32 k06 = csFP32::float_const(0.5f);
         static const csFP32 k04 = csFP32::float_const(0.3f);
         static const csFP32 k05 = csFP32::float_const(0.4f);
-        const int width = static_cast<int>(matrix.width());
-        const int height = static_cast<int>(matrix.height());
+        const auto width = matrix->width();
+        const auto height = matrix->height();
 
-        for (int y = 0; y < height; ++y) {
+        for (tMatrixPixelsSize y = 0; y < height; ++y) {
             const csFP32 yf = csFP32::from_int(y);
             const csFP32 yf_scaled = yf * k04;
-            for (int x = 0; x < width; ++x) {
+            for (tMatrixPixelsSize x = 0; x < width; ++x) {
                 const csFP32 xf = csFP32::from_int(x);
                 const csFP32 xf_scaled = xf * k04;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
                 const uint8_t b = wave_fp(t * k06 + xf_scaled + yf_scaled * k05);
-                matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }
 };
 
-class csRenderPlasma final : public csRenderBase {
+class csRenderPlasma final : public csRenderMatrixBase {
 public:
-    void render(csMatrixPixels& matrix, csRandGen& /*rand*/, uint16_t currTime) const override {
+    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+        if (!matrix) {
+            return;
+        }
         const float t = static_cast<float>(currTime) * 0.0025f;
-        const int width = static_cast<int>(matrix.width());
-        const int height = static_cast<int>(matrix.height());
+        const auto width = matrix->width();
+        const auto height = matrix->height();
 
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
+        for (tMatrixPixelsSize y = 0; y < height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < width; ++x) {
                 const float xf = static_cast<float>(x);
                 const float yf = static_cast<float>(y);
                 const float v = sin(xf * 0.35f + t) + sin(yf * 0.35f - t) + sin((xf + yf) * 0.25f + t * 0.5f);
@@ -328,7 +325,7 @@ public:
                 const uint8_t r = static_cast<uint8_t>(norm * 255.0f);
                 const uint8_t g = static_cast<uint8_t>((1.0f - norm) * 255.0f);
                 const uint8_t b = static_cast<uint8_t>((0.5f + 0.5f * sin(t + xf * 0.1f)) * 255.0f);
-                matrix.setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }

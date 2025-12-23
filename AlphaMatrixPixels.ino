@@ -41,6 +41,8 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
+    plasma.setMatrix(canvas);
+
     amp::wifi_ota::setup();
 }
 
@@ -62,7 +64,7 @@ void loop() {
 #endif
 
     const uint16_t t = static_cast<uint16_t>(millis());
-    plasma.render(canvas, rng, t);
+    plasma.render(rng, t);
     copyCanvasToLeds();
     FastLED.show();
     delay(16); // ~60 FPS

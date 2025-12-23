@@ -45,6 +45,12 @@ public:
     csRandGen randGen{};
     csRenderBase* effect{nullptr};
 
+    void bindEffectMatrix() {
+        if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(effect)) {
+            m->setMatrix(matrix);
+        }
+    }
+
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
             return false;
@@ -68,6 +74,7 @@ public:
         recreateMatrix(16, 16);
         delete effect;
         effect = new csRenderGradient();
+        bindEffectMatrix();
         return true;
     }
 
@@ -90,21 +97,25 @@ public:
                             h = 5;
                         }
                         recreateMatrix(w, h);
+                        bindEffectMatrix();
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
                         effect = new csRenderGradient();
+                        bindEffectMatrix();
                     } else if (event.key.keysym.sym == SDLK_e) {
                         delete effect;
                         effect = new csRenderGradientFP();
+                        bindEffectMatrix();
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
                         effect = new csRenderPlasma();
+                        bindEffectMatrix();
                     }
                 }
             }
 
             if (effect) {
-                effect->render(matrix, randGen, static_cast<uint16_t>(SDL_GetTicks()));
+                effect->render(randGen, static_cast<uint16_t>(SDL_GetTicks()));
             }
             renderProc();
             SDL_Delay(16); // ~60 FPS
