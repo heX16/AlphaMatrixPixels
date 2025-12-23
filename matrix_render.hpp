@@ -202,8 +202,14 @@ protected:
 public:
     virtual ~csRenderMatrixBase() = default;
 
-    void setMatrix(csMatrixPixels* m) noexcept { matrix = m; }
-    void setMatrix(csMatrixPixels& m) noexcept { matrix = &m; }
+    void setMatrix(csMatrixPixels* m) noexcept {
+        matrix = m;
+        updateRenderRect();
+    }
+    void setMatrix(csMatrixPixels& m) noexcept {
+        matrix = &m;
+        updateRenderRect();
+    }
 
     static constexpr uint8_t paramRenderRectAutosize = 3;
     static constexpr uint8_t paramRenderRect = 1;
@@ -259,7 +265,9 @@ public:
             return;
         }
 
-        rect = matrix->getRect();
+        if (renderRectAutosize) {
+            rect = matrix->getRect();
+        }
     }
 };
 
