@@ -115,12 +115,14 @@ public:
     // NOTE: parameter indices start at 1 (not 0).
     virtual void getParamInfo(uint8_t paramNum,
                               ParamType& paramType,
+                              paramPtr& ptr,
                               const char*& paramName,
-                              paramPtr& ptr) {
+                              bool& paramDisabled) {
         (void)paramNum;
         paramType = ParamType::None;
         paramName = nullptr;
         ptr = nullptr;
+        paramDisabled = false;
     }
 
     // Notification hook.
@@ -192,8 +194,10 @@ public:
 
     void getParamInfo(uint8_t paramNum,
                       ParamType& paramType,
+                      paramPtr& ptr,
                       const char*& paramName,
-                      paramPtr& ptr) override {
+                      bool& paramDisabled) override {
+        paramDisabled = false;
         switch (paramNum) {
             case paramRenderRectAutosize:
                 paramType = ParamType::Bool;
