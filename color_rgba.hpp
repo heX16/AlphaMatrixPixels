@@ -8,6 +8,41 @@ using ::uint8_t;
 using ::uint16_t;
 using ::uint32_t;
 
+// Forward declaration
+struct csColorRGBA;
+
+struct csColorRGBA16 {
+    uint16_t a;
+    uint16_t r;
+    uint16_t g;
+    uint16_t b;
+
+    csColorRGBA16() : a(0), r(0), g(0), b(0) {}
+    csColorRGBA16(uint16_t a_, uint16_t r_, uint16_t g_, uint16_t b_) : a(a_), r(r_), g(g_), b(b_) {}
+
+    csColorRGBA16& operator+=(const csColorRGBA16& other) noexcept {
+        a += other.a;
+        r += other.r;
+        g += other.g;
+        b += other.b;
+        return *this;
+    }
+
+    // Divide all channels by constant with rounding to nearest.
+    [[nodiscard]] inline csColorRGBA16 div(uint16_t d) const noexcept {
+        const uint16_t half = d / 2u;
+        return csColorRGBA16{
+            static_cast<uint16_t>((a + half) / d),
+            static_cast<uint16_t>((r + half) / d),
+            static_cast<uint16_t>((g + half) / d),
+            static_cast<uint16_t>((b + half) / d)
+        };
+    }
+
+    // Convert back to 8-bit color by dividing and rounding.
+    [[nodiscard]] inline csColorRGBA toColor8(uint16_t divisor) const noexcept;
+};
+
 // 8-bit multiply scaled by 1/255 with rounding-to-nearest.
 // Example: mul8(128, 128) ~= round(128*128/255) = 64.
 inline constexpr uint8_t mul8(uint8_t a, uint8_t b) noexcept {
@@ -142,11 +177,32 @@ struct CS_PACKED csColorRGBA {
 
         return csColorRGBA{Aout, Rout, Gout, Bout};
     }
+
+    // Add channels of this color to 'other' and return 16-bit result (no saturation).
+    [[nodiscard]] inline csColorRGBA16 sum(csColorRGBA other) const noexcept {
+        return csColorRGBA16{
+            static_cast<uint16_t>(static_cast<uint16_t>(a) + static_cast<uint16_t>(other.a)),
+            static_cast<uint16_t>(static_cast<uint16_t>(r) + static_cast<uint16_t>(other.r)),
+            static_cast<uint16_t>(static_cast<uint16_t>(g) + static_cast<uint16_t>(other.g)),
+            static_cast<uint16_t>(static_cast<uint16_t>(b) + static_cast<uint16_t>(other.b))
+        };
+    }
 };
 
 #if defined(_MSC_VER)
 #  pragma pack(pop)
 #endif
+
+// csColorRGBA16::toColor8 implementation (defined after csColorRGBA is complete)
+inline csColorRGBA csColorRGBA16::toColor8(uint16_t divisor) const noexcept {
+    const uint16_t half = divisor / 2u;
+    return csColorRGBA{
+        static_cast<uint8_t>((a + half) / divisor),
+        static_cast<uint8_t>((r + half) / divisor),
+        static_cast<uint8_t>((g + half) / divisor),
+        static_cast<uint8_t>((b + half) / divisor)
+    };
+}
 
 // TODO: OPTIMIZE!!! - `uint8_t`
 // Linear interpolation of two channels with t in [0..255]; t=0 -> a, t=255 -> b.

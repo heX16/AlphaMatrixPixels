@@ -144,7 +144,9 @@ public:
         }
     }
 
-    // calc average color of area. fast.
+    // Calc average color of area. Fast.
+    // Uses two-level hierarchical averaging to avoid overflow in uint16_t accumulators.
+    // Max area: 65536 pixels (256x256). Larger areas return transparent black.
     [[nodiscard]] inline csColorRGBA getAreaColor(csRect area) const noexcept {
         const csRect bounded = area.intersect(getRect());
         if (bounded.empty()) {
@@ -153,12 +155,28 @@ public:
 
         const tMatrixPixelsSize w = bounded.width;
         const tMatrixPixelsSize h = bounded.height;
-        const uint64_t n = static_cast<uint64_t>(w) * static_cast<uint64_t>(h);
+        const uint32_t pixel_count = static_cast<uint32_t>(w) * static_cast<uint32_t>(h);
 
-        uint64_t sum_a = 0;
-        uint64_t sum_r = 0;
-        uint64_t sum_g = 0;
-        uint64_t sum_b = 0;
+        // Two-level averaging: sum1 accumulates up to kChunk pixels, then averages into sum2.
+        // kChunk chosen so sum1 doesn't overflow: 255 * 256 = 65280 < 65535 (uint16_t max).
+        static constexpr uint16_t kChunk = 256;
+        
+        // kMaxPixels = kChunk * kChunk, ensuring sum2 doesn't overflow:
+        // After div(kChunk), each component is max 255, so 255 * 256 = 65280 < 65535.
+        static constexpr uint32_t kMaxPixels = static_cast<uint32_t>(kChunk) * kChunk;
+        
+        // Reject too large areas to avoid overflow; user should handle this.
+        if (pixel_count > kMaxPixels) {
+            return csColorRGBA{0, 0, 0, 0};
+        }
+
+        const csColorRGBA kZero{0, 0, 0, 0};
+
+        csColorRGBA16 sum1;
+        uint16_t count1 = 0;
+
+        csColorRGBA16 sum2;
+        uint16_t count2 = 0;
 
         const size_t stride = size_x_;
         const size_t row_start = index(bounded.x, bounded.y);
@@ -167,23 +185,29 @@ public:
         const csColorRGBA* ptr = pixels_ + row_start;
         for (tMatrixPixelsSize iy = 0; iy < h; ++iy) {
             for (tMatrixPixelsSize ix = 0; ix < w; ++ix) {
-                const csColorRGBA c = *ptr++;
-                sum_a += c.a;
-                sum_r += c.r;
-                sum_g += c.g;
-                sum_b += c.b;
+                sum1 += (*ptr++).sum(kZero);
+                ++count1;
+
+                if (count1 == kChunk) {
+                    sum2 += sum1.div(kChunk);
+                    ++count2;
+                    sum1 = csColorRGBA16{};
+                    count1 = 0;
+                }
             }
             ptr += row_advance;
         }
 
-        // Average per channel with rounding to nearest.
-        const uint64_t half = n / 2u;
-        return csColorRGBA{
-            static_cast<uint8_t>((sum_a + half) / n),
-            static_cast<uint8_t>((sum_r + half) / n),
-            static_cast<uint8_t>((sum_g + half) / n),
-            static_cast<uint8_t>((sum_b + half) / n)
-        };
+        if (count1 > 0) {
+            sum2 += sum1.div(count1);
+            ++count2;
+        }
+
+        if (count2 == 0) {
+            return csColorRGBA{0, 0, 0, 0};
+        }
+
+        return sum2.toColor8(count2);
     }
 
     /*
