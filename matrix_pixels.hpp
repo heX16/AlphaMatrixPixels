@@ -144,6 +144,48 @@ public:
         }
     }
 
+    // calc average color of area. fast.
+    [[nodiscard]] inline csColorRGBA getAreaColor(csRect area) const noexcept {
+        const csRect bounded = area.intersect(getRect());
+        if (bounded.empty()) {
+            return csColorRGBA{0, 0, 0, 0};
+        }
+
+        const tMatrixPixelsSize w = bounded.width;
+        const tMatrixPixelsSize h = bounded.height;
+        const uint64_t n = static_cast<uint64_t>(w) * static_cast<uint64_t>(h);
+
+        uint64_t sum_a = 0;
+        uint64_t sum_r = 0;
+        uint64_t sum_g = 0;
+        uint64_t sum_b = 0;
+
+        const size_t stride = size_x_;
+        const size_t row_start = index(bounded.x, bounded.y);
+        const size_t row_advance = stride - static_cast<size_t>(w);
+
+        const csColorRGBA* ptr = pixels_ + row_start;
+        for (tMatrixPixelsSize iy = 0; iy < h; ++iy) {
+            for (tMatrixPixelsSize ix = 0; ix < w; ++ix) {
+                const csColorRGBA c = *ptr++;
+                sum_a += c.a;
+                sum_r += c.r;
+                sum_g += c.g;
+                sum_b += c.b;
+            }
+            ptr += row_advance;
+        }
+
+        // Average per channel with rounding to nearest.
+        const uint64_t half = n / 2u;
+        return csColorRGBA{
+            static_cast<uint8_t>((sum_a + half) / n),
+            static_cast<uint8_t>((sum_r + half) / n),
+            static_cast<uint8_t>((sum_g + half) / n),
+            static_cast<uint8_t>((sum_b + half) / n)
+        };
+    }
+
     /*
     TODO:
 
@@ -156,9 +198,6 @@ public:
 
     // overwrite dst area. fast.
     `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
-
-    // calc average color of area. fast.
-    `csColorRGBA getAreaColor(csRect area)`
     */
 
 private:
