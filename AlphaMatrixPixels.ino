@@ -1,5 +1,6 @@
 #include <FastLED.h>
-#include "matrix_render.hpp"
+#include "matrix_render_efffects.hpp"
+#include "color_rgba.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
 

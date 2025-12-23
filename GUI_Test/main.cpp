@@ -9,6 +9,7 @@
 
 #include "../color_rgba.hpp"
 #include "../matrix_render.hpp"
+#include "../matrix_render_efffects.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
