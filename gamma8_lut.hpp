@@ -11,7 +11,8 @@
 //
 // If you want a different gamma curve, you can regenerate a new 256-entry table
 // with `tools/gen_gamma_lut.py` and replace the values below.
-const uint8_t amp_gamma8[256] = {
+// IMPORTANT: keep it in PROGMEM (Flash), not RAM.
+static const uint8_t PROGMEM amp_gamma8[256] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,   1,   1,
     1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,   2,   3,   3,   3,   3,

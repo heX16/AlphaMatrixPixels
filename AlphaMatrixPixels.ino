@@ -11,6 +11,16 @@
 #define AMP_ENABLE_GAMMA 1
 #endif
 
+// FastLED color correction (channel scaling), e.g. TypicalLEDStrip.
+// This is NOT gamma correction; it can be enabled together with gamma.
+#ifndef AMP_ENABLE_COLOR_CORRECTION
+#define AMP_ENABLE_COLOR_CORRECTION 1
+#endif
+
+#ifndef AMP_COLOR_CORRECTION
+#define AMP_COLOR_CORRECTION TypicalLEDStrip
+#endif
+
 constexpr uint8_t WIDTH = 8;
 constexpr uint8_t HEIGHT = 8;
 constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
@@ -38,11 +48,23 @@ void setup() {
 #endif
 
 #if (LED_INIT_MODE == 1)
+#if AMP_ENABLE_COLOR_CORRECTION
+    FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cLedCount).setCorrection(AMP_COLOR_CORRECTION);
+#else
     FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cLedCount);
+#endif
 #elif (LED_INIT_MODE == 2)
+#if AMP_ENABLE_COLOR_CORRECTION
+    FastLED.addLeds<LED_CHIPSET, cDataPin, cLedRgbOrder>(leds, cLedCount).setCorrection(AMP_COLOR_CORRECTION);
+#else
     FastLED.addLeds<LED_CHIPSET, cDataPin, cLedRgbOrder>(leds, cLedCount);
+#endif
 #elif (LED_INIT_MODE == 3)
+#if AMP_ENABLE_COLOR_CORRECTION
+    FastLED.addLeds<LED_CHIPSET, cLedRgbOrder>(leds, cLedCount).setCorrection(AMP_COLOR_CORRECTION);
+#else
     FastLED.addLeds<LED_CHIPSET, cLedRgbOrder>(leds, cLedCount);
+#endif
 #else
     #error "Invalid LED_INIT_MODE"
 #endif
@@ -73,20 +95,16 @@ static void copyCanvasToLeds() {
     for (uint8_t y = 0; y < HEIGHT; ++y) {
         for (uint8_t x = 0; x < WIDTH; ++x) {
             const amp::csColorRGBA c = canvas.getPixel(x, y);
-            leds[xyToIndex(x, y)] = CRGB(c.r, c.g, c.b);
+            CRGB out(c.r, c.g, c.b);
+#if AMP_ENABLE_GAMMA
+            out.r = amp_gamma_correct8(out.r);
+            out.g = amp_gamma_correct8(out.g);
+            out.b = amp_gamma_correct8(out.b);
+#endif
+            leds[xyToIndex(x, y)] = out;
         }
     }
 }
-
-#if AMP_ENABLE_GAMMA
-static inline void applyGammaToLeds(CRGB* buf, uint16_t count) {
-    for (uint16_t i = 0; i < count; ++i) {
-        buf[i].r = amp_gamma_correct8(buf[i].r);
-        buf[i].g = amp_gamma_correct8(buf[i].g);
-        buf[i].b = amp_gamma_correct8(buf[i].b);
-    }
-}
-#endif
 
 void loop() {
     amp::wifi_ota::handle();
@@ -102,9 +120,6 @@ void loop() {
     glyph.symbolIndex = static_cast<uint8_t>((millis() / 1000u) % 10u);
     glyph.render(rng, t); // Overlay over plasma
     copyCanvasToLeds();
-#if AMP_ENABLE_GAMMA
-    applyGammaToLeds(leds, NUM_LEDS);
-#endif
     FastLED.show();
     delay(16); // ~60 FPS
 }
