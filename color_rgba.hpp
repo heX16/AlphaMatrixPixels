@@ -204,13 +204,27 @@ inline csColorRGBA csColorRGBA16::toColor8(uint16_t divisor) const noexcept {
     };
 }
 
-// TODO: OPTIMIZE!!! - `uint8_t`
+// TODO: 1. use `AMP_CONSTEXPR` instead of `if (__cplusplus >= 201402L`
+// TODO: 2. OPTIMIZE!!! - use a `uint8_t`
 // Linear interpolation of two channels with t in [0..255]; t=0 -> a, t=255 -> b.
+//
+// Note about constexpr:
+// - C++11 constexpr functions are restricted to a single return statement.
+// - Some embedded/Arduino toolchains still compile as C++11, so we only enable
+//   constexpr when C++14 or newer is available.
+#if (__cplusplus >= 201402L)
 inline constexpr uint8_t lerp8(uint8_t a, uint8_t b, uint8_t t) noexcept {
     const int32_t delta = static_cast<int32_t>(b) - static_cast<int32_t>(a);
     const int32_t scaled = (delta * static_cast<int32_t>(t) + 127) / 255;
     return static_cast<uint8_t>(static_cast<int32_t>(a) + scaled);
 }
+#else
+inline uint8_t lerp8(uint8_t a, uint8_t b, uint8_t t) noexcept {
+    const int32_t delta = static_cast<int32_t>(b) - static_cast<int32_t>(a);
+    const int32_t scaled = (delta * static_cast<int32_t>(t) + 127) / 255;
+    return static_cast<uint8_t>(static_cast<int32_t>(a) + scaled);
+}
+#endif
 
 // Linear interpolation of two colors; t in [0..255] (fixed-point 8.8 style).
 // t=0 -> left, t=255 -> right.
