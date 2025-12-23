@@ -21,6 +21,7 @@ using amp::math::min;
 using amp::csRenderGradient;
 using amp::csRenderGradientFP;
 using amp::csRenderPlasma;
+using amp::csRenderGlyph;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -50,6 +51,19 @@ public:
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(effect)) {
             m->setMatrix(matrix);
         }
+    }
+
+    void initGlyphDefaults(csRenderGlyph& glyph) const noexcept {
+        glyph.symbolColor = csColorRGBA{255, 255, 255, 255};
+        glyph.backgroundColor = csColorRGBA{255, 0, 0, 0};
+        glyph.symbolIndex = 0;
+        glyph.renderRectAutosize = false;
+        glyph.rect = amp::csRect{
+            0,
+            0,
+            static_cast<amp::tMatrixPixelsSize>(FONT_WIDTH + 2),
+            static_cast<amp::tMatrixPixelsSize>(FONT_HEIGHT + 2)
+        };
     }
 
     bool initSDL() {
@@ -111,12 +125,24 @@ public:
                         delete effect;
                         effect = new csRenderPlasma();
                         bindEffectMatrix();
+                    } else if (event.key.keysym.sym == SDLK_r) {
+                        delete effect;
+                        auto* glyph = new csRenderGlyph();
+                        initGlyphDefaults(*glyph);
+                        effect = glyph;
+                        bindEffectMatrix();
                     }
                 }
             }
 
             if (effect) {
-                effect->render(randGen, static_cast<uint16_t>(SDL_GetTicks()));
+                const uint32_t ticks = SDL_GetTicks();
+                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
+                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
+                    glyph->render(randGen, static_cast<uint16_t>(ticks));
+                } else {
+                    effect->render(randGen, static_cast<uint16_t>(ticks));
+                }
             }
             renderProc();
             SDL_Delay(16); // ~60 FPS

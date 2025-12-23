@@ -234,7 +234,7 @@ public:
         }
     }
 
-    void updateRenderRect() {
+    virtual void updateRenderRect() {
         if (!matrix) {
             return;
         }

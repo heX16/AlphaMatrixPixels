@@ -189,6 +189,19 @@ public:
         }
     }
 
+    void updateRenderRect() override {
+        if (!matrix || !renderRectAutosize) {
+            return;
+        }
+        const csRect mrect = matrix->getRect();
+        rect = csRect{
+            mrect.x,
+            mrect.y,
+            static_cast<tMatrixPixelsSize>(FONT_WIDTH),
+            static_cast<tMatrixPixelsSize>(FONT_HEIGHT)
+        };
+    }
+
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
         if (!matrix) {
             return;
@@ -213,6 +226,9 @@ public:
             return;
         }
 
+        const tMatrixPixelsCoord offsetX = rect.x + to_coord((rect.width - glyphWidth) / 2);
+        const tMatrixPixelsCoord offsetY = rect.y + to_coord((rect.height - glyphHeight) / 2);
+
         const uint8_t safeIndex = (symbolIndex < FONT_COUNT) ? symbolIndex : static_cast<uint8_t>(FONT_COUNT - 1);
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
             const TFontBitLine glyphRow = LedFont[safeIndex][row];
@@ -221,8 +237,8 @@ public:
                 if ((glyphRow & mask) == 0) {
                     continue;
                 }
-                const tMatrixPixelsCoord px = rect.x + to_coord(col);
-                const tMatrixPixelsCoord py = rect.y + to_coord(row);
+                const tMatrixPixelsCoord px = offsetX + to_coord(col);
+                const tMatrixPixelsCoord py = offsetY + to_coord(row);
                 matrix->setPixel(px, py, symbolColor);
             }
         }
