@@ -9,7 +9,7 @@
 #include "math.hpp"
 #include "matrix_render.hpp"
 #include "font3x5.h"
-#include "bit_matrix.hpp"
+#include "matrix_boolean.hpp"
 
 
 
@@ -616,7 +616,7 @@ public:
     uint16_t lastUpdateTime = 0;
     uint8_t snowfallCount = 0; // Counter for compactSnow calls
     bool lastDirectionWasLeft = false; // Alternating priority for moveDownSide directions
-    csBitMatrix* bitmap = nullptr;
+    csMatrixBoolean* bitmap = nullptr;
     uint16_t clearingIterations = 0; // Clearing mode counter: >0 means active, decreases to 0
 
     csRenderSnowfall() = default;
@@ -785,7 +785,7 @@ private:
             return;
         }
 
-        bitmap = new csBitMatrix(rect.width, rect.height, true);
+        bitmap = new csMatrixBoolean(rect.width, rect.height, true);
         // Reset state when bitmap is recreated
         hasActiveSnowflake = false;
         filledPixelsCount = 0;

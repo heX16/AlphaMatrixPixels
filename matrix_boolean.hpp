@@ -12,20 +12,20 @@ using ::size_t;
 using ::uint8_t;
 
 // Header-only bit matrix where each pixel is represented by a single bit (boolean).
-class csBitMatrix {
+class csMatrixBoolean {
 public:
     // Construct matrix with given size, all bits cleared.
-    csBitMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height, bool defaultOutOfBoundsValue = false)
+    csMatrixBoolean(tMatrixPixelsSize width, tMatrixPixelsSize height, bool defaultOutOfBoundsValue = false)
         : outOfBoundsValue{defaultOutOfBoundsValue}, width_{width}, height_{height}, bytes_(allocate(width, height)) {}
 
     // Copy constructor: makes deep copy of bit buffer.
-    csBitMatrix(const csBitMatrix& other)
+    csMatrixBoolean(const csMatrixBoolean& other)
         : outOfBoundsValue{other.outOfBoundsValue}, width_{other.width_}, height_{other.height_}, bytes_(allocate(width_, height_)) {
         copyBytes(bytes_, other.bytes_, byteCount());
     }
 
     // Move constructor: transfers ownership of buffer, leaving source empty.
-    csBitMatrix(csBitMatrix&& other) noexcept
+    csMatrixBoolean(csMatrixBoolean&& other) noexcept
         : outOfBoundsValue{other.outOfBoundsValue}, width_{other.width_}, height_{other.height_}, bytes_{other.bytes_} {
         other.bytes_ = nullptr;
         other.width_ = 0;
@@ -34,7 +34,7 @@ public:
     }
 
     // Copy assignment: deep copy when assigning existing object.
-    csBitMatrix& operator=(const csBitMatrix& other) {
+    csMatrixBoolean& operator=(const csMatrixBoolean& other) {
         if (this != &other) {
             resize(other.width_, other.height_);
             copyBytes(bytes_, other.bytes_, byteCount());
@@ -44,7 +44,7 @@ public:
     }
 
     // Move assignment: steal buffer from other, reset other to empty.
-    csBitMatrix& operator=(csBitMatrix&& other) noexcept {
+    csMatrixBoolean& operator=(csMatrixBoolean&& other) noexcept {
         if (this != &other) {
             delete[] bytes_;
             width_ = other.width_;
@@ -59,7 +59,7 @@ public:
         return *this;
     }
 
-    ~csBitMatrix() { delete[] bytes_; }
+    ~csMatrixBoolean() { delete[] bytes_; }
 
     [[nodiscard]] tMatrixPixelsSize width() const noexcept { return width_; }
     [[nodiscard]] tMatrixPixelsSize height() const noexcept { return height_; }
