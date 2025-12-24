@@ -602,7 +602,6 @@ public:
     static constexpr uint8_t paramLast = paramSnowflake_WIP;
 
     csColorRGBA color{255, 255, 255, 255};
-    csColorRGBA backgroundColor{0, 0, 0, 0};
 
     // State fields (not mutable, changed in recalc())
     tMatrixPixelsCoord currentX = 0;
@@ -632,10 +631,6 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramColorBackground:
-                info.ptr = &backgroundColor;
-                info.disabled = false;
-                break;
             case paramSnowflake_WIP:
                 // WIP
                 info.disabled = true;
@@ -651,11 +646,8 @@ public:
     }
 
     void recalc(csRandGen& rand, uint16_t currTime) override {
-        if (!matrix) {
-            return;
-        }
-
-        if (rect.empty() || !bitmap) {
+        // Algorithm works independently of matrix, only needs rect and bitmap
+        if (!bitmap || rect.width == 0 || rect.height == 0) {
             return;
         }
 
@@ -684,9 +676,9 @@ public:
 
         // Create new snowflake if none active
         if (!hasActiveSnowflake) {
-            // Random X position in top row
-            currentX = rect.x + to_coord(rand.rand(static_cast<uint8_t>(rect.width)));
-            currentY = rect.y;
+            // Random X position in top row (local coordinates: 0..width-1)
+            currentX = to_coord(rand.rand(static_cast<uint8_t>(rect.width)));
+            currentY = 0;
             hasActiveSnowflake = true;
             return;
         }
@@ -696,38 +688,30 @@ public:
 
         // Common fix logic
         auto fixSnowflakeAtCurrent = [&]() {
-            const tMatrixPixelsCoord localX = currentX - rect.x;
-            const tMatrixPixelsCoord localY = currentY - rect.y;
-
-            if (localX >= 0 && localX < to_coord(rect.width) &&
-                localY >= 0 && localY < to_coord(rect.height)) {
-
-                if (!bitmap->getPixel(to_size(localX), to_size(localY))) {
-                    bitmap->setPixel(to_size(localX), to_size(localY), true);
-                    ++filledPixelsCount;
-                }
+            // Logic with outOfBoundsValue = true:
+            // - If snowflake is inside bounds and position is empty: getPixel returns false,
+            //   we set the pixel and increment counter.
+            // - If snowflake is inside bounds and position already has snowflake: getPixel returns true,
+            //   we do nothing.
+            // - If snowflake is out of bounds: getPixel returns true (due to outOfBoundsValue = true),
+            //   we do nothing, counter is not incremented.
+            // No boundary check needed: getPixel with outOfBoundsValue = true already handles out-of-bounds.
+            if (!bitmap->getPixel(to_size(currentX), to_size(currentY))) {
+                bitmap->setPixel(to_size(currentX), to_size(currentY), true);
+                ++filledPixelsCount;
             }
 
             hasActiveSnowflake = false;
+            
+            // Compact snow pile: make snowflakes settle down and to the left
+            compactSnow();
         };
 
-        // Reached bottom
-        if (nextY >= rect.y + to_coord(rect.height)) {
+        // Check collision with existing snowflake or boundary
+        // outOfBoundsValue = true means getPixel returns true for out-of-bounds
+        if (bitmap->getPixel(to_size(currentX), to_size(nextY))) {
             fixSnowflakeAtCurrent();
             return;
-        }
-
-        // Collision with existing snowflake
-        const tMatrixPixelsCoord localX = currentX - rect.x;
-        const tMatrixPixelsCoord localY = nextY - rect.y;
-
-        if (localX >= 0 && localX < to_coord(rect.width) &&
-            localY >= 0 && localY < to_coord(rect.height)) {
-
-            if (bitmap->getPixel(to_size(localX), to_size(localY))) {
-                fixSnowflakeAtCurrent();
-                return;
-            }
         }
 
         // Move down
@@ -747,14 +731,7 @@ public:
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
 
-        // Clear background
-        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                matrix->setPixel(x, y, backgroundColor);
-            }
-        }
-
-        // Draw fixed snowflakes from bitmap
+        // Draw fixed snowflakes from bitmap and clear background
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const tMatrixPixelsCoord localX = x - rect.x;
@@ -766,10 +743,14 @@ public:
         }
 
         // Draw current falling snowflake
+        // Convert local coordinates to global coordinates
         if (hasActiveSnowflake) {
-            if (currentX >= target.x && currentX < endX && 
-                currentY >= target.y && currentY < endY) {
-                matrix->setPixel(currentX, currentY, color);
+            const tMatrixPixelsCoord globalX = rect.x + currentX;
+            const tMatrixPixelsCoord globalY = rect.y + currentY;
+            // Check if snowflake is within target area (intersection of rect and matrix)
+            if (globalX >= target.x && globalX < endX && 
+                globalY >= target.y && globalY < endY) {
+                matrix->setPixel(globalX, globalY, color);
             }
         }
     }
@@ -779,14 +760,76 @@ private:
         delete bitmap;
         bitmap = nullptr;
 
-        if (rect.empty() || rect.width == 0 || rect.height == 0) {
+        if (rect.empty()) {
             return;
         }
 
-        bitmap = new csBitMatrix(rect.width, rect.height);
+        bitmap = new csBitMatrix(rect.width, rect.height, true);
         // Reset state when bitmap is recreated
         hasActiveSnowflake = false;
         filledPixelsCount = 0;
+    }
+
+    // Try to move snowflake down. Returns true if moved.
+    bool moveDown(tMatrixPixelsSize x, tMatrixPixelsSize y) {
+        if (!bitmap->getPixel(x, y + 1)) {
+            // Move down
+            bitmap->setPixel(x, y, false);
+            bitmap->setPixel(x, y + 1, true);
+            return true;
+        }
+        return false;
+    }
+
+    // Try to move snowflake down-left or down-right. Returns true if moved.
+    // direction: -1 for left, +1 for right
+    bool moveDownSide(tMatrixPixelsSize x, tMatrixPixelsSize y, int direction) {
+        const int newXInt = static_cast<int>(x) + direction;
+        const tMatrixPixelsSize newX = static_cast<tMatrixPixelsSize>(newXInt);
+        if (!bitmap->getPixel(newX, y + 1)) {
+            // Move down-side
+            bitmap->setPixel(x, y, false);
+            bitmap->setPixel(newX, y + 1, true);
+            return true;
+        }
+        return false;
+    }
+
+    // Compact snow pile: make snowflakes settle down and to the left
+    void compactSnow() {
+        if (!bitmap) {
+            return;
+        }
+
+        const tMatrixPixelsSize w = bitmap->width();
+        const tMatrixPixelsSize h = bitmap->height();
+
+        // Process from bottom to top, right to left
+        // This ensures snowflakes fall correctly without glitches
+        for (tMatrixPixelsSize y = h; y > 0; --y) {
+            const tMatrixPixelsSize py = y - 1;
+            for (tMatrixPixelsSize x = w; x > 0; --x) {
+                const tMatrixPixelsSize px = x - 1;
+
+                // Check if there's a snowflake at this position
+                if (!bitmap->getPixel(px, py)) {
+                    continue;
+                }
+
+                // Try to move down first
+                if (moveDown(px, py)) {
+                    continue;
+                }
+
+                // Try to move down-left (diagonal)
+                if (moveDownSide(px, py, -1)) {
+                    continue;
+                }
+
+                // Try to move down-right (diagonal)
+                moveDownSide(px, py, +1);
+            }
+        }
     }
 };
 

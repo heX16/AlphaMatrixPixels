@@ -210,6 +210,8 @@ public:
                 }
             }
 
+            matrix.clear();
+
             if (effect) {
                 const uint32_t ticks = SDL_GetTicks();
                 if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
