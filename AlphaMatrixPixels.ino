@@ -95,11 +95,13 @@ static void copyCanvasToLeds() {
     for (uint8_t y = 0; y < HEIGHT; ++y) {
         for (uint8_t x = 0; x < WIDTH; ++x) {
             const amp::csColorRGBA c = canvas.getPixel(x, y);
-            CRGB out(c.r, c.g, c.b);
-#if AMP_ENABLE_GAMMA
-            out.r = amp_gamma_correct8(out.r);
-            out.g = amp_gamma_correct8(out.g);
-            out.b = amp_gamma_correct8(out.b);
+#if !efined(AMP_ENABLE_GAMMA)
+            const CRGB out(
+                    amp_gamma_correct8(c.r), 
+                    amp_gamma_correct8(c.g), 
+                    amp_gamma_correct8(c.b));
+#else
+            const CRGB out(c.r, c.g, c.b);
 #endif
             leds[xyToIndex(x, y)] = out;
         }
