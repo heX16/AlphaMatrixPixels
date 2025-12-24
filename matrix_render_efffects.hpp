@@ -215,6 +215,9 @@ public:
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
         csRenderMatrixBase::getParamInfo(paramNum, info);
         switch (paramNum) {
+            case paramRenderRectAutosize:
+                info.disabled = true;
+                break;
             case paramSymbolIndex:
                 info.type = ParamType::UInt8;
                 info.name = "Glyph index";
@@ -261,13 +264,13 @@ public:
     }
 
     void updateRenderRect() override {
-        if (!matrix || !renderRectAutosize || !font) {
+        if (!renderRectAutosize || !font) {
             return;
         }
-        const csRect mrect = matrix->getRect();
+
         rect = csRect{
-            mrect.x,
-            mrect.y,
+            rect.x,
+            rect.y,
             to_size(font->width()),
             to_size(font->height())
         };
@@ -594,13 +597,14 @@ public:
     }
 };
 
-// Snowfall effect: single snowflake falls down, accumulates at bottom, restarts at 50% fill.
+// Snowfall effect: single snowflake falls down, accumulates at bottom, restarts at specified fill percentage.
 class csRenderSnowfall : public csRenderDynamic {
 public:
     static constexpr uint8_t base = csRenderMatrixBase::paramLast;
     static constexpr uint8_t paramSnowflake_WIP = base + 1;
     static constexpr uint8_t paramLast = paramSnowflake_WIP;
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
+    static constexpr uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
     csColorRGBA color{255, 255, 255, 255};
 
@@ -610,9 +614,10 @@ public:
     bool hasActiveSnowflake = false;
     uint16_t filledPixelsCount = 0;
     uint16_t lastUpdateTime = 0;
-    uint8_t snowfallCount = 0; // Counter for compactSnow calls (call every 3 snowfalls)
+    uint8_t snowfallCount = 0; // Counter for compactSnow calls
     bool lastDirectionWasLeft = false; // Alternating priority for moveDownSide directions
     csBitMatrix* bitmap = nullptr;
+    uint16_t clearingIterations = 0; // Clearing mode counter: >0 means active, decreases to 0
 
     csRenderSnowfall() = default;
 
@@ -627,6 +632,9 @@ public:
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
         csRenderDynamic::getParamInfo(paramNum, info);
         switch (paramNum) {
+            case paramRenderRectAutosize:
+                info.disabled = true;
+                break;
             case paramColor:
                 info.type = ParamType::Color;
                 info.name = "Snowflake color";
@@ -656,12 +664,10 @@ public:
 
         const uint32_t totalPixels = static_cast<uint32_t>(rect.width) * static_cast<uint32_t>(rect.height);
 
-        // Check for restart at 50% fill
-        if (filledPixelsCount >= totalPixels / 2) {
-            bitmap->clear();
+        // Check for clearing mode activation at specified fill percentage
+        if (clearingIterations == 0 && filledPixelsCount >= (totalPixels * restartFillPercent) / 100) {
+            clearingIterations = rect.height;
             filledPixelsCount = 0;
-            hasActiveSnowflake = false;
-            snowfallCount = 0; // Reset counter on restart
         }
 
         // Calculate time step based on speed
@@ -713,6 +719,12 @@ public:
             if (snowfallCount >= compactSnowInterval) {
                 compactSnow();
                 snowfallCount = 0;
+            }
+
+            // Handle clearing mode
+            if (clearingIterations > 0) {
+                shiftBitmapDown();
+                --clearingIterations;
             }
         };
 
@@ -778,6 +790,9 @@ private:
         hasActiveSnowflake = false;
         filledPixelsCount = 0;
         snowfallCount = 0;
+        clearingIterations = 0;
+        lastDirectionWasLeft = false;
+        lastUpdateTime = 0;
     }
 
     // Try to move snowflake down. Returns true if moved.
@@ -845,6 +860,33 @@ private:
             }
         }
     }
+
+    // Shift bitmap down: remove bottom row, shift all rows down, clear top row
+    void shiftBitmapDown() {
+        if (!bitmap) {
+            return;
+        }
+
+        const tMatrixPixelsSize w = bitmap->width();
+        const tMatrixPixelsSize h = bitmap->height();
+        if (h == 0) {
+            return;
+        }
+
+        // Shift all rows down (from bottom to top to avoid overwriting)
+        for (tMatrixPixelsSize y = h - 1; y > 0; --y) {
+            for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                const bool value = bitmap->getPixel(x, y - 1);
+                bitmap->setPixel(x, y, value);
+            }
+        }
+
+        // Clear top row
+        for (tMatrixPixelsSize x = 0; x < w; ++x) {
+            bitmap->setPixel(x, 0, false);
+        }
+    }
+
 };
 
 } // namespace amp

@@ -71,7 +71,6 @@ CLEDController* controller = nullptr;
 
     snowfall.setMatrix(canvas);
     snowfall.color = amp::csColorRGBA{255, 255, 255, 255};
-    snowfall.backgroundColor = amp::csColorRGBA{0, 0, 0, 0};
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
     /*
@@ -100,9 +99,10 @@ void loop() {
     digitalWrite(LED_BUILTIN, ((millis() / 500u) % 2u) == 0u ? LOW : HIGH);
 #endif
 
-    const uint8_t effectIndex = static_cast<uint8_t>((millis() / 10000u) % 3u);
+    const uint8_t effectIndex = static_cast<uint8_t>((millis() / 20000u) % 3u);
     const uint16_t t = static_cast<uint16_t>(millis());
 
+    canvas.clear();
     if (effectIndex == 0) {
         plasma.render(rng, t);
     } else if (effectIndex == 1) {
