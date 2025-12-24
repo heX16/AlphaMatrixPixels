@@ -311,6 +311,7 @@ public:
         }
     }
 
+protected:
     virtual void updateRenderRect() {
         if (!matrix) {
             return;

@@ -9,6 +9,7 @@
 #include "math.hpp"
 #include "matrix_render.hpp"
 #include "font3x5.h"
+#include "bit_matrix.hpp"
 
 
 
@@ -197,8 +198,8 @@ public:
 
     void setFont(const csFontBase& f) noexcept {
         font = &f;
-        fontWidth = static_cast<tMatrixPixelsSize>(font->width());
-        fontHeight = static_cast<tMatrixPixelsSize>(font->height());
+        fontWidth = to_size(font->width());
+        fontHeight = to_size(font->height());
         if (renderRectAutosize) {
             updateRenderRect();
         }
@@ -267,8 +268,8 @@ public:
         rect = csRect{
             mrect.x,
             mrect.y,
-            static_cast<tMatrixPixelsSize>(font->width()),
-            static_cast<tMatrixPixelsSize>(font->height())
+            to_size(font->width()),
+            to_size(font->height())
         };
     }
 
@@ -290,8 +291,8 @@ public:
             }
         }
 
-        const tMatrixPixelsSize glyphWidth = math::min(rect.width, static_cast<tMatrixPixelsSize>(font->width()));
-        const tMatrixPixelsSize glyphHeight = math::min(rect.height, static_cast<tMatrixPixelsSize>(font->height()));
+        const tMatrixPixelsSize glyphWidth = math::min(rect.width, to_size(font->width()));
+        const tMatrixPixelsSize glyphHeight = math::min(rect.height, to_size(font->height()));
         if (glyphWidth == 0 || glyphHeight == 0) {
             return;
         }
@@ -590,6 +591,198 @@ public:
                 matrix->setPixel(x, y, gradColor);
             }
         }
+    }
+};
+
+// Snowfall effect: single snowflake falls down, accumulates at bottom, restarts at 50% fill.
+class csRenderSnowfall : public csRenderDynamic {
+public:
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramSnowflakeColor = base + 1;
+    static constexpr uint8_t paramLast = paramSnowflakeColor;
+
+    csColorRGBA snowflakeColor{255, 255, 255, 255};
+    csColorRGBA backgroundColor{0, 0, 0, 0};
+
+    // State fields (not mutable, changed in recalc())
+    tMatrixPixelsCoord currentX = 0;
+    tMatrixPixelsCoord currentY = 0;
+    bool hasActiveSnowflake = false;
+    uint16_t filledPixelsCount = 0;
+    uint16_t lastUpdateTime = 0;
+    csBitMatrix* bitmap = nullptr;
+
+    csRenderSnowfall() = default;
+
+    ~csRenderSnowfall() {
+        delete bitmap;
+    }
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderDynamic::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramSnowflakeColor:
+                info.type = ParamType::Color;
+                info.name = "Snowflake color";
+                info.ptr = &snowflakeColor;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramColorBackground:
+                info.ptr = &backgroundColor;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void paramChanged(uint8_t paramNum) override {
+        csRenderMatrixBase::paramChanged(paramNum);
+        if (paramNum == paramRenderRect) {
+            updateBitmap();
+        }
+    }
+
+    void recalc(csRandGen& rand, uint16_t currTime) override {
+        if (!matrix) {
+            return;
+        }
+
+        if (rect.empty() || !bitmap) {
+            return;
+        }
+
+        const uint32_t totalPixels = static_cast<uint32_t>(rect.width) * static_cast<uint32_t>(rect.height);
+
+        // Check for restart at 50% fill
+        if (filledPixelsCount >= totalPixels / 2) {
+            bitmap->clear();
+            filledPixelsCount = 0;
+            hasActiveSnowflake = false;
+        }
+
+        // Calculate time step based on speed
+        const uint16_t timeStep = static_cast<uint16_t>(50.0f / speed.to_float());
+        if (timeStep == 0) {
+            return;
+        }
+
+        // Check if it's time to update position
+        const uint16_t timeDelta = currTime - lastUpdateTime;
+        if (timeDelta < timeStep && hasActiveSnowflake) {
+            return;
+        }
+
+        lastUpdateTime = currTime;
+
+        // Create new snowflake if none active
+        if (!hasActiveSnowflake) {
+            // Random X position in top row
+            currentX = rect.x + to_coord(rand.rand(static_cast<uint8_t>(rect.width)));
+            currentY = rect.y;
+            hasActiveSnowflake = true;
+            return;
+        }
+
+        // Try to move snowflake down
+        const tMatrixPixelsCoord nextY = currentY + 1;
+
+        // Common fix logic
+        auto fixSnowflakeAtCurrent = [&]() {
+            const tMatrixPixelsCoord localX = currentX - rect.x;
+            const tMatrixPixelsCoord localY = currentY - rect.y;
+
+            if (localX >= 0 && localX < to_coord(rect.width) &&
+                localY >= 0 && localY < to_coord(rect.height)) {
+
+                if (!bitmap->getPixel(to_size(localX), to_size(localY))) {
+                    bitmap->setPixel(to_size(localX), to_size(localY), true);
+                    ++filledPixelsCount;
+                }
+            }
+
+            hasActiveSnowflake = false;
+        };
+
+        // Reached bottom
+        if (nextY >= rect.y + to_coord(rect.height)) {
+            fixSnowflakeAtCurrent();
+            return;
+        }
+
+        // Collision with existing snowflake
+        const tMatrixPixelsCoord localX = currentX - rect.x;
+        const tMatrixPixelsCoord localY = nextY - rect.y;
+
+        if (localX >= 0 && localX < to_coord(rect.width) &&
+            localY >= 0 && localY < to_coord(rect.height)) {
+
+            if (bitmap->getPixel(to_size(localX), to_size(localY))) {
+                fixSnowflakeAtCurrent();
+                return;
+            }
+        }
+
+        // Move down
+        currentY = nextY;
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (!matrix || !bitmap) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+
+        // Clear background
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                matrix->setPixel(x, y, backgroundColor);
+            }
+        }
+
+        // Draw fixed snowflakes from bitmap
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                const tMatrixPixelsCoord localX = x - rect.x;
+                const tMatrixPixelsCoord localY = y - rect.y;
+                if (bitmap->getPixel(to_size(localX), to_size(localY))) {
+                    matrix->setPixel(x, y, snowflakeColor);
+                }
+            }
+        }
+
+        // Draw current falling snowflake
+        if (hasActiveSnowflake) {
+            if (currentX >= target.x && currentX < endX && 
+                currentY >= target.y && currentY < endY) {
+                matrix->setPixel(currentX, currentY, snowflakeColor);
+            }
+        }
+    }
+
+private:
+    void updateBitmap() {
+        delete bitmap;
+        bitmap = nullptr;
+
+        if (rect.empty() || rect.width == 0 || rect.height == 0) {
+            return;
+        }
+
+        bitmap = new csBitMatrix(rect.width, rect.height);
+        // Reset state when bitmap is recreated
+        hasActiveSnowflake = false;
+        filledPixelsCount = 0;
     }
 };
 
