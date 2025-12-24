@@ -1,5 +1,6 @@
 // Minimal SDL-based viewer for matrix_pixels
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -24,6 +25,7 @@ using amp::csRenderPlasma;
 using amp::csRenderGlyph;
 using amp::csRenderCircle;
 using amp::csRenderCircleGradient;
+using amp::csRenderDynamic;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -44,6 +46,7 @@ public:
     SDL_Window* window{};
     SDL_Renderer* renderer{};
     SDL_Event event{};
+    TTF_Font* font{nullptr};
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
@@ -98,6 +101,34 @@ public:
             return false;
         }
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
+        
+        // Initialize SDL_ttf
+        if (TTF_Init() == -1) {
+            std::printf("TTF_Init error: %s\n", TTF_GetError());
+            // Continue without TTF, will use fallback rendering
+        } else {
+            // Try to load a system font
+            // Common Windows font paths
+            const char* fontPaths[] = {
+                "C:/Windows/Fonts/arial.ttf",
+                "C:/Windows/Fonts/calibri.ttf",
+                "C:/Windows/Fonts/consola.ttf",
+                nullptr
+            };
+            
+            for (int i = 0; fontPaths[i] != nullptr; ++i) {
+                font = TTF_OpenFont(fontPaths[i], 16);
+                if (font) {
+                    std::printf("Loaded font: %s\n", fontPaths[i]);
+                    break;
+                }
+            }
+            
+            if (!font) {
+                std::printf("Warning: Could not load any font, text will not be displayed\n");
+            }
+        }
+        
         recreateMatrix(16, 16);
         delete effect;
         effect = new csRenderGradientWaves();
@@ -211,6 +242,27 @@ public:
         SDL_RenderFillRect(renderer, &rectFill);
     }
 
+    void drawNumber(int x, int y, float value) {
+        // Format number as string
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "scale: %.2f", value);
+        
+        if (font) {
+            // Use SDL_ttf for rendering
+            SDL_Color color = {255, 255, 255, 255};
+            SDL_Surface* textSurface = TTF_RenderText_Solid(font, buf, color);
+            if (textSurface) {
+                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                if (textTexture) {
+                    SDL_Rect destRect = {x, y, textSurface->w, textSurface->h};
+                    SDL_RenderCopy(renderer, textTexture, nullptr, &destRect);
+                    SDL_DestroyTexture(textTexture);
+                }
+                SDL_FreeSurface(textSurface);
+            }
+        }
+    }
+
     void renderProc() {
         const RenderLayout layout = makeLayout();
 
@@ -230,6 +282,14 @@ public:
             }
         }
 
+        // Draw scale parameter
+        if (effect) {
+            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+                const float scaleValue = dynamicEffect->scale.to_float();
+                drawNumber(10, 10, scaleValue);
+            }
+        }
+
         SDL_RenderPresent(renderer);
     }
 
@@ -243,6 +303,10 @@ public:
     void done() {
         delete effect;
         delete effect2;
+        if (font) {
+            TTF_CloseFont(font);
+        }
+        TTF_Quit();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
