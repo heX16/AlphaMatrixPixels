@@ -15,21 +15,22 @@ using ::uint8_t;
 class csBitMatrix {
 public:
     // Construct matrix with given size, all bits cleared.
-    csBitMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height)
-        : width_{width}, height_{height}, bytes_(allocate(width, height)) {}
+    csBitMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height, bool outOfBoundsValue = false)
+        : width_{width}, height_{height}, outOfBoundsValue{outOfBoundsValue}, bytes_(allocate(width, height)) {}
 
     // Copy constructor: makes deep copy of bit buffer.
     csBitMatrix(const csBitMatrix& other)
-        : width_{other.width_}, height_{other.height_}, bytes_(allocate(width_, height_)) {
+        : width_{other.width_}, height_{other.height_}, outOfBoundsValue{other.outOfBoundsValue}, bytes_(allocate(width_, height_)) {
         copyBytes(bytes_, other.bytes_, byteCount());
     }
 
     // Move constructor: transfers ownership of buffer, leaving source empty.
     csBitMatrix(csBitMatrix&& other) noexcept
-        : width_{other.width_}, height_{other.height_}, bytes_{other.bytes_} {
+        : width_{other.width_}, height_{other.height_}, outOfBoundsValue{other.outOfBoundsValue}, bytes_{other.bytes_} {
         other.bytes_ = nullptr;
         other.width_ = 0;
         other.height_ = 0;
+        other.outOfBoundsValue = false;
     }
 
     // Copy assignment: deep copy when assigning existing object.
@@ -37,6 +38,7 @@ public:
         if (this != &other) {
             resize(other.width_, other.height_);
             copyBytes(bytes_, other.bytes_, byteCount());
+            outOfBoundsValue = other.outOfBoundsValue;
         }
         return *this;
     }
@@ -47,10 +49,12 @@ public:
             delete[] bytes_;
             width_ = other.width_;
             height_ = other.height_;
+            outOfBoundsValue = other.outOfBoundsValue;
             bytes_ = other.bytes_;
             other.bytes_ = nullptr;
             other.width_ = 0;
             other.height_ = 0;
+            other.outOfBoundsValue = false;
         }
         return *this;
     }
@@ -63,10 +67,13 @@ public:
     // Return full matrix bounds as a rectangle: (0, 0, width, height).
     [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
 
-    // Get bit value by linear index k. Returns false when out of bounds.
+    // Default value returned when accessing out-of-bounds coordinates.
+    bool outOfBoundsValue{false};
+
+    // Get bit value by linear index k. Returns outOfBoundsValue when out of bounds.
     [[nodiscard]] inline bool get(uint16_t k) const noexcept {
         if (k >= bitCount()) {
-            return false;
+            return outOfBoundsValue;
         }
         return (bytes_[k / 8] & (1U << (k % 8))) != 0;
     }
@@ -85,10 +92,10 @@ public:
         }
     }
 
-    // Get bit value by coordinates (x, y). Returns false when out of bounds.
+    // Get bit value by coordinates (x, y). Returns outOfBoundsValue when out of bounds.
     [[nodiscard]] inline bool getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         if (!inside(x, y)) {
-            return false;
+            return outOfBoundsValue;
         }
         const uint16_t k = static_cast<uint16_t>(y) * width_ + static_cast<uint16_t>(x);
         return get(k);
