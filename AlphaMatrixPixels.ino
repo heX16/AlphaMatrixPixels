@@ -3,7 +3,7 @@
 #include "color_rgba.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
-#include "gamma8_lut.hpp"
+#include "fastled_output.hpp"
 
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.
@@ -31,12 +31,6 @@ amp::csMatrixPixels canvas(WIDTH, HEIGHT);
 amp::csRenderPlasma plasma;
 amp::csRenderGlyph glyph;
 amp::csRandGen rng;
-
-// Map 2D coordinates into serpentine 1D index.
-uint16_t xyToIndex(uint8_t x, uint8_t y) {
-    return (y & 1u) ? static_cast<uint16_t>(y) * WIDTH + (WIDTH - 1u - x)
-                    : static_cast<uint16_t>(y) * WIDTH + x;
-}
 
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
@@ -91,23 +85,6 @@ void setup() {
     amp::wifi_ota::setup();
 }
 
-static void copyCanvasToLeds() {
-    for (uint8_t y = 0; y < HEIGHT; ++y) {
-        for (uint8_t x = 0; x < WIDTH; ++x) {
-            const amp::csColorRGBA c = canvas.getPixel(x, y);
-#if !efined(AMP_ENABLE_GAMMA)
-            const CRGB out(
-                    amp_gamma_correct8(c.r), 
-                    amp_gamma_correct8(c.g), 
-                    amp_gamma_correct8(c.b));
-#else
-            const CRGB out(c.r, c.g, c.b);
-#endif
-            leds[xyToIndex(x, y)] = out;
-        }
-    }
-}
-
 void loop() {
     amp::wifi_ota::handle();
 
@@ -121,7 +98,7 @@ void loop() {
     // Show one digit (0..9), switching once per second (same rule as GUI_Test).
     glyph.symbolIndex = static_cast<uint8_t>((millis() / 1000u) % 10u);
     glyph.render(rng, t); // Overlay over plasma
-    copyCanvasToLeds();
+    amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS);
     FastLED.show();
     delay(16); // ~60 FPS
 }
