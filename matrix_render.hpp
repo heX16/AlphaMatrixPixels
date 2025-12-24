@@ -165,9 +165,85 @@ public:
     }
 };
 
+// Contains standard parameter types without the actual fields - only their parameter ID.
+// All these parameters are disabled by default - derived classes can enable them.
+// This reserves a small pool of the most commonly used properties.
+class csEffectBaseStdParams : public csEffectBase {
+public:
+
+    // Standard parameter constants
+    static constexpr uint8_t paramMatrixDest = 1;
+    static constexpr uint8_t paramRenderRect = 2;
+    static constexpr uint8_t paramRenderRectAutosize = 3;
+    static constexpr uint8_t paramScale = 4;
+    static constexpr uint8_t paramSpeed = 5;
+    static constexpr uint8_t paramAlpha = 6;
+    static constexpr uint8_t paramColor = 7;
+    static constexpr uint8_t paramColor2 = 8;
+    static constexpr uint8_t paramColor3 = 9;
+    static constexpr uint8_t paramColorBackground = 10;
+
+    uint8_t getParamsCount() const override {
+        return 10;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        info.readOnly = false;
+        info.disabled = true;  // All parameters are disabled by default
+        info.ptr = nullptr;    // No fields in this class
+
+        switch (paramNum) {
+            case paramMatrixDest:
+                info.type = ParamType::Matrix;
+                info.name = "Matrix dest";
+                break;
+            case paramRenderRect:
+                info.type = ParamType::Rect;
+                info.name = "Render rect";
+                break;
+            case paramRenderRectAutosize:
+                info.type = ParamType::Bool;
+                info.name = "Render rect autosize";
+                break;
+            case paramScale:
+                info.type = ParamType::FP16;
+                info.name = "Scale";
+                break;
+            case paramSpeed:
+                info.type = ParamType::FP16;
+                info.name = "Speed";
+                break;
+            case paramAlpha:
+                info.type = ParamType::UInt8;
+                info.name = "Alpha";
+                break;
+            case paramColor:
+                info.type = ParamType::Color;
+                info.name = "Color";
+                break;
+            case paramColor2:
+                info.type = ParamType::Color;
+                info.name = "Color 2";
+                break;
+            case paramColor3:
+                info.type = ParamType::Color;
+                info.name = "Color 3";
+                break;
+            case paramColorBackground:
+                info.type = ParamType::Color;
+                info.name = "Background color";
+                break;
+            default:
+                csEffectBase::getParamInfo(paramNum, info);
+                break;
+        }
+    }
+
+};
+
 // Base class for matrix-based renderers.
 // All fields are public by design for direct access/performance.
-class csRenderMatrixBase : public csEffectBase {
+class csRenderMatrixBase : public csEffectBaseStdParams {
 public:
     csMatrixPixels* matrix = nullptr;
 
@@ -186,35 +262,35 @@ public:
         updateRenderRect();
     }
 
-    static constexpr uint8_t paramRenderRectAutosize = 3;
-    static constexpr uint8_t paramRenderRect = 1;
-    static constexpr uint8_t paramMatrixDest = 2;
-
     uint8_t getParamsCount() const override {
-        return 3;
+        return csEffectBaseStdParams::getParamsCount();
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = false;
         switch (paramNum) {
             case paramRenderRectAutosize:
                 info.type = ParamType::Bool;
                 info.name = "Render rect autosize";
                 info.ptr = &renderRectAutosize;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramRenderRect:
                 info.type = ParamType::Rect;
                 info.name = "Render rect";
                 info.ptr = &rect;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramMatrixDest:
                 info.type = ParamType::Matrix;
                 info.name = "Matrix dest";
                 info.ptr = &matrix;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             default:
-                csEffectBase::getParamInfo(paramNum, info);
+                csEffectBaseStdParams::getParamInfo(paramNum, info);
                 break;
         }
     }

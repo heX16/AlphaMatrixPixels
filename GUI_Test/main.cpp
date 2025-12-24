@@ -57,7 +57,7 @@ public:
     }
 
     void initGlyphDefaults(csRenderGlyph& glyph) const noexcept {
-        glyph.symbolColor = csColorRGBA{255, 255, 255, 255};
+        glyph.color = csColorRGBA{255, 255, 255, 255};
         glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
         glyph.symbolIndex = 0;
         glyph.setFont(amp::font3x5Digits());
@@ -71,8 +71,8 @@ public:
     }
 
     void initCircleDefaults(csRenderCircleGradient& circle) const noexcept {
-        // circle.circleColor = csColorRGBA{255, 0, 0, 255};
-        circle.circleColor = csColorRGBA{255, 255, 255, 255};
+        // circle.color = csColorRGBA{255, 0, 0, 255};
+        circle.color = csColorRGBA{255, 255, 255, 255};
         circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
         circle.gradientOffset = 127;
         circle.renderRectAutosize = true; // использовать весь rect матрицы

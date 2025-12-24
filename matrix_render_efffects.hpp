@@ -18,22 +18,20 @@ namespace amp {
 // Base class for gradient effects with scale parameter.
 class csRenderGradientBase : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t paramScale = 4;
-
     // Scale parameter for effect size (FP16, default 1.0).
     math::csFP16 scale{1.0f};
 
     uint8_t getParamsCount() const override {
-        return paramScale;
+        return csRenderMatrixBase::getParamsCount();
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = false;
         if (paramNum == paramScale) {
             info.type = ParamType::FP16;
             info.name = "Scale";
             info.ptr = &scale;
+            info.readOnly = false;
+            info.disabled = false;
             return;
         }
         csRenderMatrixBase::getParamInfo(paramNum, info);
@@ -167,13 +165,13 @@ public:
 class csRenderGlyph : public csRenderMatrixBase {
 public:
     static constexpr uint8_t paramSymbolIndex = 4;
-    static constexpr uint8_t paramSymbolColor = 5;
+    static constexpr uint8_t paramColor = 5;
     static constexpr uint8_t paramBackgroundColor = 6;
     static constexpr uint8_t paramFontWidth = 7;
     static constexpr uint8_t paramFontHeight = 8;
 
     uint8_t symbolIndex = 0;
-    csColorRGBA symbolColor{255, 255, 255, 255};
+    csColorRGBA color{255, 255, 255, 255};
     csColorRGBA backgroundColor{255, 0, 0, 0};
 
     // Runtime font selection.
@@ -201,35 +199,41 @@ public:
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = false;
         switch (paramNum) {
             case paramSymbolIndex:
                 info.type = ParamType::UInt8;
                 info.name = "Glyph index";
                 info.ptr = &symbolIndex;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
-            case paramSymbolColor:
+            case paramColor:
                 info.type = ParamType::Color;
                 info.name = "Symbol color";
-                info.ptr = &symbolColor;
+                info.ptr = &color;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramBackgroundColor:
                 info.type = ParamType::Color;
                 info.name = "Background color";
                 info.ptr = &backgroundColor;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramFontWidth:
                 info.type = ParamType::UInt16;
                 info.name = "Font width";
                 info.ptr = &fontWidth;
                 info.readOnly = true;
+                info.disabled = false;
                 break;
             case paramFontHeight:
                 info.type = ParamType::UInt16;
                 info.name = "Font height";
                 info.ptr = &fontHeight;
                 info.readOnly = true;
+                info.disabled = false;
                 break;
             default:
                 csRenderMatrixBase::getParamInfo(paramNum, info);
@@ -299,7 +303,7 @@ public:
                 }
                 const tMatrixPixelsCoord px = offsetX + to_coord(col);
                 const tMatrixPixelsCoord py = offsetY + to_coord(row);
-                matrix->setPixel(px, py, symbolColor);
+                matrix->setPixel(px, py, color);
             }
         }
     }
@@ -308,11 +312,11 @@ public:
 // Effect: draw a filled circle inscribed into rect.
 class csRenderCircle : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t paramCircleColor = 4;
+    static constexpr uint8_t paramColor = 4;
     static constexpr uint8_t paramBackgroundColor = 5;
     static constexpr uint8_t paramSmoothEdges = 6;
 
-    csColorRGBA circleColor{255, 255, 255, 255};
+    csColorRGBA color{255, 255, 255, 255};
     csColorRGBA backgroundColor{0, 0, 0, 0};
     bool smoothEdges = true;
 
@@ -321,23 +325,27 @@ public:
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = false;
         switch (paramNum) {
-            case paramCircleColor:
+            case paramColor:
                 info.type = ParamType::Color;
                 info.name = "Circle color";
-                info.ptr = &circleColor;
+                info.ptr = &color;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramBackgroundColor:
                 info.type = ParamType::Color;
                 info.name = "Background color";
                 info.ptr = &backgroundColor;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case paramSmoothEdges:
                 info.type = ParamType::Bool;
                 info.name = "Smooth edges";
                 info.ptr = &smoothEdges;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             default:
                 csRenderMatrixBase::getParamInfo(paramNum, info);
@@ -373,7 +381,7 @@ public:
                 const float dx = px - cx;
                 const float distSq = dx * dx + dySq;
                 if (!smoothEdges) {
-                    const csColorRGBA color = (distSq <= radiusSq) ? circleColor : backgroundColor;
+                    const csColorRGBA color = (distSq <= radiusSq) ? color : backgroundColor;
                     matrix->setPixel(x, y, color);
                     continue;
                 }
@@ -391,7 +399,7 @@ public:
                 matrix->setPixel(x, y, backgroundColor);
                 if (coverage > 0.0f) {
                     const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                    matrix->setPixel(x, y, circleColor, coverageAlpha);
+                    matrix->setPixel(x, y, color, coverageAlpha);
                 }
             }
         }
@@ -457,16 +465,16 @@ public:
                 if (x < target.x || x >= endX) {
                     continue;
                 }
-                matrix->setPixel(x, y, circleColor);
+                matrix->setPixel(x, y, color);
             }
 
             if (!smoothEdges) {
                 // Hard edges: fill boundary pixels if inside bounds.
                 if (xLeft >= target.x && xLeft < endX) {
-                    matrix->setPixel(xLeft, y, circleColor);
+                    matrix->setPixel(xLeft, y, color);
                 }
                 if (xRight >= target.x && xRight < endX && xRight != xLeft) {
-                    matrix->setPixel(xRight, y, circleColor);
+                    matrix->setPixel(xRight, y, color);
                 }
                 continue;
             }
@@ -484,7 +492,7 @@ public:
                     coverage = 1.0f;
                 }
                 const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                matrix->setPixel(x, y, circleColor, coverageAlpha);
+                matrix->setPixel(x, y, color, coverageAlpha);
             };
 
             const float leftPixelCenter = static_cast<float>(xLeft) + 0.5f;
@@ -496,25 +504,25 @@ public:
     }
 };
 
-// Radial gradient circle: interpolates from circleColor (center) to backgroundColor (edge).
+// Radial gradient circle: interpolates from color (center) to backgroundColor (edge).
 class csRenderCircleGradient : public csRenderCircle {
 public:
-    static constexpr uint8_t paramGradientOffset = 7;
+    static constexpr uint8_t paramGradientOffset = 11;
 
     // Offset of gradient start from center, normalized: 0..255 -> 0..1 of radius.
     uint8_t gradientOffset = 0;
 
     uint8_t getParamsCount() const override {
-        return paramGradientOffset;
+        return csRenderCircle::getParamsCount() + 1;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = false;
         if (paramNum == paramGradientOffset) {
             info.type = ParamType::UInt8;
             info.name = "Gradient offset";
             info.ptr = &gradientOffset;
+            info.readOnly = false;
+            info.disabled = false;
             return;
         }
         csRenderCircle::getParamInfo(paramNum, info);
@@ -568,9 +576,9 @@ public:
                     }
                 }
 
-                // Linear interpolation between circleColor (center) and backgroundColor (edge).
+                // Linear interpolation between color (center) and backgroundColor (edge).
                 const uint8_t t8 = static_cast<uint8_t>(t * 255.0f + 0.5f);
-                const csColorRGBA gradColor = lerp(circleColor, backgroundColor, t8);
+                const csColorRGBA gradColor = lerp(color, backgroundColor, t8);
 
                 matrix->setPixel(x, y, gradColor);
             }

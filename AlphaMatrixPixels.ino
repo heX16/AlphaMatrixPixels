@@ -70,7 +70,7 @@ void setup() {
     glyph.setMatrix(canvas);
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
-    glyph.symbolColor = amp::csColorRGBA{255, 255, 255, 255};
+    glyph.color = amp::csColorRGBA{255, 255, 255, 255};
     glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
     glyph.symbolIndex = 0;
     glyph.setFont(amp::font3x5Digits());
