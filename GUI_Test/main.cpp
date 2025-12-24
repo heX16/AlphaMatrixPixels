@@ -144,7 +144,7 @@ public:
                 } else if (event.type == SDL_KEYDOWN) {
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
                         quit = true;
-                    } else if (event.key.keysym.sym == SDLK_1 || event.key.keysym.sym == SDLK_2) {
+                    } else if (event.key.keysym.sym == SDLK_1 || event.key.keysym.sym == SDLK_2 || event.key.keysym.sym == SDLK_3) {
                         tMatrixPixelsSize w = 0;
                         tMatrixPixelsSize h = 0;
                         if (event.key.keysym.sym == SDLK_1) {
@@ -153,6 +153,9 @@ public:
                         } else if (event.key.keysym.sym == SDLK_2) {
                             w = 15;
                             h = 5;
+                        } else if (event.key.keysym.sym == SDLK_3) {
+                            w = 8;
+                            h = 8;
                         }
                         recreateMatrix(w, h);
                         bindEffectMatrix(effect);
@@ -182,6 +185,22 @@ public:
                         initCircleDefaults(*circle);
                         effect2 = circle;
                         bindEffectMatrix(effect2);
+                    } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
+                        // Increase scale for dynamic effects
+                        if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+                            dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{0.1f};
+                        }
+                        if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
+                            dynamicEffect2->scale = dynamicEffect2->scale + amp::math::csFP16{0.1f};
+                        }
+                    } else if (event.key.keysym.sym == SDLK_KP_MINUS || event.key.keysym.sym == SDLK_MINUS) {
+                        // Decrease scale for dynamic effects
+                        if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+                            dynamicEffect->scale = dynamicEffect->scale - amp::math::csFP16{0.1f};
+                        }
+                        if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
+                            dynamicEffect2->scale = dynamicEffect2->scale - amp::math::csFP16{0.1f};
+                        }
                     }
                 }
             }

@@ -175,6 +175,9 @@ public:
     static constexpr uint8_t paramMatrixDest = 1;
     static constexpr uint8_t paramRenderRect = 2;
     static constexpr uint8_t paramRenderRectAutosize = 3;
+    // Scale parameter: 
+    // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
+    // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
     static constexpr uint8_t paramScale = 4;
     static constexpr uint8_t paramSpeed = 5;
     static constexpr uint8_t paramAlpha = 6;
