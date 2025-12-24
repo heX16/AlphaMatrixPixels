@@ -118,7 +118,7 @@ void loop() {
     glyph.render(rng, t); // Overlay over plasma
     */
 
-    amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS);
+    amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
     delay(16); // ~60 FPS
 }
