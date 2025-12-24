@@ -62,11 +62,11 @@ CLEDController* controller = nullptr;
 
     plasma.setMatrix(canvas);
     plasma.scale = amp::math::csFP16(0.3f);
-    plasma.speed = amp::math::csFP16(0.3f);
+    plasma.speed = amp::math::csFP16(1.0f);
 
     gradientWaves.setMatrix(canvas);
     gradientWaves.scale = amp::math::csFP16(0.5f);
-    gradientWaves.speed = amp::math::csFP16(0.3f);
+    gradientWaves.speed = amp::math::csFP16(1.0f);
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
     /*
