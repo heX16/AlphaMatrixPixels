@@ -308,6 +308,26 @@ public:
     explicit operator float() const noexcept { return to_float(); }
 };
 
+// Conversion between fixed-point types.
+inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
+    // Convert FP16 (8.8) to FP32 (16.16) by shifting raw value left by 8 bits.
+    return csFP32::from_raw(static_cast<csFP32::fp_type>(fp16.raw_value()) << 8);
+}
+
+inline csFP16 fp32_to_fp16(csFP32 fp32) noexcept {
+    // Convert FP32 (16.16) to FP16 (8.8) by shifting raw value right by 8 bits with rounding.
+    // Round to nearest: add 128 (half of 256) before shifting.
+    const int32_t raw32 = fp32.raw_value();
+    const int32_t rounded = (raw32 >= 0) 
+        ? (raw32 + 128) >> 8
+        : (raw32 - 128) >> 8;
+    // Clamp to FP16 range and convert.
+    const int16_t clamped = (rounded > 32767) ? 32767
+                          : (rounded < -32768) ? -32768
+                          : static_cast<int16_t>(rounded);
+    return csFP16::from_raw(clamped);
+}
+
 // Trigonometry on fixed-point types (argument in radians, result fixed-point).
 inline csFP16 fp16_sin(csFP16 angle) noexcept {
     return csFP16(static_cast<float>(sin(angle.to_float())));

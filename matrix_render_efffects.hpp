@@ -15,9 +15,33 @@
 
 namespace amp {
 
+// Base class for gradient effects with scale parameter.
+class csRenderGradientBase : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t paramScale = 4;
+
+    // Scale parameter for effect size (FP16, default 1.0).
+    math::csFP16 scale{1.0f};
+
+    uint8_t getParamsCount() const override {
+        return paramScale;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        info.readOnly = false;
+        info.disabled = false;
+        if (paramNum == paramScale) {
+            info.type = ParamType::FP16;
+            info.name = "Scale";
+            info.ptr = &scale;
+            return;
+        }
+        csRenderMatrixBase::getParamInfo(paramNum, info);
+    }
+};
 
 // Simple animated RGB gradient (float).
-class csRenderGradient final : public csRenderMatrixBase {
+class csRenderGradient : public csRenderGradientBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
         if (!matrix) {
@@ -36,10 +60,11 @@ public:
 
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        const float scaleF = scale.to_float();
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const float xf = static_cast<float>(x) * 0.4f;
-                const float yf = static_cast<float>(y) * 0.4f;
+                const float xf = static_cast<float>(x) * 0.4f * scaleF;
+                const float yf = static_cast<float>(y) * 0.4f * scaleF;
                 const uint8_t r = wave(t * 0.8f + xf);
                 const uint8_t g = wave(t * 1.0f + yf);
                 const uint8_t b = wave(t * 0.6f + xf + yf * 0.5f);
@@ -50,7 +75,7 @@ public:
 };
 
 // Animated RGB gradient using fixed-point for time/phase.
-class csRenderGradientFP final : public csRenderMatrixBase {
+class csRenderGradientFP : public csRenderGradientBase {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
     static uint8_t wave_fp(math::csFP32 phase) noexcept {
@@ -83,6 +108,8 @@ public:
         static const csFP32 k06 = csFP32::float_const(0.5f);
         static const csFP32 k04 = csFP32::float_const(0.3f);
         static const csFP32 k05 = csFP32::float_const(0.4f);
+        // Convert scale from FP16 to FP32 for multiplication.
+        const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
         const csRect target = rect.intersect(matrix->getRect());
         if (target.empty()) {
             return;
@@ -92,10 +119,10 @@ public:
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             const csFP32 yf = csFP32::from_int(y);
-            const csFP32 yf_scaled = yf * k04;
+            const csFP32 yf_scaled = yf * k04 * scaleFP32;
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const csFP32 xf = csFP32::from_int(x);
-                const csFP32 xf_scaled = xf * k04;
+                const csFP32 xf_scaled = xf * k04 * scaleFP32;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
                 const uint8_t b = wave_fp(t * k06 + xf_scaled + yf_scaled * k05);
@@ -106,7 +133,7 @@ public:
 };
 
 // Simple sinusoidal plasma effect (float).
-class csRenderPlasma final : public csRenderMatrixBase {
+class csRenderPlasma : public csRenderGradientBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
         if (!matrix) {
@@ -118,12 +145,13 @@ public:
             return;
         }
 
+        const float scaleF = scale.to_float();
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const float xf = static_cast<float>(x);
-                const float yf = static_cast<float>(y);
+                const float xf = static_cast<float>(x) * scaleF;
+                const float yf = static_cast<float>(y) * scaleF;
                 const float v = sin(xf * 0.35f + t) + sin(yf * 0.35f - t) + sin((xf + yf) * 0.25f + t * 0.5f);
                 const float norm = (v + 3.0f) / 6.0f; // bring into [0..1]
                 const uint8_t r = static_cast<uint8_t>(norm * 255.0f);
@@ -136,7 +164,7 @@ public:
 };
 
 // Effect: draw a single digit glyph using the 3x5 font.
-class csRenderGlyph final : public csRenderMatrixBase {
+class csRenderGlyph : public csRenderMatrixBase {
 public:
     static constexpr uint8_t paramSymbolIndex = 4;
     static constexpr uint8_t paramSymbolColor = 5;
@@ -371,7 +399,7 @@ public:
 };
 
 // Optimized circle renderer: per-scanline chord computation, optional AA on edges.
-class csRenderCircleFast final : public csRenderCircle {
+class csRenderCircleFast : public csRenderCircle {
 public:
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
         if (!matrix) {
@@ -469,7 +497,7 @@ public:
 };
 
 // Radial gradient circle: interpolates from circleColor (center) to backgroundColor (edge).
-class csRenderCircleGradient final : public csRenderCircle {
+class csRenderCircleGradient : public csRenderCircle {
 public:
     static constexpr uint8_t paramGradientOffset = 7;
 
