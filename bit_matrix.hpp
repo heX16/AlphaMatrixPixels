@@ -15,18 +15,18 @@ using ::uint8_t;
 class csBitMatrix {
 public:
     // Construct matrix with given size, all bits cleared.
-    csBitMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height, bool outOfBoundsValue = false)
-        : width_{width}, height_{height}, outOfBoundsValue{outOfBoundsValue}, bytes_(allocate(width, height)) {}
+    csBitMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height, bool defaultOutOfBoundsValue = false)
+        : outOfBoundsValue{defaultOutOfBoundsValue}, width_{width}, height_{height}, bytes_(allocate(width, height)) {}
 
     // Copy constructor: makes deep copy of bit buffer.
     csBitMatrix(const csBitMatrix& other)
-        : width_{other.width_}, height_{other.height_}, outOfBoundsValue{other.outOfBoundsValue}, bytes_(allocate(width_, height_)) {
+        : outOfBoundsValue{other.outOfBoundsValue}, width_{other.width_}, height_{other.height_}, bytes_(allocate(width_, height_)) {
         copyBytes(bytes_, other.bytes_, byteCount());
     }
 
     // Move constructor: transfers ownership of buffer, leaving source empty.
     csBitMatrix(csBitMatrix&& other) noexcept
-        : width_{other.width_}, height_{other.height_}, outOfBoundsValue{other.outOfBoundsValue}, bytes_{other.bytes_} {
+        : outOfBoundsValue{other.outOfBoundsValue}, width_{other.width_}, height_{other.height_}, bytes_{other.bytes_} {
         other.bytes_ = nullptr;
         other.width_ = 0;
         other.height_ = 0;
