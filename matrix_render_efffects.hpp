@@ -21,20 +21,15 @@ public:
     // Scale parameter for effect size (FP16, default 1.0).
     math::csFP16 scale{1.0f};
 
-    uint8_t getParamsCount() const override {
-        return csRenderMatrixBase::getParamsCount();
-    }
+    // NOTE: uint8_t getParamsCount() - count dont changed
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
         if (paramNum == paramScale) {
-            info.type = ParamType::FP16;
-            info.name = "Scale";
             info.ptr = &scale;
-            info.readOnly = false;
             info.disabled = false;
             return;
         }
-        csRenderMatrixBase::getParamInfo(paramNum, info);
     }
 };
 
@@ -164,11 +159,11 @@ public:
 // Effect: draw a single digit glyph using the 3x5 font.
 class csRenderGlyph : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t paramSymbolIndex = 4;
-    static constexpr uint8_t paramColor = 5;
-    static constexpr uint8_t paramBackgroundColor = 6;
-    static constexpr uint8_t paramFontWidth = 7;
-    static constexpr uint8_t paramFontHeight = 8;
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramSymbolIndex = base+1;
+    static constexpr uint8_t paramFontWidth = base+2;
+    static constexpr uint8_t paramFontHeight = base+3;
+    static constexpr uint8_t paramLast = paramFontHeight;
 
     uint8_t symbolIndex = 0;
     csColorRGBA color{255, 255, 255, 255};
@@ -195,10 +190,11 @@ public:
     }
 
     uint8_t getParamsCount() const override {
-        return paramFontHeight;
+        return paramLast;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
         switch (paramNum) {
             case paramSymbolIndex:
                 info.type = ParamType::UInt8;
@@ -214,11 +210,8 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramBackgroundColor:
-                info.type = ParamType::Color;
-                info.name = "Background color";
+            case paramColorBackground:
                 info.ptr = &backgroundColor;
-                info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramFontWidth:
@@ -234,9 +227,6 @@ public:
                 info.ptr = &fontHeight;
                 info.readOnly = true;
                 info.disabled = false;
-                break;
-            default:
-                csRenderMatrixBase::getParamInfo(paramNum, info);
                 break;
         }
     }
@@ -312,16 +302,16 @@ public:
 // Effect: draw a filled circle inscribed into rect.
 class csRenderCircle : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t paramColor = 4;
-    static constexpr uint8_t paramBackgroundColor = 5;
-    static constexpr uint8_t paramSmoothEdges = 6;
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramSmoothEdges = base + 1;
+    static constexpr uint8_t paramLast = paramSmoothEdges;
 
     csColorRGBA color{255, 255, 255, 255};
     csColorRGBA backgroundColor{0, 0, 0, 0};
     bool smoothEdges = true;
 
     uint8_t getParamsCount() const override {
-        return paramSmoothEdges;
+        return paramLast;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
@@ -333,11 +323,8 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramBackgroundColor:
-                info.type = ParamType::Color;
-                info.name = "Background color";
+            case paramColorBackground:
                 info.ptr = &backgroundColor;
-                info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramSmoothEdges:
@@ -507,13 +494,15 @@ public:
 // Radial gradient circle: interpolates from color (center) to backgroundColor (edge).
 class csRenderCircleGradient : public csRenderCircle {
 public:
-    static constexpr uint8_t paramGradientOffset = 11;
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramGradientOffset = base+1;
+    static constexpr uint8_t paramLast = paramGradientOffset;
 
     // Offset of gradient start from center, normalized: 0..255 -> 0..1 of radius.
     uint8_t gradientOffset = 0;
 
     uint8_t getParamsCount() const override {
-        return csRenderCircle::getParamsCount() + 1;
+        return paramLast;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {

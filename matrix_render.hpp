@@ -183,8 +183,18 @@ public:
     static constexpr uint8_t paramColor3 = 9;
     static constexpr uint8_t paramColorBackground = 10;
 
+    // Special "parameter" - the last one in the list. Shadowed in each derived class.
+    // Example:
+    // ```
+    //     static constexpr uint8_t base = _prev_class_::paramLast;
+    //     static constexpr uint8_t paramNew = base+1;
+    //     static constexpr uint8_t paramLast = paramNew;
+    // ```
+    static constexpr uint8_t paramLast = paramColorBackground;
+    
+    
     uint8_t getParamsCount() const override {
-        return 10;
+        return paramLast;
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
@@ -262,35 +272,25 @@ public:
         updateRenderRect();
     }
 
-    uint8_t getParamsCount() const override {
-        return csEffectBaseStdParams::getParamsCount();
-    }
+    // NOTE: uint8_t getParamsCount() - count dont changed
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csEffectBaseStdParams::getParamInfo(paramNum, info);
+
         switch (paramNum) {
             case paramRenderRectAutosize:
-                info.type = ParamType::Bool;
-                info.name = "Render rect autosize";
                 info.ptr = &renderRectAutosize;
-                info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramRenderRect:
-                info.type = ParamType::Rect;
-                info.name = "Render rect";
                 info.ptr = &rect;
-                info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramMatrixDest:
-                info.type = ParamType::Matrix;
-                info.name = "Matrix dest";
                 info.ptr = &matrix;
-                info.readOnly = false;
                 info.disabled = false;
                 break;
             default:
-                csEffectBaseStdParams::getParamInfo(paramNum, info);
                 break;
         }
     }
