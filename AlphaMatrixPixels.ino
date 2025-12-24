@@ -67,6 +67,8 @@ void setup() {
     FastLED.clear(true);
 
     plasma.setMatrix(canvas);
+    plasma.scale = amp::math::csFP16(0.5f);
+    plasma.speed = amp::math::csFP16(0.3f);
     glyph.setMatrix(canvas);
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).

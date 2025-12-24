@@ -18,8 +18,8 @@ using amp::csRandGen;
 using amp::tMatrixPixelsSize;
 using amp::math::max;
 using amp::math::min;
-using amp::csRenderGradient;
-using amp::csRenderGradientFP;
+using amp::csRenderGradientWaves;
+using amp::csRenderGradientWavesFP;
 using amp::csRenderPlasma;
 using amp::csRenderGlyph;
 using amp::csRenderCircle;
@@ -100,7 +100,7 @@ public:
         SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
         recreateMatrix(16, 16);
         delete effect;
-        effect = new csRenderGradient();
+        effect = new csRenderGradientWaves();
         bindEffectMatrix(effect);
         return true;
     }
@@ -128,11 +128,11 @@ public:
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
-                        effect = new csRenderGradient();
+                        effect = new csRenderGradientWaves();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_e) {
                         delete effect;
-                        effect = new csRenderGradientFP();
+                        effect = new csRenderGradientWavesFP();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;

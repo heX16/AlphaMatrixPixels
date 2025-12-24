@@ -16,10 +16,12 @@
 namespace amp {
 
 // Base class for gradient effects with scale parameter.
-class csRenderGradientBase : public csRenderMatrixBase {
+class csRenderDynamic : public csRenderMatrixBase {
 public:
     // Scale parameter for effect size (FP16, default 1.0).
     math::csFP16 scale{1.0f};
+    // Speed parameter for effect animation speed (FP16, default 1.0).
+    math::csFP16 speed{1.0f};
 
     // NOTE: uint8_t getParamsCount() - count dont changed
 
@@ -30,17 +32,22 @@ public:
             info.disabled = false;
             return;
         }
+        if (paramNum == paramSpeed) {
+            info.ptr = &speed;
+            info.disabled = false;
+            return;
+        }
     }
 };
 
 // Simple animated RGB gradient (float).
-class csRenderGradient : public csRenderGradientBase {
+class csRenderGradientWaves : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
         if (!matrix) {
             return;
         }
-        const float t = static_cast<float>(currTime) * 0.001f;
+        const float t = static_cast<float>(currTime) * 0.001f * speed.to_float();
 
         auto wave = [](float v) -> uint8_t {
             return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
@@ -68,7 +75,7 @@ public:
 };
 
 // Animated RGB gradient using fixed-point for time/phase.
-class csRenderGradientFP : public csRenderGradientBase {
+class csRenderGradientWavesFP : public csRenderDynamic {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
     static uint8_t wave_fp(math::csFP32 phase) noexcept {
@@ -94,7 +101,10 @@ public:
         // Convert milliseconds to seconds in 16.16 fixed-point WITHOUT float:
         // t_raw = currTime * 65536 / 1000
         const int32_t t_raw = static_cast<int32_t>((static_cast<int64_t>(currTime) * csFP32::scale) / 1000);
-        const csFP32 t = csFP32::from_raw(t_raw);
+        csFP32 t = csFP32::from_raw(t_raw);
+        // Apply speed multiplier (convert speed from FP16 to FP32).
+        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
+        t = t * speedFP32;
 
         // Fixed-point constants.
         static const csFP32 k08 = csFP32::float_const(0.7f);
@@ -126,18 +136,18 @@ public:
 };
 
 // Simple sinusoidal plasma effect (float).
-class csRenderPlasma : public csRenderGradientBase {
+class csRenderPlasma : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
         if (!matrix) {
             return;
         }
-        const float t = static_cast<float>(currTime) * 0.0025f;
+        const float t = static_cast<float>(currTime) * 0.0025f * speed.to_float();
         const csRect target = rect.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
-
+        
         const float scaleF = scale.to_float();
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
