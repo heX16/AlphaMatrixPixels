@@ -26,6 +26,7 @@ using amp::csRenderGlyph;
 using amp::csRenderCircle;
 using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
+using amp::csRenderSnowfall;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -160,7 +161,7 @@ public:
                         recreateMatrix(w, h);
                         bindEffectMatrix(effect);
                         bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_q) {
+                    } else if (event.key.keysym.sym == SDLK_w) {
                         delete effect;
                         effect = new csRenderGradientWaves();
                         bindEffectMatrix(effect);
@@ -168,9 +169,13 @@ public:
                         delete effect;
                         effect = new csRenderGradientWavesFP();
                         bindEffectMatrix(effect);
-                    } else if (event.key.keysym.sym == SDLK_w) {
+                    } else if (event.key.keysym.sym == SDLK_q) {
                         delete effect;
                         effect = new csRenderPlasma();
+                        bindEffectMatrix(effect);
+                    } else if (event.key.keysym.sym == SDLK_s) {
+                        delete effect;
+                        effect = new csRenderSnowfall();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_r) {
                         delete effect2;
@@ -210,6 +215,9 @@ public:
                 if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
                     glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
                     glyph->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
+                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
+                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect->render(randGen, static_cast<uint16_t>(ticks));
                 }
@@ -219,6 +227,9 @@ public:
                 if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
                     glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
                     glyph->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
+                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
+                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect2->render(randGen, static_cast<uint16_t>(ticks));
                 }
