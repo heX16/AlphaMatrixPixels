@@ -18,7 +18,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-m64" />
-					<Add option="-lmingw32 -lSDL2main -lSDL2 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
+					<Add option="-lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -lfreetype -lharfbuzz -lgraphite2 -lpng -lbz2 -lbrotlidec -lbrotlicommon -lz -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lrpcrt4 -ldwrite -lversion" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -34,7 +34,7 @@
 				<Linker>
 					<Add option="-s" />
 					<Add option="-m64" />
-					<Add option="-lmingw32 -lSDL2main -lSDL2 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
+					<Add option="-lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -lfreetype -lharfbuzz -lgraphite2 -lpng -lbz2 -lbrotlidec -lbrotlicommon -lz -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lrpcrt4 -ldwrite -lversion" />
 				</Linker>
 			</Target>
 		</Build>
@@ -49,7 +49,7 @@
 		</Compiler>
 		<Linker>
 			<Add option="-m64" />
-			<Add option="-lSDL2main -lSDL2 -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lversion" />
+			<Add option="-lSDL2main -lSDL2 -lSDL2_ttf -lfreetype -lharfbuzz -lgraphite2 -lpng -lbz2 -lbrotlidec -lbrotlicommon -lz -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lrpcrt4 -ldwrite -lversion" />
 			<Add directory="C:/msys64/mingw64/lib" />
 			<Add option="-static" />
 			<Add option="-static-libstdc++" />
