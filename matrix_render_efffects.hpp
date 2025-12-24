@@ -598,10 +598,10 @@ public:
 class csRenderSnowfall : public csRenderDynamic {
 public:
     static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramSnowflakeColor = base + 1;
-    static constexpr uint8_t paramLast = paramSnowflakeColor;
+    static constexpr uint8_t paramSnowflake_WIP = base + 1;
+    static constexpr uint8_t paramLast = paramSnowflake_WIP;
 
-    csColorRGBA snowflakeColor{255, 255, 255, 255};
+    csColorRGBA color{255, 255, 255, 255};
     csColorRGBA backgroundColor{0, 0, 0, 0};
 
     // State fields (not mutable, changed in recalc())
@@ -625,10 +625,10 @@ public:
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
         csRenderDynamic::getParamInfo(paramNum, info);
         switch (paramNum) {
-            case paramSnowflakeColor:
+            case paramColor:
                 info.type = ParamType::Color;
                 info.name = "Snowflake color";
-                info.ptr = &snowflakeColor;
+                info.ptr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -636,7 +636,11 @@ public:
                 info.ptr = &backgroundColor;
                 info.disabled = false;
                 break;
-        }
+            case paramSnowflake_WIP:
+                // WIP
+                info.disabled = true;
+                break;
+    }
     }
 
     void paramChanged(uint8_t paramNum) override {
@@ -756,7 +760,7 @@ public:
                 const tMatrixPixelsCoord localX = x - rect.x;
                 const tMatrixPixelsCoord localY = y - rect.y;
                 if (bitmap->getPixel(to_size(localX), to_size(localY))) {
-                    matrix->setPixel(x, y, snowflakeColor);
+                    matrix->setPixel(x, y, color);
                 }
             }
         }
@@ -765,7 +769,7 @@ public:
         if (hasActiveSnowflake) {
             if (currentX >= target.x && currentX < endX && 
                 currentY >= target.y && currentY < endY) {
-                matrix->setPixel(currentX, currentY, snowflakeColor);
+                matrix->setPixel(currentX, currentY, color);
             }
         }
     }

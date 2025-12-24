@@ -30,6 +30,7 @@ CRGB leds[NUM_LEDS];
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
 amp::csRenderPlasma plasma;
 amp::csRenderGradientWaves gradientWaves;
+amp::csRenderSnowfall snowfall;
 amp::csRenderGlyph glyph;
 amp::csRandGen rng;
 
@@ -68,6 +69,10 @@ CLEDController* controller = nullptr;
     gradientWaves.scale = amp::math::csFP16(0.5f);
     gradientWaves.speed = amp::math::csFP16(1.0f);
 
+    snowfall.setMatrix(canvas);
+    snowfall.color = amp::csColorRGBA{255, 255, 255, 255};
+    snowfall.backgroundColor = amp::csColorRGBA{0, 0, 0, 0};
+
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
     /*
     glyph.setMatrix(canvas);
@@ -95,13 +100,16 @@ void loop() {
     digitalWrite(LED_BUILTIN, ((millis() / 500u) % 2u) == 0u ? LOW : HIGH);
 #endif
 
-    const uint8_t effectIndex = static_cast<uint8_t>((millis() / 10000u) % 2u);
+    const uint8_t effectIndex = static_cast<uint8_t>((millis() / 10000u) % 3u);
     const uint16_t t = static_cast<uint16_t>(millis());
 
     if (effectIndex == 0) {
         plasma.render(rng, t);
-    } else {
+    } else if (effectIndex == 1) {
         gradientWaves.render(rng, t);
+    } else {
+        snowfall.recalc(rng, t);
+        snowfall.render(rng, t);
     }
 
     /*
