@@ -600,6 +600,7 @@ public:
     static constexpr uint8_t base = csRenderMatrixBase::paramLast;
     static constexpr uint8_t paramSnowflake_WIP = base + 1;
     static constexpr uint8_t paramLast = paramSnowflake_WIP;
+    static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
 
     csColorRGBA color{255, 255, 255, 255};
 
@@ -609,6 +610,8 @@ public:
     bool hasActiveSnowflake = false;
     uint16_t filledPixelsCount = 0;
     uint16_t lastUpdateTime = 0;
+    uint8_t snowfallCount = 0; // Counter for compactSnow calls (call every 3 snowfalls)
+    bool lastDirectionWasLeft = false; // Alternating priority for moveDownSide directions
     csBitMatrix* bitmap = nullptr;
 
     csRenderSnowfall() = default;
@@ -658,6 +661,7 @@ public:
             bitmap->clear();
             filledPixelsCount = 0;
             hasActiveSnowflake = false;
+            snowfallCount = 0; // Reset counter on restart
         }
 
         // Calculate time step based on speed
@@ -704,7 +708,12 @@ public:
             hasActiveSnowflake = false;
             
             // Compact snow pile: make snowflakes settle down and to the left
-            compactSnow();
+            // Call compactSnow only once every N snowfalls
+            ++snowfallCount;
+            if (snowfallCount >= compactSnowInterval) {
+                compactSnow();
+                snowfallCount = 0;
+            }
         };
 
         // Check collision with existing snowflake or boundary
@@ -768,6 +777,7 @@ private:
         // Reset state when bitmap is recreated
         hasActiveSnowflake = false;
         filledPixelsCount = 0;
+        snowfallCount = 0;
     }
 
     // Try to move snowflake down. Returns true if moved.
@@ -783,13 +793,15 @@ private:
 
     // Try to move snowflake down-left or down-right. Returns true if moved.
     // direction: -1 for left, +1 for right
-    bool moveDownSide(tMatrixPixelsSize x, tMatrixPixelsSize y, int direction) {
+    // Updates lastDirectionWasLeft on successful movement
+    bool moveDownSide(tMatrixPixelsSize x, tMatrixPixelsSize y, int direction, bool& lastDirectionWasLeft) {
         const int newXInt = static_cast<int>(x) + direction;
         const tMatrixPixelsSize newX = static_cast<tMatrixPixelsSize>(newXInt);
         if (!bitmap->getPixel(newX, y + 1)) {
             // Move down-side
             bitmap->setPixel(x, y, false);
             bitmap->setPixel(newX, y + 1, true);
+            lastDirectionWasLeft = !lastDirectionWasLeft;
             return true;
         }
         return false;
@@ -821,13 +833,15 @@ private:
                     continue;
                 }
 
-                // Try to move down-left (diagonal)
-                if (moveDownSide(px, py, -1)) {
-                    continue;
+                // Try diagonal movement with alternating priority
+                // Alternate between left (-1) and right (+1) directions
+                if (lastDirectionWasLeft) {
+                    // Last was left, try right first this time
+                    moveDownSide(px, py, +1, lastDirectionWasLeft) || moveDownSide(px, py, -1, lastDirectionWasLeft);
+                } else {
+                    // Last was right, try left first this time
+                    moveDownSide(px, py, -1, lastDirectionWasLeft) || moveDownSide(px, py, +1, lastDirectionWasLeft);
                 }
-
-                // Try to move down-right (diagonal)
-                moveDownSide(px, py, +1);
             }
         }
     }
