@@ -1,0 +1,110 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build GUI_Test (Debug)",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "GUI_Test/main.cpp",
+                "-std=c++17",
+                "-m64",
+                "-g",
+                "-Wall",
+                "-I.",
+                "-IGUI_Test",
+                "-o",
+                "GUI_Test/bin/Debug/HXLED_GUI_Test.exe",
+                "-lmingw32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_ttf",
+                "-lfreetype",
+                "-lharfbuzz",
+                "-lgraphite2",
+                "-lpng",
+                "-lbz2",
+                "-lbrotlidec",
+                "-lbrotlicommon",
+                "-lz",
+                "-lgdi32",
+                "-lsetupapi",
+                "-lwinmm",
+                "-limm32",
+                "-lole32",
+                "-loleaut32",
+                "-lrpcrt4",
+                "-ldwrite",
+                "-lversion"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build GUI_Test (Release)",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "GUI_Test/main.cpp",
+                "-std=c++17",
+                "-m64",
+                "-Os",
+                "-Wall",
+                "-I.",
+                "-IGUI_Test",
+                "-o",
+                "GUI_Test/bin/Release/HXLED_GUI_Test.exe",
+                "-lmingw32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_ttf",
+                "-lfreetype",
+                "-lharfbuzz",
+                "-lgraphite2",
+                "-lpng",
+                "-lbz2",
+                "-lbrotlidec",
+                "-lbrotlicommon",
+                "-lz",
+                "-lgdi32",
+                "-lsetupapi",
+                "-lwinmm",
+                "-limm32",
+                "-lole32",
+                "-loleaut32",
+                "-lrpcrt4",
+                "-ldwrite",
+                "-lversion"
+            ],
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "rm",
+            "args": [
+                "-f",
+                "GUI_Test/bin/Debug/HXLED_GUI_Test.exe",
+                "GUI_Test/bin/Release/HXLED_GUI_Test.exe"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}
+
