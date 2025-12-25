@@ -8,8 +8,6 @@ project('AlphaMatrixPixels', 'cpp',
 )
 
 # Header-only library - no build needed, just include directories
-amp_inc = include_directories('.')
-
-# Subdirectories
-subdir('GUI_Test')
+# This is the library root - no executables here
+# Test/debug applications are in dev/ subdirectories with their own meson.build files
 

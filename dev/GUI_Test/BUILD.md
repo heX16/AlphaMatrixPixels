@@ -39,6 +39,9 @@ pacman -S --needed mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_ttf mingw-w64-x86
 
 ### Сборка
 ```bash
+# Перейти в директорию GUI_Test
+cd dev/GUI_Test
+
 # Настроить build директорию (первый раз)
 meson setup builddir
 
@@ -56,12 +59,21 @@ meson compile
 
 ### Запуск
 ```bash
-# Из корня проекта
-./builddir/dev/GUI_Test/HXLED_GUI_Test.exe
+# Из директории dev/GUI_Test
+./builddir/HXLED_GUI_Test.exe
 
 # Или из builddir
-cd builddir
-./dev/GUI_Test/HXLED_GUI_Test.exe
+cd dev/GUI_Test/builddir
+./HXLED_GUI_Test.exe
+```
+
+### Использование скрипта build.sh
+```bash
+# Из директории dev/GUI_Test
+./build.sh
+
+# Или из корня проекта
+./dev/GUI_Test/build.sh
 ```
 
 **Примечание:** DLL SDL2 (`SDL2.dll` и `SDL2_ttf.dll`) должны быть доступны в PATH или рядом с исполняемым файлом.

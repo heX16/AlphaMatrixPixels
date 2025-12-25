@@ -1,4 +1,16 @@
-# GUI_Test executable
+# GUI_Test executable - standalone project
+project('GUI_Test', 'cpp',
+  version : '1.0.0',
+  default_options : [
+    'cpp_std=c++17',
+    'warning_level=2',
+    'default_library=static'
+  ]
+)
+
+# Path to library source (relative to this meson.build location)
+# This meson.build is in dev/GUI_Test/, so library is at ../../src/
+amp_inc = include_directories('../../src')
 
 # System libraries for Windows/MinGW
 cc = meson.get_compiler('cpp')
