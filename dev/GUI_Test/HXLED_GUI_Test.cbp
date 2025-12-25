@@ -43,7 +43,7 @@
 			<Add option="-m64" />
 			<Add option="-std=c++17" />
 			<Add directory="." />
-			<Add directory=".." />
+			<Add directory="../../src" />
 			<Add directory="C:/msys64/mingw64/include/SDL2" />
 			<Add directory="C:/msys64/mingw64/include" />
 		</Compiler>
@@ -55,8 +55,6 @@
 			<Add option="-static-libstdc++" />
 			<Add option="-static-libgcc" />
 		</Linker>
-		<Unit filename="../color_rgba.hpp" />
-		<Unit filename="../matrix_pixels.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
