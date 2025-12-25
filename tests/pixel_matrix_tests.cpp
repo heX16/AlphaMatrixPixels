@@ -1,8 +1,6 @@
 #include <iostream>
 #include <cmath>
-#include <string>
 #include "../src/matrix_pixels.hpp"
-#include "../src/math.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
@@ -139,8 +137,8 @@ void test_matrix_set_get_in_bounds(TestStats& stats) {
     const char* testName = "matrix_set_get_in_bounds";
     csMatrixPixels m{2, 2};
     csColorRGBA c{40, 10, 20, 30};
-    m.setPixel(1, 1, c);
-    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 1), 40, 10, 20, 30), "setPixel stores value");
+    m.setPixelRewrite(1, 1, c);
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 1), 40, 10, 20, 30), "setPixelRewrite stores value");
 }
 
 void test_matrix_out_of_bounds(TestStats& stats) {
@@ -159,10 +157,10 @@ void test_matrix_setPixelBlend(TestStats& stats) {
     csMatrixPixels m{1, 1};
     const csColorRGBA dst{40, 10, 20, 30};
     const csColorRGBA src{128, 200, 100, 50};
-    m.setPixel(0, 0, dst);
-    m.setPixelBlend(0, 0, src);
+    m.setPixelRewrite(0, 0, dst);
+    m.setPixel(0, 0, src);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src);
-    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixelBlend matches SourceOver");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixel matches SourceOver");
 }
 
 void test_matrix_setPixelBlend_with_global(TestStats& stats) {
@@ -170,10 +168,10 @@ void test_matrix_setPixelBlend_with_global(TestStats& stats) {
     csMatrixPixels m{1, 1};
     const csColorRGBA dst{200, 0, 50, 100};
     const csColorRGBA src{128, 255, 0, 0};
-    m.setPixel(0, 0, dst);
-    m.setPixelBlend(0, 0, src, 128);
+    m.setPixelRewrite(0, 0, dst);
+    m.setPixel(0, 0, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src, 128);
-    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixelBlend with global alpha matches SourceOver");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixel with global alpha matches SourceOver");
 }
 
 void test_matrix_getPixelBlend(TestStats& stats) {
@@ -181,7 +179,7 @@ void test_matrix_getPixelBlend(TestStats& stats) {
     csMatrixPixels m{1, 1};
     const csColorRGBA dst{255, 0, 0, 255};
     const csColorRGBA fg{128, 255, 0, 0};
-    m.setPixel(0, 0, fg);
+    m.setPixelRewrite(0, 0, fg);
     const csColorRGBA blended = m.getPixelBlend(0, 0, dst);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, fg);
     expect_true(stats, testName, __LINE__, colorEq(blended, expected.a, expected.r, expected.g, expected.b), "getPixelBlend returns SourceOver without mutating");
@@ -192,8 +190,8 @@ void test_matrix_drawMatrix_clip(TestStats& stats) {
     const char* testName = "matrix_drawMatrix_clip";
     csMatrixPixels dst{3, 3};
     csMatrixPixels src{2, 2};
-    src.setPixel(0, 0, csColorRGBA{255, 255, 0, 0});     // not drawn (clipped)
-    src.setPixel(1, 1, csColorRGBA{255, 0, 255, 0});     // drawn to (0,0)
+    src.setPixelRewrite(0, 0, csColorRGBA{255, 255, 0, 0});     // not drawn (clipped)
+    src.setPixelRewrite(1, 1, csColorRGBA{255, 0, 255, 0});     // drawn to (0,0)
     dst.drawMatrix(-1, -1, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 1), 128);
     expect_true(stats, testName, __LINE__, colorEq(dst.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "clipped draw writes only overlapping pixel");
@@ -204,9 +202,9 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
     const char* testName = "matrix_drawMatrix_basic";
     csMatrixPixels dst{2, 2};
     csMatrixPixels src{2, 2};
-    src.setPixel(0, 0, csColorRGBA{128, 0, 0, 255});
-    src.setPixel(1, 0, csColorRGBA{255, 255, 0, 0});
-    dst.setPixel(0, 0, csColorRGBA{255, 0, 255, 0});
+    src.setPixelRewrite(0, 0, csColorRGBA{128, 0, 0, 255});
+    src.setPixelRewrite(1, 0, csColorRGBA{255, 255, 0, 0});
+    dst.setPixelRewrite(0, 0, csColorRGBA{255, 0, 255, 0});
     dst.drawMatrix(0, 0, src, 200);
     csColorRGBA expected00 = csColorRGBA::sourceOverStraight(csColorRGBA{255, 0, 255, 0}, src.getPixel(0, 0), 200);
     csColorRGBA expected10 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 0), 200);
