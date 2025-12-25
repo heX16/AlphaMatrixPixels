@@ -892,4 +892,125 @@ private:
 
 };
 
+// Effect: clear matrix to transparent black.
+class csRenderClear : public csRenderMatrixBase {
+public:
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix) {
+            return;
+        }
+        matrix->clear();
+    }
+};
+
+// Effect: display 4 digits clock using glyph renderer.
+// Time value is passed via 'time' parameter (int32_t).
+// Extracts last 4 decimal digits from time parameter.
+// Does not use system time - time must be set externally.
+class csRenderClock : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramTime = base + 1;
+    static constexpr uint8_t paramLast = paramTime;
+
+    int32_t time = 0;
+
+    // Four glyph renderers for 4 digits
+    // Mutable because render() modifies them but doesn't change logical state
+    static constexpr uint8_t digitCount = 4;
+    mutable csRenderGlyph glyphs[digitCount];
+
+    csRenderClock() {
+        // Initialize all glyphs with font
+        const csFontBase& font = font3x5Digits();
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            glyphs[i].setFont(font);
+            glyphs[i].renderRectAutosize = false;
+        }
+    }
+
+    void setMatrix(csMatrixPixels* m) noexcept {
+        csRenderMatrixBase::setMatrix(m);
+        // Set matrix for all glyphs
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            glyphs[i].setMatrix(m);
+        }
+    }
+
+    void setMatrix(csMatrixPixels& m) noexcept {
+        csRenderMatrixBase::setMatrix(m);
+        // Set matrix for all glyphs
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            glyphs[i].setMatrix(m);
+        }
+    }
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramRenderRectAutosize:
+                info.disabled = true;
+                break;
+            case paramTime:
+                info.type = ParamType::Int32;
+                info.name = "Time";
+                info.ptr = &time;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void render(csRandGen& rand, uint16_t currTime) const override {
+        if (disabled || !matrix) {
+            return;
+        }
+
+        // Extract last 4 decimal digits from time parameter
+        // Handle negative values by taking absolute value
+        uint32_t timeAbs = static_cast<uint32_t>((time < 0) ? -time : time);
+        uint8_t digits[digitCount];
+        uint32_t divisor = 1;
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            digits[i] = static_cast<uint8_t>((timeAbs / divisor) % 10);
+            divisor *= 10;
+        }
+
+        // Get font dimensions
+        const csFontBase* font = glyphs[0].font;
+        if (!font) {
+            return;
+        }
+
+        const tMatrixPixelsSize fontWidth = to_size(font->width());
+        const tMatrixPixelsSize fontHeight = to_size(font->height());
+
+        // Calculate positions for 4 digits horizontally
+        // Position them within rect bounds
+        const tMatrixPixelsCoord startX = rect.x;
+        const tMatrixPixelsCoord startY = rect.y;
+        const tMatrixPixelsSize spacing = 1; // 1 pixel spacing between digits
+
+        // Set symbol indices and positions for each glyph
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            glyphs[i].symbolIndex = digits[i];
+            glyphs[i].rect = csRect{
+                startX + to_coord((fontWidth + spacing) * i),
+                startY,
+                fontWidth,
+                fontHeight
+            };
+        }
+
+        // Render all glyphs
+        for (uint8_t i = 0; i < digitCount; ++i) {
+            glyphs[i].render(rand, currTime);
+        }
+    }
+};
+
 } // namespace amp
