@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
-#include "../matrix_pixels.hpp"
-#include "../math.hpp"
+#include "../src/matrix_pixels.hpp"
+#include "../src/math.hpp"
 
-#include "../color_rgba.hpp"
-#include "../matrix_render.hpp"
-#include "../matrix_render_efffects.hpp"
+#include "../src/color_rgba.hpp"
+#include "../src/matrix_render.hpp"
+#include "../src/matrix_render_efffects.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;

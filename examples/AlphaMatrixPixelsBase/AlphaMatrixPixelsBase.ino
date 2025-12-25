@@ -1,9 +1,7 @@
 #include <FastLED.h>
-#include "matrix_render_efffects.hpp"
-#include "color_rgba.hpp"
+#include "AlphaMatrixPixels.h"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
-#include "fastled_output.hpp"
 
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.

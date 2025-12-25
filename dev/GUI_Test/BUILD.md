@@ -57,11 +57,11 @@ meson compile
 ### Запуск
 ```bash
 # Из корня проекта
-./builddir/GUI_Test/HXLED_GUI_Test.exe
+./builddir/dev/GUI_Test/HXLED_GUI_Test.exe
 
 # Или из builddir
 cd builddir
-./GUI_Test/HXLED_GUI_Test.exe
+./dev/GUI_Test/HXLED_GUI_Test.exe
 ```
 
 **Примечание:** DLL SDL2 (`SDL2.dll` и `SDL2_ttf.dll`) должны быть доступны в PATH или рядом с исполняемым файлом.

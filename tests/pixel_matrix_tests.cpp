@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-#include "matrix_pixels.hpp"
-#include "math.hpp"
+#include "../src/matrix_pixels.hpp"
+#include "../src/math.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;

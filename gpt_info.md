@@ -29,14 +29,14 @@
 ## Быстрый старт
 
 ### Тесты
-- Запуск из MSYS2 Bash: `./run_tests.sh`
+- Запуск из MSYS2 Bash: `./tests/build_and_run_tests.sh`
 - Скрипт компилирует и запускает `tests/pixel_matrix_tests.cpp` и печатает `Passed/Failed`.
 
 ### Arduino (FastLED)
-Скетч `AlphaMatrixPixels.ino` демонстрирует работу с LED-матрицей через FastLED.
+Скетч `examples/AlphaMatrixPixelsBase/AlphaMatrixPixelsBase.ino` демонстрирует работу с LED-матрицей через FastLED.
 
 ### Примечание по AMP_CONSTEXPR
-В `fixed_point.hpp` используется макрос `AMP_CONSTEXPR` (по умолчанию `constexpr`), который на Arduino по умолчанию
+В `src/fixed_point.hpp` используется макрос `AMP_CONSTEXPR` (по умолчанию `constexpr`), который на Arduino по умолчанию
 переключается в `inline`, чтобы избежать проблем старых компиляторов с `constexpr` и float math.
 
 ## Основные типы
@@ -61,7 +61,7 @@
 - `csFP32` (struct) — signed 16.16 fixed-point.
 
 ### Важно
-- Классы/структуры из `GUI_Test/` и `tests/` (например `csMainProgramSDL`, `TestStats`) **не являются частью библиотеки** — это демо и тестовый код.
+- Классы/структуры из `dev/GUI_Test/` и `tests/` (например `csMainProgramSDL`, `TestStats`) **не являются частью библиотеки** — это демо и тестовый код.
 
 
 ## Класс `csColorRGBA`
@@ -93,7 +93,7 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 
 ## Класс `csMatrixPixels`
 
-**Исходник:** `matrix_pixels.hpp`
+**Исходник:** `src/matrix_pixels.hpp`
 
 2D-матрица пикселей ARGB (0xAARRGGBB).
 
@@ -105,7 +105,7 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 
 ## Система рендеринга
 
-**Исходник:** `matrix_render.hpp`
+**Исходник:** `src/matrix_render.hpp`
 
 ### Ключевые принципы
 

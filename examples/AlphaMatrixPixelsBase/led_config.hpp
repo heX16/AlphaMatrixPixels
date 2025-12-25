@@ -106,7 +106,7 @@ constexpr uint8_t cClockPin = 4;   // D2 GPIO_04
 //#endif
 
 #ifndef AMP_WIFI_PASSWORD
-#include "hided_code/mywifipass.hpp"
+#include "mywifipass.hpp"
 #endif
 
 // OTA settings (ESP8266/ESP32 only).
