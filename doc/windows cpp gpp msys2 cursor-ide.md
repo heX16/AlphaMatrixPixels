@@ -94,6 +94,59 @@ UCRT64
 Если там `MSYS`, откройте именно:
 
 - `C:\msys64\ucrt64.exe` (откроет отдельное окно терминала)
+- Или через `msys2_shell.cmd` с параметром `-ucrt64`:
+
+```cmd
+C:\msys64\msys2_shell.cmd -ucrt64
+```
+
+Для запуска в текущей директории добавьте параметр `-here`:
+
+```cmd
+C:\msys64\msys2_shell.cmd -ucrt64 -here
+```
+
+### Переключение на UCRT64 в текущем терминале (без выхода)
+
+Если вы уже находитесь в терминале MSYS2 и хотите переключиться на UCRT64 **не покидая текущий терминал**, выполните:
+
+**Многострочная версия:**
+```bash
+export MSYSTEM=UCRT64
+export MSYS2_PATH_TYPE=inherit
+if [ -f /ucrt64/etc/profile ]; then
+    source /ucrt64/etc/profile
+elif [ -f /etc/profile ]; then
+    source /etc/profile
+fi
+```
+
+**Объяснение команд:**
+- `export MSYSTEM=UCRT64` — устанавливает переменную окружения, которая указывает MSYS2 использовать окружение UCRT64
+- `export MSYS2_PATH_TYPE=inherit` — указывает MSYS2 наследовать PATH из Windows (чтобы были доступны программы из Windows)
+- `if [ -f /ucrt64/etc/profile ]` — проверяет, существует ли профиль UCRT64
+- `source /ucrt64/etc/profile` — загружает профиль UCRT64 в текущую оболочку (настраивает PATH, переменные окружения, алиасы)
+- `elif [ -f /etc/profile ]` — если профиль UCRT64 не найден, проверяет общий профиль MSYS2
+- `source /etc/profile` — загружает общий профиль MSYS2 как запасной вариант
+
+**Как это работает:** Команды устанавливают переменные окружения и загружают профиль, который настраивает PATH так, чтобы инструменты UCRT64 (например, `g++` из `/ucrt64/bin`) были доступны в текущем терминале.
+
+**Однострочная версия (для копирования):**
+```bash
+export MSYSTEM=UCRT64 && export MSYS2_PATH_TYPE=inherit && ([ -f /ucrt64/etc/profile ] && source /ucrt64/etc/profile || source /etc/profile)
+```
+
+Проверка:
+
+```bash
+echo $MSYSTEM
+g++ --version
+```
+
+Ожидаемый вывод `echo $MSYSTEM`:
+```text
+UCRT64
+```
 
 **Примечание:** Для интеграции с Cursor IDE используйте настройки терминала, описанные ниже.
 
@@ -322,4 +375,40 @@ g++ -std=c++17 hello.cpp -o hello.exe
 ## система сборки Meson
 
 `pacman -S --needed mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-python`
+
+---
+
+## Информация о терминале и окружении в Cursor
+
+При работе в терминале Cursor на Windows с MSYS2 можно проверить текущее окружение следующими командами:
+
+### Основные характеристики терминала
+
+- **Оболочка:** Bash (`/usr/bin/bash`)
+- **OSTYPE:** `cygwin` (эмуляция Unix на Windows)
+- **ОС:** Windows 10
+- **Shell путь:** `C:\msys64\usr\bin\bash.exe` (MSYS2)
+- **Рабочая директория:** монтируется в Unix-стиле (например, `H:\Prj\AlphaMatrixPixels` → `/h/Prj/AlphaMatrixPixels`)
+
+### Проверка окружения
+
+```bash
+echo "Shell: $SHELL"
+echo "OSTYPE: $OSTYPE"
+echo "MSYSTEM: $MSYSTEM"
+echo "PWD: $PWD"
+echo "HOME: $HOME"
+```
+
+### Особенности окружения
+
+- Это **MSYS2 Bash**, запущенный из Cursor IDE
+- PATH содержит Windows-пути (Python, Git, Node.js, VS Code/Cursor и т.д.)
+- Пути монтируются в Unix-стиле (`/c/Users/...`, `/h/Prj/...`)
+- Некоторые Unix-утилиты (`uname`, `tr`, `head`, `ps`) могут быть недоступны в минимальной конфигурации, но базовые команды Bash работают
+
+### Примечание
+
+Это стандартная среда MSYS2 на Windows, интегрированная в Cursor IDE. Для полноценной работы рекомендуется использовать UCRT64 окружение (см. раздел "Важно: вы должны быть в UCRT64, а не MSYS").
+
 
