@@ -1,4 +1,74 @@
-# Сборка GUI_Test (MSYS2 + Code::Blocks / консоль)
+# Сборка GUI_Test (MSYS2 + Code::Blocks / консоль / Meson)
+
+## Сборка через Meson (рекомендуется)
+
+### Установка Meson, Ninja и Python
+
+**Важно:** Установите пакеты для вашего MinGW окружения, а не системные пакеты MSYS2.
+
+Для **UCRT64** (рекомендуется):
+```bash
+pacman -S --needed mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-python
+```
+
+Для **MinGW64**:
+```bash
+pacman -S --needed mingw-w64-x86_64-meson mingw-w64-x86_64-ninja mingw-w64-x86_64-python
+```
+
+Для **MinGW32**:
+```bash
+pacman -S --needed mingw-w64-i686-meson mingw-w64-i686-ninja mingw-w64-i686-python
+```
+
+**Примечание:** Если вы получили ошибку "This python3 seems to be msys/python on MSYS2 Windows, but you are in a MinGW environment", значит установлен системный Python вместо MinGW версии. Установите правильный пакет для вашего окружения.
+
+### Установка SDL2 и зависимостей
+
+Для **UCRT64**:
+```bash
+pacman -S --needed mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-freetype mingw-w64-ucrt-x86_64-harfbuzz mingw-w64-ucrt-x86_64-graphite2 mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-zlib mingw-w64-ucrt-x86_64-bzip2 mingw-w64-ucrt-x86_64-brotli
+```
+
+Для **MinGW64**:
+```bash
+pacman -S --needed mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_ttf mingw-w64-x86_64-freetype mingw-w64-x86_64-harfbuzz mingw-w64-x86_64-graphite2 mingw-w64-x86_64-libpng mingw-w64-x86_64-zlib mingw-w64-x86_64-bzip2 mingw-w64-x86_64-brotli
+```
+
+**Примечание:** Meson автоматически найдет SDL2 в стандартных путях MSYS2, даже если pkg-config не настроен.
+
+### Сборка
+```bash
+# Настроить build директорию (первый раз)
+meson setup builddir
+
+# Или с явным указанием типа сборки
+meson setup builddir --buildtype=debug
+meson setup builddir --buildtype=release
+
+# Собрать проект
+meson compile -C builddir
+
+# Или из builddir
+cd builddir
+meson compile
+```
+
+### Запуск
+```bash
+# Из корня проекта
+./builddir/GUI_Test/HXLED_GUI_Test.exe
+
+# Или из builddir
+cd builddir
+./GUI_Test/HXLED_GUI_Test.exe
+```
+
+**Примечание:** DLL SDL2 (`SDL2.dll` и `SDL2_ttf.dll`) должны быть доступны в PATH или рядом с исполняемым файлом.
+
+---
+
+## Сборка через Code::Blocks / консоль
 
 ## 64‑битный вариант (рекомендуется)
 - Установить SDL2, SDL_ttf и их зависимости в MinGW64:  

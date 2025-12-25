@@ -318,3 +318,8 @@ UCRT64
 g++ -std=c++17 hello.cpp -o hello.exe
 ```
 
+
+## система сборки Meson
+
+`pacman -S --needed mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-python`
+
