@@ -47,7 +47,7 @@ public:
 class csRenderGradientWaves : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
         const float t = static_cast<float>(currTime) * 0.001f * speed.to_float();
@@ -98,7 +98,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
         using namespace math;
@@ -146,7 +146,7 @@ public:
 class csRenderPlasma : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, uint16_t currTime) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
         const float t = static_cast<float>(currTime) * 0.0025f * speed.to_float();
@@ -277,7 +277,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix || !font) {
+        if (disabled || !matrix || !font) {
             return;
         }
 
@@ -363,7 +363,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
 
@@ -419,7 +419,7 @@ public:
 class csRenderCircleFast : public csRenderCircle {
 public:
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
 
@@ -540,7 +540,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix) {
+        if (disabled || !matrix) {
             return;
         }
 
@@ -657,6 +657,9 @@ public:
     }
 
     void recalc(csRandGen& rand, uint16_t currTime) override {
+        if (disabled) {
+            return;
+        }
         // Algorithm works independently of matrix, only needs rect and bitmap
         if (!bitmap || rect.width == 0 || rect.height == 0) {
             return;
@@ -740,7 +743,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (!matrix || !bitmap) {
+        if (disabled || !matrix || !bitmap) {
             return;
         }
 

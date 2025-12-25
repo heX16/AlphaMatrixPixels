@@ -175,16 +175,17 @@ public:
     static constexpr uint8_t paramMatrixDest = 1;
     static constexpr uint8_t paramRenderRect = 2;
     static constexpr uint8_t paramRenderRectAutosize = 3;
+    static constexpr uint8_t paramDisabled = 4;
     // Scale parameter: 
     // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
     // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
-    static constexpr uint8_t paramScale = 4;
-    static constexpr uint8_t paramSpeed = 5;
-    static constexpr uint8_t paramAlpha = 6;
-    static constexpr uint8_t paramColor = 7;
-    static constexpr uint8_t paramColor2 = 8;
-    static constexpr uint8_t paramColor3 = 9;
-    static constexpr uint8_t paramColorBackground = 10;
+    static constexpr uint8_t paramScale = 5;
+    static constexpr uint8_t paramSpeed = 6;
+    static constexpr uint8_t paramAlpha = 7;
+    static constexpr uint8_t paramColor = 8;
+    static constexpr uint8_t paramColor2 = 9;
+    static constexpr uint8_t paramColor3 = 10;
+    static constexpr uint8_t paramColorBackground = 11;
 
     // Special "parameter" - the last one in the list. Shadowed in each derived class.
     // Example:
@@ -217,6 +218,10 @@ public:
             case paramRenderRectAutosize:
                 info.type = ParamType::Bool;
                 info.name = "Render rect autosize";
+                break;
+            case paramDisabled:
+                info.type = ParamType::Bool;
+                info.name = "Disabled";
                 break;
             case paramScale:
                 info.type = ParamType::FP16;
@@ -264,6 +269,8 @@ public:
 
     bool renderRectAutosize = true;
 
+    bool disabled = false;
+
     virtual ~csRenderMatrixBase() = default;
 
     void setMatrix(csMatrixPixels* m) noexcept {
@@ -295,12 +302,16 @@ public:
                 info.ptr = &matrix;
                 info.disabled = false;
                 break;
+            case paramDisabled:
+                info.ptr = &disabled;
+                info.disabled = false;
+                break;
             default:
                 break;
         }
     }
 
-    virtual void paramChanged(uint8_t paramNum) {
+    void paramChanged(uint8_t paramNum) override {
         switch (paramNum) {
             case paramRenderRectAutosize:
             case paramMatrixDest:
