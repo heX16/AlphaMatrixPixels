@@ -112,14 +112,14 @@ public:
         auto* fill = new csRenderFill();
         fill->color = csColorRGBA{192, 0, 0, 0};
         fill->renderRectAutosize = false;
-        fill->rect = amp::csRect{0, 0, clockWidth, clockHeight};
+        fill->rect = amp::csRect{1, 1, clockWidth+2, clockHeight+2};
         
         // Create clock effect
         auto* clock = new csRenderClock();
         clock->glyph.color = csColorRGBA{255, 255, 255, 255};
         clock->glyph.backgroundColor = csColorRGBA{0, 0, 0, 0};
         clock->renderRectAutosize = false;
-        clock->rect = amp::csRect{0, 0, clockWidth, clockHeight};
+        clock->rect = amp::csRect{2, 2, clockWidth+1, clockHeight+1};
         
         // Add effects to container (fill first, then clock on top)
         container->effects[0] = fill;
@@ -198,8 +198,8 @@ public:
                             w = 16;
                             h = 16;
                         } else if (event.key.keysym.sym == SDLK_2) {
-                            w = 15;
-                            h = 5;
+                            w = 19;
+                            h = 9;
                         } else if (event.key.keysym.sym == SDLK_3) {
                             w = 8;
                             h = 8;
