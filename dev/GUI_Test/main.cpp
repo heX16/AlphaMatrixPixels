@@ -28,6 +28,8 @@ using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
 using amp::csRenderSnowfall;
 using amp::csRenderClock;
+using amp::csRenderContainer;
+using amp::csRenderFill;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -58,6 +60,14 @@ public:
     void bindEffectMatrix(csEffectBase* eff) {
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
             m->setMatrix(matrix);
+            // If it's a container, also bind matrix to nested effects
+            if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
+                for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
+                    if (container->effects[i] != nullptr) {
+                        bindEffectMatrix(container->effects[i]);
+                    }
+                }
+            }
         }
     }
 
@@ -83,12 +93,39 @@ public:
         circle.renderRectAutosize = true; // использовать весь rect матрицы
     }
 
-    csRenderClock* createClock() const noexcept {
+    csRenderContainer* createClock() const noexcept {
+        // Get font dimensions for clock size calculation
+        const auto& font = amp::font3x5Digits();
+        const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
+        const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
+        constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
+        constexpr uint8_t digitCount = 4; // clock displays 4 digits
+        
+        // Calculate clock rect size: 4 digits + 3 spacings between them
+        const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
+        const tMatrixPixelsSize clockHeight = fontHeight;
+        
+        // Create container
+        auto* container = new csRenderContainer();
+        
+        // Create fill effect (background) - covers clock rect
+        auto* fill = new csRenderFill();
+        fill->color = csColorRGBA{192, 0, 0, 0};
+        fill->renderRectAutosize = false;
+        fill->rect = amp::csRect{0, 0, clockWidth, clockHeight};
+        
+        // Create clock effect
         auto* clock = new csRenderClock();
         clock->glyph.color = csColorRGBA{255, 255, 255, 255};
-        clock->glyph.backgroundColor = csColorRGBA{192, 0, 0, 0};
-        clock->renderRectAutosize = true; // использовать весь rect матрицы
-        return clock;
+        clock->glyph.backgroundColor = csColorRGBA{0, 0, 0, 0};
+        clock->renderRectAutosize = false;
+        clock->rect = amp::csRect{0, 0, clockWidth, clockHeight};
+        
+        // Add effects to container (fill first, then clock on top)
+        container->effects[0] = fill;
+        container->effects[1] = clock;
+        
+        return container;
     }
 
     bool initSDL() {
@@ -243,7 +280,16 @@ public:
             }
             if (effect2) {
                 const uint32_t ticks = SDL_GetTicks();
-                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
+                if (auto* container = dynamic_cast<csRenderContainer*>(effect2)) {
+                    // Update time for clock inside container
+                    for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
+                        if (auto* clock = dynamic_cast<csRenderClock*>(container->effects[i])) {
+                            clock->time = ticks / 1000u;
+                            break;
+                        }
+                    }
+                    container->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
                     glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
                     glyph->render(randGen, static_cast<uint16_t>(ticks));
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
