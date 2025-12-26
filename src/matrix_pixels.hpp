@@ -210,15 +210,82 @@ public:
         return sum2.toColor8(count2);
     }
 
+    // Scale and draw source matrix onto this matrix using bilinear interpolation.
+    // 'src' is the source rectangle in 'source' matrix, 'dst' is the destination rectangle in this matrix.
+    // Returns false if src or dst is empty, or if src is out of bounds of source matrix.
+    bool drawMatrixScale(csRect src, csRect dst, const csMatrixPixels& source) noexcept {
+        // Validate input rectangles
+        if (src.empty() || dst.empty()) {
+            return false;
+        }
+
+        // Check if source rectangle is within source matrix bounds
+        const csRect sourceBounds = source.getRect();
+        const csRect srcBounded = src.intersect(sourceBounds);
+        if (srcBounded.empty() || srcBounded.width != src.width || srcBounded.height != src.height) {
+            return false;
+        }
+
+        // Clip destination rectangle to this matrix bounds
+        const csRect dstBounded = dst.intersect(getRect());
+        if (dstBounded.empty()) {
+            return true; // Nothing to draw, but operation is valid
+        }
+
+        // Calculate scale factors based on original dst size (using fixed-point arithmetic for precision)
+        // We use 16.16 fixed-point: multiply by 65536, then shift right by 16
+        const int32_t scale_x_fp = (static_cast<int32_t>(src.width) << 16) / static_cast<int32_t>(dst.width);
+        const int32_t scale_y_fp = (static_cast<int32_t>(src.height) << 16) / static_cast<int32_t>(dst.height);
+
+        // Iterate over each pixel in clipped destination rectangle
+        for (tMatrixPixelsSize dy = 0; dy < dstBounded.height; ++dy) {
+            const tMatrixPixelsCoord dst_y = dstBounded.y + static_cast<tMatrixPixelsCoord>(dy);
+            
+            for (tMatrixPixelsSize dx = 0; dx < dstBounded.width; ++dx) {
+                const tMatrixPixelsCoord dst_x = dstBounded.x + static_cast<tMatrixPixelsCoord>(dx);
+
+                // Calculate corresponding position in source (fixed-point)
+                // Map from dst coordinates to src coordinates, accounting for offset from dst origin
+                const int32_t offset_x = dst_x - dst.x;
+                const int32_t offset_y = dst_y - dst.y;
+                const int32_t src_x_fp = (static_cast<int32_t>(src.x) << 16) + 
+                                         (offset_x * scale_x_fp);
+                const int32_t src_y_fp = (static_cast<int32_t>(src.y) << 16) + 
+                                         (offset_y * scale_y_fp);
+
+                // Extract integer and fractional parts
+                const int32_t src_x_int = src_x_fp >> 16;
+                const int32_t src_y_int = src_y_fp >> 16;
+                const uint8_t fx = static_cast<uint8_t>((src_x_fp & 0xFFFF) >> 8); // 8-bit fractional part
+                const uint8_t fy = static_cast<uint8_t>((src_y_fp & 0xFFFF) >> 8);
+
+                // Get 4 neighboring pixels for bilinear interpolation
+                const csColorRGBA p00 = source.getPixel(src_x_int, src_y_int);
+                const csColorRGBA p10 = source.getPixel(src_x_int + 1, src_y_int);
+                const csColorRGBA p01 = source.getPixel(src_x_int, src_y_int + 1);
+                const csColorRGBA p11 = source.getPixel(src_x_int + 1, src_y_int + 1);
+
+                // Bilinear interpolation: first interpolate horizontally (top and bottom)
+                const csColorRGBA top = lerp(p00, p10, fx);
+                const csColorRGBA bottom = lerp(p01, p11, fx);
+
+                // Then interpolate vertically
+                const csColorRGBA result = lerp(top, bottom, fy);
+
+                // Draw the interpolated pixel with alpha blending
+                setPixel(dst_x, dst_y, result);
+            }
+        }
+
+        return true;
+    }
+
     /*
     TODO:
 
     `void getScanLine(csRect area, offset_x, offset_y, OUT &* ptrLineOfColors, OUT & lineLen)`
 
     `void fill(csRect area, color)`
-
-    // slow and nice
-    `bool drawMatrixScale(csRect src, csRect dst, const csMatrixPixels& source)`
 
     // overwrite dst area. fast.
     `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
