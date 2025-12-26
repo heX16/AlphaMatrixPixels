@@ -75,7 +75,7 @@ CLEDController* controller = nullptr;
     glyph.color = amp::csColorRGBA{255, 255, 255, 255};
     glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
     glyph.symbolIndex = 0;
-    glyph.setFont(amp::getFont<amp::csFont3x5Digits>());
+    glyph.setFont(amp::getStaticFontTemplate<amp::csFont3x5Digits>());
     glyph.renderRectAutosize = false;
     glyph.rectDest = amp::csRect{
         1,

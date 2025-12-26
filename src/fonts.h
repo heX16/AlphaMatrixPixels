@@ -8,7 +8,7 @@ namespace amp {
 
 // Template function for font accessors: avoids global objects and ODR issues in header-only mode.
 template<typename FontType>
-inline const FontType& getFont() noexcept {
+inline const FontType& getStaticFontTemplate() noexcept {
     static FontType f;
     return f;
 }
