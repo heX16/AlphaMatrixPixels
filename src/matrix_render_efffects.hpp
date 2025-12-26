@@ -310,12 +310,11 @@ public:
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
             const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
             for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
-                if (!csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
-                    continue;
-                }
-                const tMatrixPixelsCoord px = offsetX + to_coord(col);
-                const tMatrixPixelsCoord py = offsetY + to_coord(row);
-                matrix->setPixel(px, py, color);
+                if (csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
+                    const tMatrixPixelsCoord px = offsetX + to_coord(col);
+                    const tMatrixPixelsCoord py = offsetY + to_coord(row);
+                    matrix->setPixel(px, py, color);
+                } 
             }
         }
     }

@@ -77,13 +77,13 @@ public:
         glyph.color = csColorRGBA{255, 255, 255, 255};
         glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
         glyph.symbolIndex = 0;
-        glyph.setFont(amp::font4x7Digits());
+        glyph.setFont(amp::getFont<amp::csFont4x7Digits>());
         glyph.renderRectAutosize = false;
         glyph.rectDest = amp::csRect{
             2,
             2,
-            static_cast<amp::tMatrixPixelsSize>(amp::font4x7Digits().width() + 2),
-            static_cast<amp::tMatrixPixelsSize>(amp::font4x7Digits().height() + 2)
+            glyph.fontWidth + 2,
+            glyph.fontHeight + 2
         };
     }
 
@@ -105,7 +105,7 @@ public:
 
     csRenderContainer* createClock() const noexcept {
         // Get font dimensions for clock size calculation
-        const auto& font = amp::font4x7Digits();
+        const auto& font = amp::getFont<amp::csFont4x7Digits>();
         const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
         const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
         constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
