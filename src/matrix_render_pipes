@@ -1,6 +1,7 @@
 #pragma once
 
 #include "matrix_render.hpp"
+#include "matrix_types.hpp"
 
 namespace amp {
 
@@ -75,12 +76,17 @@ public:
     }
 };
 
-// Effect: convert 2D matrix to linear 1D matrix (height=1, width=src.height*src.width).
+// Effect: convert 2D matrix to linear 1D matrix
+//
+// linear 1D matrix size:  (height=1, width=src.height*src.width).
+// Index starts from 1. (not 0!)
+// If `index==0` - skip the pixel.
 class csRenderMatrixCopyLine : public csRenderMatrixPipeBase {
 public:
     // Calculate linear index from 2D coordinates (row-major order).
     virtual uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const {
-        return static_cast<uint32_t>(y) * static_cast<uint32_t>(srcWidth) + static_cast<uint32_t>(x);
+        return 
+            (y * srcWidth + x) + 1;
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
@@ -104,10 +110,10 @@ public:
             for (tMatrixPixelsSize x = 0; x < srcWidth; ++x) {
                 const csColorRGBA sourcePixel = matrixSource->getPixel(x, y);
                 const uint32_t linearIndex = getPixelLineIndex(x, y, srcWidth);
-                if (linearIndex == UINT32_MAX) {
+                if (linearIndex == 0) {
                     continue;
                 }
-                matrix->setPixelRewrite(static_cast<tMatrixPixelsCoord>(linearIndex), 0, sourcePixel);
+                matrix->setPixelRewrite(to_coord(linearIndex - 1), 0, sourcePixel);
             }
         }
     }
@@ -154,11 +160,9 @@ public:
     // Calculate linear index from 2D coordinates (row-major order).
     uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const override {
         if (matrixIndex) {
-            const csColorRGBA indexColor = matrixIndex->getPixel(x, y);
-            // Extract index from color: use R and G components for 16-bit index (0-65535)
-            return indexColor.value;
+            return matrixIndex->getPixel(x, y).value;
         }
-        return UINT32_MAX;
+        return 0;
     }
 };
 
