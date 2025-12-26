@@ -22,8 +22,7 @@
 
 // Fonts
 #include "font_base.hpp"
-#include "font3x5.h"
-#include "font4x7.h"
+#include "fonts.h"
 
 // Output drivers
 #include "output_driver.hpp"
