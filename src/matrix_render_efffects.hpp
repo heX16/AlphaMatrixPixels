@@ -986,10 +986,18 @@ public:
         // Extract last 4 decimal digits from time parameter
         // Extract from left to right (most significant first)
         uint8_t digits[digitCount];
-        digits[0] = static_cast<uint8_t>((time / 1000) % 10); // thousands
-        digits[1] = static_cast<uint8_t>((time / 100) % 10);  // hundreds
-        digits[2] = static_cast<uint8_t>((time / 10) % 10);  // tens
-        digits[3] = static_cast<uint8_t>((time / 1) % 10);   // units
+
+        uint32_t divisor = 1;
+        // cycle [3..0]
+        for (int i = digitCount - 1; i >= 0; --i) {
+            // digits[3] = (1234 / 1) → 1234 % 10 → 4
+            // digits[2] = (1234 / 10) → 123 % 10 → 3
+            // digits[1] = (1234 / 100) → 12 % 10 → 2
+            // digits[0] = (1234 / 1000) → 1 % 10 → 1
+            digits[i] = static_cast<uint8_t>( (time / divisor) % 10 );
+            // 1 → 10 → 100 → 1000
+            divisor = divisor * 10;
+        }
 
         // Get font dimensions
         const csFontBase* font = glyphs[0].font;
