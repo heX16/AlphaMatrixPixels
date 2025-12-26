@@ -11,6 +11,7 @@
 #include "../src/color_rgba.hpp"
 #include "../src/matrix_render.hpp"
 #include "../src/matrix_render_efffects.hpp"
+#include "../src/matrix_render_pipes"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
@@ -30,6 +31,7 @@ using amp::csRenderSnowfall;
 using amp::csRenderClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
+using amp::csRenderBlurArea;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -91,6 +93,14 @@ public:
         circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
         circle.gradientOffset = 127;
         circle.renderRectAutosize = true; // использовать весь rect матрицы
+    }
+
+    void initBlurAreaDefaults(csRenderBlurArea& blurArea) noexcept {
+        blurArea.matrix = &matrix;
+        blurArea.matrixSource = &matrix;
+        blurArea.renderRectAutosize = false;
+        blurArea.rectSource = amp::csRect{1, 1, 4, 4};
+        blurArea.rectDest = amp::csRect{1, 1, 4, 4};
     }
 
     csRenderContainer* createClock() const noexcept {
@@ -239,6 +249,12 @@ public:
                     } else if (event.key.keysym.sym == SDLK_c) {
                         delete effect2;
                         effect2 = createClock();
+                        bindEffectMatrix(effect2);
+                    } else if (event.key.keysym.sym == SDLK_b) {
+                        delete effect2;
+                        auto* blurArea = new csRenderBlurArea();
+                        initBlurAreaDefaults(*blurArea);
+                        effect2 = blurArea;
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
                         // Increase scale for dynamic effects
