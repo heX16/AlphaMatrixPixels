@@ -71,7 +71,6 @@ CLEDController* controller = nullptr;
     snowfall.color = amp::csColorRGBA{255, 255, 255, 255};
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
-    /*
     glyph.setMatrix(canvas);
     glyph.color = amp::csColorRGBA{255, 255, 255, 255};
     glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
@@ -84,7 +83,6 @@ CLEDController* controller = nullptr;
         static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().width()),
         static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().height())
     };
-    */
 
     amp::wifi_ota::setup();
 }
