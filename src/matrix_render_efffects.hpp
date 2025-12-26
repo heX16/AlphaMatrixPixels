@@ -1202,16 +1202,14 @@ public:
             return;
         }
 
-        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
-        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                // Calculate local coordinates in source matrix (relative to rect.x and rect.y)
-                const tMatrixPixelsCoord srcX = x - rect.x;
-                const tMatrixPixelsCoord srcY = y - rect.y;
-                const csColorRGBA srcColor = matrixSource->getPixel(srcX, srcY);
-                matrix->setPixel(x, y, srcColor);
-            }
+        const csRect srcRect = matrixSource->getRect();
+        
+        // If sizes match, use simple drawMatrix (faster)
+        if (rect.width == srcRect.width && rect.height == srcRect.height) {
+            matrix->drawMatrix(rect.x, rect.y, *matrixSource);
+        } else {
+            // Use drawMatrixScale for different sizes
+            matrix->drawMatrixScale(srcRect, rect, *matrixSource);
         }
     }
 };
