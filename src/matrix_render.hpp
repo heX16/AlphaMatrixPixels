@@ -275,12 +275,12 @@ public:
 
     void setMatrix(csMatrixPixels* m) noexcept {
         matrix = m;
-        updateRenderRect();
+        paramChanged(paramMatrixDest);
         paramChanged(paramRenderRect);
     }
     void setMatrix(csMatrixPixels& m) noexcept {
         matrix = &m;
-        updateRenderRect();
+        paramChanged(paramMatrixDest);
         paramChanged(paramRenderRect);
     }
 

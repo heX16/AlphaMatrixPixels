@@ -936,14 +936,14 @@ public:
         glyph.renderRectAutosize = false;
     }
 
-    void setMatrix(csMatrixPixels* m) noexcept {
-        csRenderMatrixBase::setMatrix(m);
-        glyph.setMatrix(m);
-    }
-
-    void setMatrix(csMatrixPixels& m) noexcept {
-        csRenderMatrixBase::setMatrix(m);
-        glyph.setMatrix(m);
+    void paramChanged(uint8_t paramNum) override {
+        csRenderMatrixBase::paramChanged(paramNum);
+        if (paramNum == paramMatrixDest) {
+            // Update glyph matrix when matrix destination changes
+            if (matrix) {
+                glyph.setMatrix(matrix);
+            }
+        }
     }
 
     uint8_t getParamsCount() const override {
