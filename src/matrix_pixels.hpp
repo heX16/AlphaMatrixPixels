@@ -168,6 +168,21 @@ public:
         }
     }
 
+    // Fill rectangular area with color. Area is clipped to matrix bounds.
+    inline void fillArea(csRect area, csColorRGBA color) noexcept {
+        const csRect target = area.intersect(getRect());
+        if (target.empty()) {
+            return;
+        }
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                setPixel(x, y, color);
+            }
+        }
+    }
+
     // Calc average color of area. Fast.
     // Uses two-level hierarchical averaging to avoid overflow in uint16_t accumulators.
     // Max area: 65536 pixels (256x256). Larger areas return transparent black.

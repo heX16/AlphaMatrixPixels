@@ -925,17 +925,7 @@ public:
         if (disabled || !matrix) {
             return;
         }
-        const csRect target = rectDest.intersect(matrix->getRect());
-        if (target.empty()) {
-            return;
-        }
-        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
-        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
+        matrix->fillArea(rectDest, color);
     }
 };
 

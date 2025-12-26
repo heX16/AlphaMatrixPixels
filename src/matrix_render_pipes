@@ -166,4 +166,18 @@ public:
     }
 };
 
+// Effect: blur area by computing average color of source area and filling destination area with it.
+class csRenderBlurArea : public csRenderMatrixPipeBase {
+public:
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !matrixSource) {
+            return;
+        }
+
+        // Get average color of source area and fill destination area with it
+        const csColorRGBA areaColor = matrixSource->getAreaColor(rectSource);
+        matrix->fillArea(rectDest, areaColor);
+    }
+};
+
 } // namespace amp
