@@ -1156,4 +1156,55 @@ public:
     }
 };
 
+// Effect: copy pixels from source matrix to destination matrix with blending.
+class csRenderMatrixCopy : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramMatrixSource = base + 1;
+    static constexpr uint8_t paramLast = paramMatrixSource;
+
+    // Source matrix pointer (nullptr means no source).
+    csMatrixPixels* matrixSource = nullptr;
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramMatrixSource:
+                info.type = ParamType::Matrix;
+                info.name = "Matrix source";
+                info.ptr = &matrixSource;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !matrixSource) {
+            return;
+        }
+
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                // Calculate local coordinates in source matrix (relative to rect.x and rect.y)
+                const tMatrixPixelsCoord srcX = x - rect.x;
+                const tMatrixPixelsCoord srcY = y - rect.y;
+                const csColorRGBA srcColor = matrixSource->getPixel(srcX, srcY);
+                matrix->setPixel(x, y, srcColor);
+            }
+        }
+    }
+};
+
 } // namespace amp
