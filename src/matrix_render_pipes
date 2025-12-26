@@ -61,19 +61,16 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
-        if (target.empty()) {
+        if (rect.intersect(rectSource).empty()) {
             return;
         }
-
-        const csRect srcRect = matrixSource->getRect();
         
         // If sizes match, use simple drawMatrix (faster)
-        if (rect.width == srcRect.width && rect.height == srcRect.height) {
-            matrix->drawMatrix(rect.x, rect.y, *matrixSource);
+        if (rect.width == rectSource.width && rect.height == rectSource.height) {
+            matrix->drawMatrixArea(rectSource, rect.x, rect.y, *matrixSource);
         } else {
             // Use drawMatrixScale for different sizes
-            matrix->drawMatrixScale(srcRect, rect, *matrixSource);
+            matrix->drawMatrixScale(rectSource, rect, *matrixSource);
         }
     }
 };
