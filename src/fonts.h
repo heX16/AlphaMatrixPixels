@@ -10,7 +10,7 @@ namespace amp {
 //
 // Storage format:
 // - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - rowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
+// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont3x5Digits final : public csFontBase {
 public:
     using Row = uint8_t;
@@ -23,7 +23,7 @@ public:
     uint16_t height() const noexcept override { return kHeight; }
     uint16_t count() const noexcept override { return kCount; }
 
-    uint32_t rowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
+    uint32_t getRowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
@@ -119,7 +119,7 @@ inline const csFont3x5Digits& font3x5Digits() noexcept {
 //
 // Storage format:
 // - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - rowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
+// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont4x7Digits final : public csFontBase {
 public:
     using Row = uint8_t;
@@ -132,7 +132,7 @@ public:
     uint16_t height() const noexcept override { return kHeight; }
     uint16_t count() const noexcept override { return kCount; }
 
-    uint32_t rowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
+    uint32_t getRowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
@@ -248,7 +248,7 @@ inline const csFont4x7Digits& font4x7Digits() noexcept {
 //
 // Storage format:
 // - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - rowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
+// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont4x7DigitsRound final : public csFontBase {
 public:
     using Row = uint8_t;
@@ -261,7 +261,7 @@ public:
     uint16_t height() const noexcept override { return kHeight; }
     uint16_t count() const noexcept override { return kCount; }
 
-    uint32_t rowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
+    uint32_t getRowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }

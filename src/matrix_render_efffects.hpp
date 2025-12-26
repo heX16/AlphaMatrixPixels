@@ -303,14 +303,14 @@ public:
         const tMatrixPixelsCoord offsetX = rectDest.x + to_coord((rectDest.width - glyphWidth) / 2);
         const tMatrixPixelsCoord offsetY = rectDest.y + to_coord((rectDest.height - glyphHeight) / 2);
 
-        const uint16_t safeIndex = (symbolIndex < font->count())
-            ? static_cast<uint16_t>(symbolIndex)
-            : static_cast<uint16_t>((font->count() == 0) ? 0 : (font->count() - 1));
+        if (symbolIndex >= font->count()) {
+            return;
+        }
+            
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
-            const uint32_t glyphRow = font->rowBits(safeIndex, static_cast<uint16_t>(row));
+            const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
             for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
-                const uint32_t mask = 1u << (31u - static_cast<uint32_t>(col));
-                if ((glyphRow & mask) == 0u) {
+                if (!csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
                     continue;
                 }
                 const tMatrixPixelsCoord px = offsetX + to_coord(col);
@@ -1056,9 +1056,7 @@ public:
     mutable csRenderGlyph glyph;
 
     csRenderClock() {
-        // Initialize glyph with font
-        const csFontBase& font = font3x5Digits();
-        glyph.setFont(font);
+        // Font is not set by default (nullptr) - must be set explicitly
         glyph.renderRectAutosize = false;
     }
 
