@@ -31,7 +31,8 @@ enum class ParamType : uint8_t {
     Ptr = 11,
     Matrix = 12,
     Rect = 13,
-    Color
+    Color = 14,
+    Effect = 15
 };
 
 struct csParamInfo {

@@ -939,6 +939,106 @@ public:
     }
 };
 
+// Effect: container that holds and calls up to 5 nested effects.
+// Container does NOT create or destroy nested effects - only stores pointers.
+class csRenderContainer : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t maxEffects = 5;
+    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
+    static constexpr uint8_t paramEffect1 = base + 1;
+    static constexpr uint8_t paramEffect2 = base + 2;
+    static constexpr uint8_t paramEffect3 = base + 3;
+    static constexpr uint8_t paramEffect4 = base + 4;
+    static constexpr uint8_t paramEffect5 = base + 5;
+    static constexpr uint8_t paramLast = paramEffect5;
+
+    // Array of pointers to nested effects (nullptr means slot is empty).
+    // Container does NOT manage memory - effects must be created/destroyed externally.
+    csEffectBase* effects[maxEffects] = {};
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramRenderRect:
+                info.disabled = true;
+                break;
+            case paramRenderRectAutosize:
+                info.disabled = true;
+                break;
+            case paramEffect1:
+                info.type = ParamType::Effect;
+                info.name = "Effect 1";
+                info.ptr = &effects[0];
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramEffect2:
+                info.type = ParamType::Effect;
+                info.name = "Effect 2";
+                info.ptr = &effects[1];
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramEffect3:
+                info.type = ParamType::Effect;
+                info.name = "Effect 3";
+                info.ptr = &effects[2];
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramEffect4:
+                info.type = ParamType::Effect;
+                info.name = "Effect 4";
+                info.ptr = &effects[3];
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramEffect5:
+                info.type = ParamType::Effect;
+                info.name = "Effect 5";
+                info.ptr = &effects[4];
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void paramChanged(uint8_t paramNum) override {
+        // Ignore paramRenderRect and paramRenderRectAutosize - they are disabled
+        if (paramNum == paramRenderRect || paramNum == paramRenderRectAutosize) {
+            return;
+        }
+        // Call base implementation for other parameters
+        csRenderMatrixBase::paramChanged(paramNum);
+    }
+
+    void recalc(csRandGen& rand, uint16_t currTime) override {
+        if (disabled) {
+            return;
+        }
+        for (uint8_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] != nullptr) {
+                effects[i]->recalc(rand, currTime);
+            }
+        }
+    }
+
+    void render(csRandGen& rand, uint16_t currTime) const override {
+        if (disabled) {
+            return;
+        }
+        for (uint8_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] != nullptr) {
+                effects[i]->render(rand, currTime);
+            }
+        }
+    }
+};
+
 // Effect: display 4 digits clock using glyph renderer.
 // Time value is passed via 'time' parameter (int32_t).
 // Extracts last 4 decimal digits from time parameter.
