@@ -135,6 +135,30 @@ public:
         }
     }
 
+    // Draw specific source area to destination coordinates with clipping.
+    // 'src' is the area to copy from source matrix, (dst_x, dst_y) is where to draw in this matrix.
+    // Source alpha is respected and additionally scaled by 'alpha'.
+    inline void drawMatrixArea(csRect src, tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y,
+                               const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
+        // Clip source rectangle to source matrix bounds
+        const csRect srcBounds = source.getRect();
+        const csRect srcClipped = src.intersect(srcBounds);
+        if (srcClipped.empty()) {
+            return;
+        }
+        
+        // Copy pixels from source area to destination coordinates
+        for (tMatrixPixelsSize y = 0; y < srcClipped.height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < srcClipped.width; ++x) {
+                const csColorRGBA pixel = source.getPixel(srcClipped.x + static_cast<tMatrixPixelsCoord>(x), 
+                                                           srcClipped.y + static_cast<tMatrixPixelsCoord>(y));
+                setPixel(dst_x + static_cast<tMatrixPixelsCoord>(x), 
+                        dst_y + static_cast<tMatrixPixelsCoord>(y), 
+                        pixel, alpha);
+            }
+        }
+    }
+
     // Clear matrix to transparent black.
     inline void clear() noexcept {
         const size_t bytes = count() * sizeof(csColorRGBA);
