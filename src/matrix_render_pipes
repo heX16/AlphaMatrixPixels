@@ -79,8 +79,8 @@ public:
 class csRenderMatrixCopyLine : public csRenderMatrixPipeBase {
 public:
     // Calculate linear index from 2D coordinates (row-major order).
-    static size_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) {
-        return static_cast<size_t>(y) * static_cast<size_t>(srcWidth) + static_cast<size_t>(x);
+    virtual uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const {
+        return static_cast<uint32_t>(y) * static_cast<uint32_t>(srcWidth) + static_cast<uint32_t>(x);
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
@@ -103,11 +103,75 @@ public:
         for (tMatrixPixelsSize y = 0; y < srcHeight; ++y) {
             for (tMatrixPixelsSize x = 0; x < srcWidth; ++x) {
                 const csColorRGBA sourcePixel = matrixSource->getPixel(x, y);
-                const size_t linearIndex = getPixelLineIndex(x, y, srcWidth);
+                const uint32_t linearIndex = getPixelLineIndex(x, y, srcWidth);
+                if (linearIndex == UINT32_MAX) {
+                    continue;
+                }
                 matrix->setPixelRewrite(static_cast<tMatrixPixelsCoord>(linearIndex), 0, sourcePixel);
             }
         }
     }
 };
     
+// Effect: convert 2D matrix to linear 1D matrix (height=1, width=src.height*src.width).
+// Index mode with custom index mapping via matrixIndex.
+//
+// matrixIndex: pointer to a matrix that defines custom linear index for each source pixel.
+//   - If nullptr: all pixels are skipped (getPixelLineIndex returns UINT32_MAX)
+//   - If set: for each source pixel at (x, y), reads index from matrixIndex at (x, y)
+//   - Index format: stored as the full 32-bit color value (0xAARRGGBB format)
+//   - Formula: index = matrixIndex->getPixel(x, y).value
+//   - Range: 0-UINT32_MAX (32-bit value)
+//   - Special value: if index equals UINT32_MAX, pixel is skipped
+//
+// For each pixel at (x, y) in matrixSource:
+//   1. Read color from matrixSource at (x, y)
+//   2. Read linear index from matrixIndex at (x, y) as color.value
+//   3. Write color to destination matrix at position (linearIndex, 0)
+//
+// Example: to create index matrix with row-major order:
+//   uint32_t idx = 0;
+//   for (y = 0; y < height; ++y) {
+//       for (x = 0; x < width; ++x) {
+//           matrixIndex->setPixel(x, y, csColorRGBA(idx));
+//           ++idx;
+//       }
+//   }
+class csRenderMatrixCopyLineIndex : public csRenderMatrixCopyLine {
+public:
+    static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
+    static constexpr uint8_t paramMatrixIndex = base + 1;
+    static constexpr uint8_t paramLast = paramMatrixIndex;
+
+    // Index matrix pointer (nullptr means use default index calculation).
+    csMatrixPixels* matrixIndex = nullptr;
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixCopyLine::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramMatrixIndex:
+                info.type = ParamType::Matrix;
+                info.name = "Matrix index";
+                info.ptr = &matrixIndex;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    // Calculate linear index from 2D coordinates (row-major order).
+    uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const override {
+        if (matrixIndex) {
+            const csColorRGBA indexColor = matrixIndex->getPixel(x, y);
+            // Extract index from color: use R and G components for 16-bit index (0-65535)
+            return indexColor.value;
+        }
+        return UINT32_MAX;
+    }
+};
+
 } // namespace amp
