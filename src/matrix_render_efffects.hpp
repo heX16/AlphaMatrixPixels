@@ -913,7 +913,16 @@ public:
     static constexpr uint8_t paramTime = base + 1;
     static constexpr uint8_t paramLast = paramTime;
 
-    int32_t time = 0;
+    // Time parameter (uint32_t): stores time value for clock display.
+    //
+    // Examples:
+    //   - time = 1234 → extracts [1, 2, 3, 4] → displays "1234"
+    //   - time = 5    → extracts [0, 0, 0, 5] → displays "0005"
+    //
+    // Note:
+    //   This effect does NOT read system time. The time value must be set
+    //   externally by the application.
+    uint32_t time = 0;
 
     // Four glyph renderers for 4 digits
     // Mutable because render() modifies them but doesn't change logical state
@@ -956,7 +965,11 @@ public:
                 info.disabled = true;
                 break;
             case paramTime:
-                info.type = ParamType::Int32;
+                // Time parameter: uint32_t value containing time data.
+                // Extracts last 4 decimal digits (rightmost) from the value.
+                // Digits are extracted right-to-left and displayed left-to-right.
+                // Examples: time=1234 → "4321", time=567 → "7650", time=99 → "9900"
+                info.type = ParamType::UInt32;
                 info.name = "Time";
                 info.ptr = &time;
                 info.readOnly = false;
@@ -971,14 +984,12 @@ public:
         }
 
         // Extract last 4 decimal digits from time parameter
-        // Handle negative values by taking absolute value
-        uint32_t timeAbs = static_cast<uint32_t>((time < 0) ? -time : time);
+        // Extract from left to right (most significant first)
         uint8_t digits[digitCount];
-        uint32_t divisor = 1;
-        for (uint8_t i = 0; i < digitCount; ++i) {
-            digits[i] = static_cast<uint8_t>((timeAbs / divisor) % 10);
-            divisor *= 10;
-        }
+        digits[0] = static_cast<uint8_t>((time / 1000) % 10); // thousands
+        digits[1] = static_cast<uint8_t>((time / 100) % 10);  // hundreds
+        digits[2] = static_cast<uint8_t>((time / 10) % 10);  // tens
+        digits[3] = static_cast<uint8_t>((time / 1) % 10);   // units
 
         // Get font dimensions
         const csFontBase* font = glyphs[0].font;
