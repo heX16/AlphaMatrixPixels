@@ -27,6 +27,7 @@ using amp::csRenderCircle;
 using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
 using amp::csRenderSnowfall;
+using amp::csRenderClock;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -80,6 +81,14 @@ public:
         circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
         circle.gradientOffset = 127;
         circle.renderRectAutosize = true; // использовать весь rect матрицы
+    }
+
+    csRenderClock* createClock() const noexcept {
+        auto* clock = new csRenderClock();
+        clock->glyph.color = csColorRGBA{255, 255, 255, 255};
+        clock->glyph.backgroundColor = csColorRGBA{192, 0, 0, 0};
+        clock->renderRectAutosize = true; // использовать весь rect матрицы
+        return clock;
     }
 
     bool initSDL() {
@@ -190,6 +199,10 @@ public:
                         initCircleDefaults(*circle);
                         effect2 = circle;
                         bindEffectMatrix(effect2);
+                    } else if (event.key.keysym.sym == SDLK_c) {
+                        delete effect2;
+                        effect2 = createClock();
+                        bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
                         // Increase scale for dynamic effects
                         if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
@@ -220,6 +233,10 @@ public:
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
                     snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
                     snowfall->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* clock = dynamic_cast<csRenderClock*>(effect)) {
+                    // Update time from SDL ticks (convert to seconds)
+                    clock->time = ticks / 1000u;
+                    clock->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect->render(randGen, static_cast<uint16_t>(ticks));
                 }
@@ -232,6 +249,10 @@ public:
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
                     snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
                     snowfall->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* clock = dynamic_cast<csRenderClock*>(effect2)) {
+                    // Update time from SDL ticks (convert to seconds)
+                    clock->time = ticks / 1000u;
+                    clock->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect2->render(randGen, static_cast<uint16_t>(ticks));
                 }
