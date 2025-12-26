@@ -320,6 +320,55 @@ public:
     }
 };
 
+// Effect: draw a single digit glyph using the 3x5 font (copy).
+class csRenderDigitalClock : public csRenderGlyph {
+public:
+    csRenderDigitalClock() {
+        setFont(getStaticFontTemplate<csFont4x7DigitClock>());
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !font) {
+            return;
+        }
+
+        const csRect target = rectDest.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsSize glyphWidth = math::min(rectDest.width, to_size(font->width()));
+        const tMatrixPixelsSize glyphHeight = math::min(rectDest.height, to_size(font->height()));
+        if (glyphWidth == 0 || glyphHeight == 0) {
+            return;
+        }
+
+        const tMatrixPixelsCoord offsetX = rectDest.x + to_coord((rectDest.width - glyphWidth) / 2);
+        const tMatrixPixelsCoord offsetY = rectDest.y + to_coord((rectDest.height - glyphHeight) / 2);
+
+        if (symbolIndex >= font->count()) {
+            return;
+        }
+            
+        for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
+            const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
+            const uint32_t glyphRowAllSeg = font->getRowBits(8, static_cast<uint16_t>(row));
+            for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
+                const tMatrixPixelsCoord px = offsetX + to_coord(col);
+                const tMatrixPixelsCoord py = offsetY + to_coord(row);
+
+                if (csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
+                    matrix->setPixel(px, py, color);
+                } else {
+                    if (csFontBase::getColBit(glyphRowAllSeg, static_cast<uint16_t>(col))) {
+                        matrix->setPixel(px, py, backgroundColor);
+                    }
+                }
+            }
+        }
+    }
+};
+
 // Effect: draw a filled circle inscribed into rect.
 class csRenderCircle : public csRenderMatrixBase {
 public:
