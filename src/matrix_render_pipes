@@ -67,4 +67,39 @@ public:
     }
 };
 
+// Effect: convert 2D matrix to linear 1D matrix (height=1, width=src.height*src.width).
+class csRenderMatrixCopyLine : public csRenderMatrixPipeBase {
+public:
+    // Calculate linear index from 2D coordinates (row-major order).
+    static size_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) {
+        return static_cast<size_t>(y) * static_cast<size_t>(srcWidth) + static_cast<size_t>(x);
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !matrixSource) {
+            return;
+        }
+
+        // Validate matrixDest: height must be 1, width must be src.height * src.width
+        const tMatrixPixelsSize destHeight = matrix->height();
+        const tMatrixPixelsSize destWidth = matrix->width();
+        const tMatrixPixelsSize srcHeight = matrixSource->height();
+        const tMatrixPixelsSize srcWidth = matrixSource->width();
+        const tMatrixPixelsSize expectedWidth = srcHeight * srcWidth;
+
+        if (destHeight != 1 || destWidth != expectedWidth) {
+            return;
+        }
+
+        // Copy all pixels from 2D source to linear destination
+        for (tMatrixPixelsSize y = 0; y < srcHeight; ++y) {
+            for (tMatrixPixelsSize x = 0; x < srcWidth; ++x) {
+                const csColorRGBA sourcePixel = matrixSource->getPixel(x, y);
+                const size_t linearIndex = getPixelLineIndex(x, y, srcWidth);
+                matrix->setPixelRewrite(static_cast<tMatrixPixelsCoord>(linearIndex), 0, sourcePixel);
+            }
+        }
+    }
+};
+
 } // namespace amp
