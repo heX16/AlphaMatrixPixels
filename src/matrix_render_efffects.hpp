@@ -1183,6 +1183,15 @@ public:
         }
     }
 
+    void paramChanged(uint8_t paramNum) override {
+        csRenderMatrixBase::paramChanged(paramNum);
+        if (paramNum == paramMatrixSource) {
+            if (renderRectAutosize && matrixSource) {
+                rect = matrixSource->getRect();
+            }
+        }
+    }
+
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
         if (disabled || !matrix || !matrixSource) {
             return;
