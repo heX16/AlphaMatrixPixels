@@ -116,27 +116,15 @@ public:
 // Effect: convert 2D matrix to linear 1D matrix (height=1, width=src.height*src.width).
 // Index mode with custom index mapping via matrixIndex.
 //
-// matrixIndex: pointer to a matrix that defines custom linear index for each source pixel.
-//   - If nullptr: all pixels are skipped (getPixelLineIndex returns UINT32_MAX)
-//   - If set: for each source pixel at (x, y), reads index from matrixIndex at (x, y)
-//   - Index format: stored as the full 32-bit color value (0xAARRGGBB format)
-//   - Formula: index = matrixIndex->getPixel(x, y).value
-//   - Range: 0-UINT32_MAX (32-bit value)
-//   - Special value: if index equals UINT32_MAX, pixel is skipped
+// `csRenderMatrixCopyLineIndex` contains the matrix `matrixIndex`.
+// It is desirable that its size matches `matrixSource`.
+// But this is not required.
 //
-// For each pixel at (x, y) in matrixSource:
-//   1. Read color from matrixSource at (x, y)
-//   2. Read linear index from matrixIndex at (x, y) as color.value
-//   3. Write color to destination matrix at position (linearIndex, 0)
-//
-// Example: to create index matrix with row-major order:
-//   uint32_t idx = 0;
-//   for (y = 0; y < height; ++y) {
-//       for (x = 0; x < width; ++x) {
-//           matrixIndex->setPixel(x, y, csColorRGBA(idx));
-//           ++idx;
-//       }
-//   }
+// `csRenderMatrixCopyLineIndex` copies pixels from `matrixSource` to `matrixDest`.
+// For this, it takes the pixel `(x, y)`, then takes the number from `matrixIndex`,
+// and writes to `matrixDest` at coordinates `(matrixIndex, 0)`.
+// Thus, the matrix `matrixIndex` is a table where each number is the index
+// in the linear matrix where the corresponding pixel should be placed.
 class csRenderMatrixCopyLineIndex : public csRenderMatrixCopyLine {
 public:
     static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
