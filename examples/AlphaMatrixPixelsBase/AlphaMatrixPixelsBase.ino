@@ -77,7 +77,7 @@ CLEDController* controller = nullptr;
     glyph.symbolIndex = 0;
     glyph.setFont(amp::font3x5Digits());
     glyph.renderRectAutosize = false;
-    glyph.rect = amp::csRect{
+    glyph.rectDest = amp::csRect{
         1,
         1,
         static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().width()),

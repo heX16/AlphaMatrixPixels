@@ -56,7 +56,7 @@ public:
             return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
         };
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -120,7 +120,7 @@ public:
         const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
         static const csFP32 one = csFP32::float_const(1.0f);
         const csFP32 invScaleFP32 = (scaleFP32.raw > 0) ? (one / scaleFP32) : one;
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -150,7 +150,7 @@ public:
             return;
         }
         const float t = static_cast<float>(currTime) * 0.0025f * speed.to_float();
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -268,9 +268,9 @@ public:
             return;
         }
 
-        rect = csRect{
-            rect.x,
-            rect.y,
+        rectDest = csRect{
+            rectDest.x,
+            rectDest.y,
             to_size(font->width()),
             to_size(font->height())
         };
@@ -281,7 +281,7 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -294,14 +294,14 @@ public:
             }
         }
 
-        const tMatrixPixelsSize glyphWidth = math::min(rect.width, to_size(font->width()));
-        const tMatrixPixelsSize glyphHeight = math::min(rect.height, to_size(font->height()));
+        const tMatrixPixelsSize glyphWidth = math::min(rectDest.width, to_size(font->width()));
+        const tMatrixPixelsSize glyphHeight = math::min(rectDest.height, to_size(font->height()));
         if (glyphWidth == 0 || glyphHeight == 0) {
             return;
         }
 
-        const tMatrixPixelsCoord offsetX = rect.x + to_coord((rect.width - glyphWidth) / 2);
-        const tMatrixPixelsCoord offsetY = rect.y + to_coord((rect.height - glyphHeight) / 2);
+        const tMatrixPixelsCoord offsetX = rectDest.x + to_coord((rectDest.width - glyphWidth) / 2);
+        const tMatrixPixelsCoord offsetY = rectDest.y + to_coord((rectDest.height - glyphHeight) / 2);
 
         const uint16_t safeIndex = (symbolIndex < font->count())
             ? static_cast<uint16_t>(symbolIndex)
@@ -367,7 +367,7 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -423,7 +423,7 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -544,7 +544,7 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -660,16 +660,16 @@ public:
         if (disabled) {
             return;
         }
-        // Algorithm works independently of matrix, only needs rect and bitmap
-        if (!bitmap || rect.width == 0 || rect.height == 0) {
+        // Algorithm works independently of matrix, only needs rectDest and bitmap
+        if (!bitmap || rectDest.width == 0 || rectDest.height == 0) {
             return;
         }
 
-        const uint32_t totalPixels = static_cast<uint32_t>(rect.width) * static_cast<uint32_t>(rect.height);
+        const uint32_t totalPixels = static_cast<uint32_t>(rectDest.width) * static_cast<uint32_t>(rectDest.height);
 
         // Check for clearing mode activation at specified fill percentage
         if (clearingIterations == 0 && filledPixelsCount >= (totalPixels * restartFillPercent) / 100) {
-            clearingIterations = rect.height;
+            clearingIterations = rectDest.height;
             filledPixelsCount = 0;
         }
 
@@ -690,7 +690,7 @@ public:
         // Create new snowflake if none active
         if (!hasActiveSnowflake) {
             // Random X position in top row (local coordinates: 0..width-1)
-            currentX = to_coord(rand.rand(static_cast<uint8_t>(rect.width)));
+            currentX = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
             currentY = 0;
             hasActiveSnowflake = true;
             return;
@@ -747,7 +747,7 @@ public:
             return;
         }
 
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -758,8 +758,8 @@ public:
         // Draw fixed snowflakes from bitmap and clear background
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const tMatrixPixelsCoord localX = x - rect.x;
-                const tMatrixPixelsCoord localY = y - rect.y;
+                const tMatrixPixelsCoord localX = x - rectDest.x;
+                const tMatrixPixelsCoord localY = y - rectDest.y;
                 if (bitmap->getPixel(to_size(localX), to_size(localY))) {
                     matrix->setPixel(x, y, color);
                 }
@@ -769,8 +769,8 @@ public:
         // Draw current falling snowflake
         // Convert local coordinates to global coordinates
         if (hasActiveSnowflake) {
-            const tMatrixPixelsCoord globalX = rect.x + currentX;
-            const tMatrixPixelsCoord globalY = rect.y + currentY;
+            const tMatrixPixelsCoord globalX = rectDest.x + currentX;
+            const tMatrixPixelsCoord globalY = rectDest.y + currentY;
             // Check if snowflake is within target area (intersection of rect and matrix)
             if (globalX >= target.x && globalX < endX && 
                 globalY >= target.y && globalY < endY) {
@@ -784,11 +784,11 @@ private:
         delete bitmap;
         bitmap = nullptr;
 
-        if (rect.empty()) {
+        if (rectDest.empty()) {
             return;
         }
 
-        bitmap = new csMatrixBoolean(rect.width, rect.height, true);
+        bitmap = new csMatrixBoolean(rectDest.width, rectDest.height, true);
         // Reset state when bitmap is recreated
         hasActiveSnowflake = false;
         filledPixelsCount = 0;
@@ -925,7 +925,7 @@ public:
         if (disabled || !matrix) {
             return;
         }
-        const csRect target = rect.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
@@ -1137,15 +1137,15 @@ public:
         const tMatrixPixelsSize fontHeight = to_size(font->height());
 
         // Calculate positions for 4 digits horizontally
-        // Position them within rect bounds
-        const tMatrixPixelsCoord startX = rect.x;
-        const tMatrixPixelsCoord startY = rect.y;
+        // Position them within rectDest bounds
+        const tMatrixPixelsCoord startX = rectDest.x;
+        const tMatrixPixelsCoord startY = rectDest.y;
         const tMatrixPixelsSize spacing = 1; // 1 pixel spacing between digits
 
         // Render each digit by updating and rendering the single glyph
         for (uint8_t i = 0; i < digitCount; ++i) {
             glyph.symbolIndex = digits[i];
-            glyph.rect = csRect{
+            glyph.rectDest = csRect{
                 startX + to_coord((fontWidth + spacing) * i),
                 startY,
                 fontWidth,

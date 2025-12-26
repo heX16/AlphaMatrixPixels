@@ -46,7 +46,7 @@ public:
         csRenderMatrixBase::paramChanged(paramNum);
         if (paramNum == paramMatrixSource) {
             if (renderRectAutosize && matrixSource) {
-                rect = matrixSource->getRect();
+                rectDest = matrixSource->getRect();
             }
         }
     }
@@ -61,16 +61,16 @@ public:
             return;
         }
 
-        if (rect.intersect(rectSource).empty()) {
+        if (rectDest.intersect(rectSource).empty()) {
             return;
         }
         
         // If sizes match, use simple drawMatrix (faster)
-        if (rect.width == rectSource.width && rect.height == rectSource.height) {
-            matrix->drawMatrixArea(rectSource, rect.x, rect.y, *matrixSource);
+        if (rectDest.width == rectSource.width && rectDest.height == rectSource.height) {
+            matrix->drawMatrixArea(rectSource, rectDest.x, rectDest.y, *matrixSource);
         } else {
             // Use drawMatrixScale for different sizes
-            matrix->drawMatrixScale(rectSource, rect, *matrixSource);
+            matrix->drawMatrixScale(rectSource, rectDest, *matrixSource);
         }
     }
 };

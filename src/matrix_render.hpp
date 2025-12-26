@@ -266,7 +266,7 @@ class csRenderMatrixBase : public csEffectBaseStdParams {
 public:
     csMatrixPixels* matrix = nullptr;
 
-    csRect rect;
+    csRect rectDest;
 
     bool renderRectAutosize = true;
 
@@ -296,7 +296,7 @@ public:
                 info.disabled = false;
                 break;
             case paramRectDest:
-                info.ptr = &rect;
+                info.ptr = &rectDest;
                 info.disabled = false;
                 break;
             case paramMatrixDest:
@@ -332,7 +332,7 @@ protected:
         }
 
         if (renderRectAutosize) {
-            rect = matrix->getRect();
+            rectDest = matrix->getRect();
         }
     }
 };

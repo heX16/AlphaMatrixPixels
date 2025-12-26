@@ -77,7 +77,7 @@ public:
         glyph.symbolIndex = 0;
         glyph.setFont(amp::font3x5Digits());
         glyph.renderRectAutosize = false;
-        glyph.rect = amp::csRect{
+        glyph.rectDest = amp::csRect{
             2,
             2,
             static_cast<amp::tMatrixPixelsSize>(amp::font3x5Digits().width() + 2),
@@ -112,14 +112,14 @@ public:
         auto* fill = new csRenderFill();
         fill->color = csColorRGBA{192, 0, 0, 0};
         fill->renderRectAutosize = false;
-        fill->rect = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
+        fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
         
         // Create clock effect
         auto* clock = new csRenderClock();
         clock->glyph.color = csColorRGBA{255, 255, 255, 255};
         clock->glyph.backgroundColor = csColorRGBA{0, 0, 0, 0};
         clock->renderRectAutosize = false;
-        clock->rect = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
+        clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
         
         // Add effects to container (fill first, then clock on top)
         container->effects[0] = fill;
