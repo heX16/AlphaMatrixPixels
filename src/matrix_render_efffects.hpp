@@ -903,6 +903,42 @@ public:
     }
 };
 
+// Effect: fill rectangular area with solid color.
+class csRenderFill : public csRenderMatrixBase {
+public:
+    csColorRGBA color{255, 255, 255, 255};
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixBase::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramColor:
+                info.type = ParamType::Color;
+                info.name = "Fill color";
+                info.ptr = &color;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix) {
+            return;
+        }
+        const csRect target = rect.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                matrix->setPixel(x, y, color);
+            }
+        }
+    }
+};
+
 // Effect: display 4 digits clock using glyph renderer.
 // Time value is passed via 'time' parameter (int32_t).
 // Extracts last 4 decimal digits from time parameter.
