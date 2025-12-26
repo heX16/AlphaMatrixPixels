@@ -9,10 +9,14 @@ class csRenderMatrixPipeBase : public csRenderMatrixBase {
 public:
     static constexpr uint8_t base = csRenderMatrixBase::paramLast;
     static constexpr uint8_t paramMatrixSource = base + 1;
-    static constexpr uint8_t paramLast = paramMatrixSource;
+    static constexpr uint8_t paramRectSource = base + 2;
+    static constexpr uint8_t paramLast = paramRectSource;
 
     // Source matrix pointer (nullptr means no source).
     csMatrixPixels* matrixSource = nullptr;
+
+    // Source rectangle (defines area to copy from source matrix).
+    csRect rectSource;
 
     uint8_t getParamsCount() const override {
         return paramLast;
@@ -25,6 +29,13 @@ public:
                 info.type = ParamType::Matrix;
                 info.name = "Matrix source";
                 info.ptr = &matrixSource;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case paramRectSource:
+                info.type = ParamType::Rect;
+                info.name = "Rect source";
+                info.ptr = &rectSource;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -101,5 +112,5 @@ public:
         }
     }
 };
-
+    
 } // namespace amp

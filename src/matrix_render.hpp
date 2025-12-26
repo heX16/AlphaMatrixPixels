@@ -174,7 +174,7 @@ public:
 
     // Standard parameter constants
     static constexpr uint8_t paramMatrixDest = 1;
-    static constexpr uint8_t paramRenderRect = 2;
+    static constexpr uint8_t paramRectDest = 2;
     static constexpr uint8_t paramRenderRectAutosize = 3;
     static constexpr uint8_t paramDisabled = 4;
     // Scale parameter: 
@@ -212,9 +212,9 @@ public:
                 info.type = ParamType::Matrix;
                 info.name = "Matrix dest";
                 break;
-            case paramRenderRect:
+            case paramRectDest:
                 info.type = ParamType::Rect;
-                info.name = "Render rect";
+                info.name = "Rect dest";
                 break;
             case paramRenderRectAutosize:
                 info.type = ParamType::Bool;
@@ -277,12 +277,12 @@ public:
     void setMatrix(csMatrixPixels* m) noexcept {
         matrix = m;
         paramChanged(paramMatrixDest);
-        paramChanged(paramRenderRect);
+        paramChanged(paramRectDest);
     }
     void setMatrix(csMatrixPixels& m) noexcept {
         matrix = &m;
         paramChanged(paramMatrixDest);
-        paramChanged(paramRenderRect);
+        paramChanged(paramRectDest);
     }
 
     // NOTE: uint8_t getParamsCount() - count dont changed
@@ -295,7 +295,7 @@ public:
                 info.ptr = &renderRectAutosize;
                 info.disabled = false;
                 break;
-            case paramRenderRect:
+            case paramRectDest:
                 info.ptr = &rect;
                 info.disabled = false;
                 break;

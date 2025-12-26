@@ -651,7 +651,7 @@ public:
 
     void paramChanged(uint8_t paramNum) override {
         csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramRenderRect) {
+        if (paramNum == paramRectDest) {
             updateBitmap();
         }
     }
@@ -963,7 +963,7 @@ public:
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
         csRenderMatrixBase::getParamInfo(paramNum, info);
         switch (paramNum) {
-            case paramRenderRect:
+            case paramRectDest:
                 info.disabled = true;
                 break;
             case paramRenderRectAutosize:
@@ -1008,8 +1008,8 @@ public:
     }
 
     void paramChanged(uint8_t paramNum) override {
-        // Ignore paramRenderRect and paramRenderRectAutosize - they are disabled
-        if (paramNum == paramRenderRect || paramNum == paramRenderRectAutosize) {
+        // Ignore paramRectDest and paramRenderRectAutosize - they are disabled
+        if (paramNum == paramRectDest || paramNum == paramRenderRectAutosize) {
             return;
         }
         // Call base implementation for other parameters
