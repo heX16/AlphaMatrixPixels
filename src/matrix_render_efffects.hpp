@@ -924,34 +924,26 @@ public:
     //   externally by the application.
     uint32_t time = 0;
 
-    // Four glyph renderers for 4 digits
-    // Mutable because render() modifies them but doesn't change logical state
+    // Single glyph renderer reused for all 4 digits
+    // Mutable because render() modifies it but doesn't change logical state
     static constexpr uint8_t digitCount = 4;
-    mutable csRenderGlyph glyphs[digitCount];
+    mutable csRenderGlyph glyph;
 
     csRenderClock() {
-        // Initialize all glyphs with font
+        // Initialize glyph with font
         const csFontBase& font = font3x5Digits();
-        for (uint8_t i = 0; i < digitCount; ++i) {
-            glyphs[i].setFont(font);
-            glyphs[i].renderRectAutosize = false;
-        }
+        glyph.setFont(font);
+        glyph.renderRectAutosize = false;
     }
 
     void setMatrix(csMatrixPixels* m) noexcept {
         csRenderMatrixBase::setMatrix(m);
-        // Set matrix for all glyphs
-        for (uint8_t i = 0; i < digitCount; ++i) {
-            glyphs[i].setMatrix(m);
-        }
+        glyph.setMatrix(m);
     }
 
     void setMatrix(csMatrixPixels& m) noexcept {
         csRenderMatrixBase::setMatrix(m);
-        // Set matrix for all glyphs
-        for (uint8_t i = 0; i < digitCount; ++i) {
-            glyphs[i].setMatrix(m);
-        }
+        glyph.setMatrix(m);
     }
 
     uint8_t getParamsCount() const override {
@@ -1000,7 +992,7 @@ public:
         }
 
         // Get font dimensions
-        const csFontBase* font = glyphs[0].font;
+        const csFontBase* font = glyph.font;
         if (!font) {
             return;
         }
@@ -1014,20 +1006,16 @@ public:
         const tMatrixPixelsCoord startY = rect.y;
         const tMatrixPixelsSize spacing = 1; // 1 pixel spacing between digits
 
-        // Set symbol indices and positions for each glyph
+        // Render each digit by updating and rendering the single glyph
         for (uint8_t i = 0; i < digitCount; ++i) {
-            glyphs[i].symbolIndex = digits[i];
-            glyphs[i].rect = csRect{
+            glyph.symbolIndex = digits[i];
+            glyph.rect = csRect{
                 startX + to_coord((fontWidth + spacing) * i),
                 startY,
                 fontWidth,
                 fontHeight
             };
-        }
-
-        // Render all glyphs
-        for (uint8_t i = 0; i < digitCount; ++i) {
-            glyphs[i].render(rand, currTime);
+            glyph.render(rand, currTime);
         }
     }
 };
