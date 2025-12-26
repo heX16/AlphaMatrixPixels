@@ -105,7 +105,7 @@ public:
 
     csRenderContainer* createClock() const noexcept {
         // Get font dimensions for clock size calculation
-        const auto& font = amp::getStaticFontTemplate<amp::csFont4x7Digits>();
+        const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
         const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
         const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
         constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
