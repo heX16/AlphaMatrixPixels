@@ -7,6 +7,7 @@
 #include "matrix_pixels.hpp"
 #include "rect.hpp"
 #include "math.hpp"
+#include "fixed_point.hpp"
 #include "matrix_render.hpp"
 #include "fonts.h"
 #include "matrix_boolean.hpp"

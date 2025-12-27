@@ -5,14 +5,15 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
-#include "../src/matrix_pixels.hpp"
-#include "../src/math.hpp"
+#include "../../src/matrix_pixels.hpp"
 
-#include "../src/color_rgba.hpp"
-#include "../src/matrix_render.hpp"
-#include "../src/matrix_render_efffects.hpp"
-#include "../src/matrix_render_pipes"
-#include "../src/driver_sdl2.hpp"
+#include "../../src/color_rgba.hpp"
+#include "../../src/matrix_render.hpp"
+#include "../../src/matrix_render_efffects.hpp"
+#include "../../src/matrix_render_pipes"
+#include "../../src/driver_sdl2.hpp"
+#include "../../src/fixed_point.hpp"
+#include "copy_line_index_helper.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
@@ -31,6 +32,7 @@ using amp::csRenderDigitalClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
+using amp::csRenderMatrixCopyLineIndex;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -50,6 +52,9 @@ public:
     csRandGen randGen{};
     csEffectBase* effect{nullptr};
     csEffectBase* effect2{nullptr};
+    
+    // Helper for csRenderMatrixCopyLineIndex functionality
+    csCopyLineIndexHelper copyLineIndexHelper;
 
     void bindEffectMatrix(csEffectBase* eff) {
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
@@ -111,6 +116,7 @@ public:
         averageArea.rectSource = amp::csRect{1, 1, 4, 4};
         averageArea.rectDest = amp::csRect{1, 1, 4, 4};
     }
+
 
     csRenderContainer* createClock() const noexcept {
         // Get font dimensions for clock size calculation
@@ -281,6 +287,15 @@ public:
                         initAverageAreaDefaults(*averageArea);
                         effect2 = averageArea;
                         bindEffectMatrix(effect2);
+                    } else if (event.key.keysym.sym == SDLK_8) {
+                        deleteEffect(effect);
+                        auto* copyLineIndex = new csRenderMatrixCopyLineIndex();
+                        copyLineIndexHelper.initCopyLineIndexDefaults(*copyLineIndex, matrix, 
+                            [this](tMatrixPixelsSize w, tMatrixPixelsSize h) { 
+                                this->recreateMatrix(w, h); 
+                            });
+                        effect = copyLineIndex;
+                        bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
                         // Increase scale for dynamic effects
                         if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
@@ -303,22 +318,7 @@ public:
 
             matrix.clear();
 
-            if (effect) {
-                const uint32_t ticks = SDL_GetTicks();
-                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
-                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-                    glyph->render(randGen, static_cast<uint16_t>(ticks));
-                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
-                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
-                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
-                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect)) {
-                    // Update time from SDL ticks (convert to seconds)
-                    clock->time = ticks / 1000u;
-                    clock->render(randGen, static_cast<uint16_t>(ticks));
-                } else {
-                    effect->render(randGen, static_cast<uint16_t>(ticks));
-                }
-            }
+            // First render effect2 into matrix (if exists)
             if (effect2) {
                 const uint32_t ticks = SDL_GetTicks();
                 if (auto* container = dynamic_cast<csRenderContainer*>(effect2)) {
@@ -342,6 +342,29 @@ public:
                     clock->render(randGen, static_cast<uint16_t>(ticks));
                 } else {
                     effect2->render(randGen, static_cast<uint16_t>(ticks));
+                }
+            }
+
+            // Now render effect (which may use matrix as source after effect2 rendered into it)
+            if (effect) {
+                const uint32_t ticks = SDL_GetTicks();
+                if (auto* copyLineIndexEffect = dynamic_cast<csRenderMatrixCopyLineIndex*>(effect)) {
+                    // Update matrixSource to point to matrix (which now contains effect2 result)
+                    copyLineIndexHelper.updateCopyLineIndexSource(copyLineIndexEffect, matrix);
+                }
+                
+                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
+                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
+                    glyph->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
+                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
+                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
+                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect)) {
+                    // Update time from SDL ticks (convert to seconds)
+                    clock->time = ticks / 1000u;
+                    clock->render(randGen, static_cast<uint16_t>(ticks));
+                } else {
+                    effect->render(randGen, static_cast<uint16_t>(ticks));
                 }
             }
             renderProc();

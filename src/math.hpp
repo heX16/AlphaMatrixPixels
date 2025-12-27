@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#include "fixed_point.hpp"
-
 #ifdef max
 #  undef max
 #endif
