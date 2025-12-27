@@ -4,3 +4,4 @@
 *.layout
 /other/*
 /hided_code/*
+.~lock.*.ods#

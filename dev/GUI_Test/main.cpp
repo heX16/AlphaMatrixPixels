@@ -28,7 +28,7 @@ using amp::csRenderCircle;
 using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
 using amp::csRenderSnowfall;
-using amp::csRenderClock;
+using amp::csRenderDigitalClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
 using amp::csRenderBlurArea;
@@ -142,13 +142,14 @@ public:
         fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
         
         // Create clock effect
-        auto* clock = new csRenderClock();
+        auto* clock = new csRenderDigitalClock();
         
         // Create glyph effect for rendering digits
+        // TODO: leak memory!!!
         auto* digitGlyph = clock->createGlyph();
         digitGlyph->setFont(font);
         digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-        digitGlyph->backgroundColor = csColorRGBA{0, 0, 0, 0};
+        digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
         digitGlyph->renderRectAutosize = false;
         
         // Set glyph via paramRenderDigit parameter
@@ -166,7 +167,6 @@ public:
         // Add effects to container (fill first, then clock on top)
         container->effects[0] = fill;
         container->effects[1] = clock;
-        container->effects[2] = digitGlyph;
         
         return container;
     }
@@ -319,7 +319,7 @@ public:
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
                     snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
                     snowfall->render(randGen, static_cast<uint16_t>(ticks));
-                } else if (auto* clock = dynamic_cast<csRenderClock*>(effect)) {
+                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect)) {
                     // Update time from SDL ticks (convert to seconds)
                     clock->time = ticks / 1000u;
                     clock->render(randGen, static_cast<uint16_t>(ticks));
@@ -332,7 +332,7 @@ public:
                 if (auto* container = dynamic_cast<csRenderContainer*>(effect2)) {
                     // Update time for clock inside container
                     for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
-                        if (auto* clock = dynamic_cast<csRenderClock*>(container->effects[i])) {
+                        if (auto* clock = dynamic_cast<csRenderDigitalClock*>(container->effects[i])) {
                             clock->time = ticks / 1000u;
                             break;
                         }
@@ -344,7 +344,7 @@ public:
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
                     snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
                     snowfall->render(randGen, static_cast<uint16_t>(ticks));
-                } else if (auto* clock = dynamic_cast<csRenderClock*>(effect2)) {
+                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect2)) {
                     // Update time from SDL ticks (convert to seconds)
                     clock->time = ticks / 1000u;
                     clock->render(randGen, static_cast<uint16_t>(ticks));
