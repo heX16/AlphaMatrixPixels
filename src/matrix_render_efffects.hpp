@@ -321,9 +321,9 @@ public:
 };
 
 // Effect: draw a single digit glyph using the 3x5 font (copy).
-class csRenderDigitalClock : public csRenderGlyph {
+class csRenderDigitalClockDigit : public csRenderGlyph {
 public:
-    csRenderDigitalClock() {
+    csRenderDigitalClockDigit() {
         setFont(getStaticFontTemplate<csFont4x7DigitClock>());
     }
 
@@ -352,7 +352,9 @@ public:
             
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
             const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
+            // get the row bits for all segments (its a number "8")
             const uint32_t glyphRowAllSeg = font->getRowBits(8, static_cast<uint16_t>(row));
+
             for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
                 const tMatrixPixelsCoord px = offsetX + to_coord(col);
                 const tMatrixPixelsCoord py = offsetY + to_coord(row);
@@ -1081,11 +1083,12 @@ public:
 // Time value is passed via 'time' parameter (int32_t).
 // Extracts last 4 decimal digits from time parameter.
 // Does not use system time - time must be set externally.
-class csRenderClock : public csRenderMatrixBase {
+class csRenderDigitalClock : public csRenderMatrixBase {
 public:
     static constexpr uint8_t base = csRenderMatrixBase::paramLast;
     static constexpr uint8_t paramTime = base + 1;
-    static constexpr uint8_t paramLast = paramTime;
+    static constexpr uint8_t paramRenderDigit = base + 2;
+    static constexpr uint8_t paramLast = paramRenderDigit;
 
     // Time parameter (uint32_t): stores time value for clock display.
     //
@@ -1098,22 +1101,46 @@ public:
     //   externally by the application.
     uint32_t time = 0;
 
-    // Single glyph renderer reused for all 4 digits
-    // Mutable because render() modifies it but doesn't change logical state
     static constexpr uint8_t digitCount = 4;
-    mutable csRenderGlyph glyph;
 
-    csRenderClock() {
-        // Font is not set by default (nullptr) - must be set explicitly
-        glyph.renderRectAutosize = false;
+    // Single glyph renderer reused for all 4 digits
+    // Set via paramRenderDigit parameter (external memory management)
+    // Mutable pointer because render() modifies it but doesn't change logical state
+    mutable csRenderGlyph* glyph = nullptr;
+
+    // Virtual factory method to create glyph renderer
+    // Derived classes can override to use custom glyph types
+    // Public method for external use - caller owns the returned object
+    virtual csRenderGlyph* createGlyph() const {
+        return new csRenderDigitalClockDigit();
+    }
+
+    csRenderDigitalClock() {
+        // glyph is set externally via paramRenderDigit parameter
+    }
+
+    ~csRenderDigitalClock() {
+        // glyph is managed externally, do not delete
     }
 
     void paramChanged(uint8_t paramNum) override {
         csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramMatrixDest) {
+        if (paramNum == paramRenderDigit) {
+            // Validate glyph type - must be csRenderGlyph*
+            csRenderGlyph* validGlyph = dynamic_cast<csRenderGlyph*>(glyph);
+            if (validGlyph) {
+                // Update glyph matrix when glyph is set
+                if (matrix && validGlyph) {
+                    validGlyph->setMatrix(matrix);
+                }
+            } else {
+                // Invalid type or nullptr - ignore
+                glyph = nullptr;
+            }
+        } else if (paramNum == paramMatrixDest) {
             // Update glyph matrix when matrix destination changes
-            if (matrix) {
-                glyph.setMatrix(matrix);
+            if (matrix && glyph) {
+                glyph->setMatrix(matrix);
             }
         }
     }
@@ -1139,11 +1166,21 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
+            case paramRenderDigit:
+                // Render digit parameter: csEffectBase* pointer to csRenderGlyph effect.
+                // Used for rendering individual digits. Must be csRenderGlyph* or derived.
+                // Memory is managed externally - object does not own the glyph.
+                info.type = ParamType::Effect;
+                info.name = "Render digit";
+                info.ptr = reinterpret_cast<void*>(&glyph);
+                info.readOnly = false;
+                info.disabled = false;
+                break;
         }
     }
 
     void render(csRandGen& rand, uint16_t currTime) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrix || !glyph) {
             return;
         }
 
@@ -1164,7 +1201,7 @@ public:
         }
 
         // Get font dimensions
-        const csFontBase* font = glyph.font;
+        const csFontBase* font = glyph->font;
         if (!font) {
             return;
         }
@@ -1180,14 +1217,14 @@ public:
 
         // Render each digit by updating and rendering the single glyph
         for (uint8_t i = 0; i < digitCount; ++i) {
-            glyph.symbolIndex = digits[i];
-            glyph.rectDest = csRect{
+            glyph->symbolIndex = digits[i];
+            glyph->rectDest = csRect{
                 startX + to_coord((fontWidth + spacing) * i),
                 startY,
                 fontWidth,
                 fontHeight
             };
-            glyph.render(rand, currTime);
+            glyph->render(rand, currTime);
         }
     }
 };
