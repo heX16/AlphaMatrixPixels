@@ -359,6 +359,11 @@ public:
                 const tMatrixPixelsCoord px = offsetX + to_coord(col);
                 const tMatrixPixelsCoord py = offsetY + to_coord(row);
 
+                //TODO:!!!
+                /*if (csFontBase::getColBit(glyphRowAllSeg, static_cast<uint16_t>(col))) {
+                    matrix->setPixel(px, py, csColorRGBA(255, 0,0));
+                }*/
+
                 if (csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
                     matrix->setPixel(px, py, color);
                 } else {
@@ -1200,14 +1205,13 @@ public:
             divisor = divisor * 10;
         }
 
-        // Get font dimensions
-        const csFontBase* font = glyph->font;
-        if (!font) {
+        // Get font dimensions directly from glyph
+        if (!glyph->font) {
             return;
         }
 
-        const tMatrixPixelsSize fontWidth = to_size(font->width());
-        const tMatrixPixelsSize fontHeight = to_size(font->height());
+        const tMatrixPixelsSize fontWidth = to_size(glyph->font->width());
+        const tMatrixPixelsSize fontHeight = to_size(glyph->font->height());
 
         // Calculate positions for 4 digits horizontally
         // Position them within rectDest bounds
