@@ -1,10 +1,8 @@
 // Minimal SDL-based viewer for matrix_pixels
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <cmath>
 #include <cstdint>
 #include <cstdio>
-#include <memory>
 #include "../../src/matrix_pixels.hpp"
 
 #include "../../src/color_rgba.hpp"
