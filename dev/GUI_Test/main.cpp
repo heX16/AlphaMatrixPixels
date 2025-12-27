@@ -30,7 +30,7 @@ using amp::csRenderSnowfall;
 using amp::csRenderDigitalClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
-using amp::csRenderBlurArea;
+using amp::csRenderAverageArea;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -104,12 +104,12 @@ public:
         circle.renderRectAutosize = true; // использовать весь rect матрицы
     }
 
-    void initBlurAreaDefaults(csRenderBlurArea& blurArea) noexcept {
-        blurArea.matrix = &matrix;
-        blurArea.matrixSource = &matrix;
-        blurArea.renderRectAutosize = false;
-        blurArea.rectSource = amp::csRect{1, 1, 4, 4};
-        blurArea.rectDest = amp::csRect{1, 1, 4, 4};
+    void initAverageAreaDefaults(csRenderAverageArea& averageArea) noexcept {
+        averageArea.matrix = &matrix;
+        averageArea.matrixSource = &matrix;
+        averageArea.renderRectAutosize = false;
+        averageArea.rectSource = amp::csRect{1, 1, 4, 4};
+        averageArea.rectDest = amp::csRect{1, 1, 4, 4};
     }
 
     csRenderContainer* createClock() const noexcept {
@@ -277,9 +277,9 @@ public:
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_b) {
                         deleteEffect(effect2);
-                        auto* blurArea = new csRenderBlurArea();
-                        initBlurAreaDefaults(*blurArea);
-                        effect2 = blurArea;
+                        auto* averageArea = new csRenderAverageArea();
+                        initAverageAreaDefaults(*averageArea);
+                        effect2 = averageArea;
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
                         // Increase scale for dynamic effects

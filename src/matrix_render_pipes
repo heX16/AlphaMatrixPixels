@@ -166,9 +166,9 @@ public:
     }
 };
 
-// Effect: blur area by computing average color of source area and filling destination area with it.
-// Can blur area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
-class csRenderBlurArea : public csRenderMatrixPipeBase {
+// Effect: average area by computing average color of source area and filling destination area with it.
+// Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
+class csRenderAverageArea : public csRenderMatrixPipeBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
         if (disabled || !matrix || !matrixSource) {
