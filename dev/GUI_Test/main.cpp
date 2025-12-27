@@ -73,6 +73,23 @@ public:
         }
     }
 
+    void deleteEffect(csEffectBase* eff) {
+        if (!eff) {
+            return;
+        }
+        // If it's a container, delete all nested effects first
+        if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
+            for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
+                if (container->effects[i] != nullptr) {
+                    deleteEffect(container->effects[i]);
+                    container->effects[i] = nullptr;
+                }
+            }
+        }
+        // Delete the effect itself
+        delete eff;
+    }
+
     void initGlyphDefaults(csRenderGlyph& glyph) const noexcept {
         glyph.color = csColorRGBA{255, 255, 255, 255};
         glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
@@ -126,15 +143,30 @@ public:
         
         // Create clock effect
         auto* clock = new csRenderClock();
-        clock->glyph.setFont(font);
-        clock->glyph.color = csColorRGBA{255, 255, 255, 255};
-        clock->glyph.backgroundColor = csColorRGBA{0, 0, 0, 0};
+        
+        // Create glyph effect for rendering digits
+        auto* digitGlyph = clock->createGlyph();
+        digitGlyph->setFont(font);
+        digitGlyph->color = csColorRGBA{255, 255, 255, 255};
+        digitGlyph->backgroundColor = csColorRGBA{0, 0, 0, 0};
+        digitGlyph->renderRectAutosize = false;
+        
+        // Set glyph via paramRenderDigit parameter
+        clock->glyph = digitGlyph;
+        
+        // Notify clock that paramRenderDigit parameter changed
+        // This will validate the glyph type and update its matrix if needed
+        if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
+            digitalClock->paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
+        }
+        
         clock->renderRectAutosize = false;
         clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
         
         // Add effects to container (fill first, then clock on top)
         container->effects[0] = fill;
         container->effects[1] = clock;
+        container->effects[2] = digitGlyph;
         
         return container;
     }
@@ -188,7 +220,7 @@ public:
         }
         
         recreateMatrix(16, 16);
-        delete effect;
+        deleteEffect(effect);
         effect = new csRenderGradientWaves();
         bindEffectMatrix(effect);
         return true;
@@ -219,40 +251,40 @@ public:
                         bindEffectMatrix(effect);
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_w) {
-                        delete effect;
+                        deleteEffect(effect);
                         effect = new csRenderGradientWaves();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_e) {
-                        delete effect;
+                        deleteEffect(effect);
                         effect = new csRenderGradientWavesFP();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_q) {
-                        delete effect;
+                        deleteEffect(effect);
                         effect = new csRenderPlasma();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_s) {
-                        delete effect;
+                        deleteEffect(effect);
                         effect = new csRenderSnowfall();
                         bindEffectMatrix(effect);
                     } else if (event.key.keysym.sym == SDLK_r) {
-                        delete effect2;
+                        deleteEffect(effect2);
                         auto* glyph = new csRenderGlyph();
                         initGlyphDefaults(*glyph);
                         effect2 = glyph;
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_t) {
-                        delete effect2;
+                        deleteEffect(effect2);
                         // auto* circle = new csRenderCircle();
                         auto* circle = new csRenderCircleGradient();
                         initCircleDefaults(*circle);
                         effect2 = circle;
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_c) {
-                        delete effect2;
+                        deleteEffect(effect2);
                         effect2 = createClock();
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_b) {
-                        delete effect2;
+                        deleteEffect(effect2);
                         auto* blurArea = new csRenderBlurArea();
                         initBlurAreaDefaults(*blurArea);
                         effect2 = blurArea;
@@ -417,8 +449,8 @@ public:
     }
 
     void done() {
-        delete effect;
-        delete effect2;
+        deleteEffect(effect);
+        deleteEffect(effect2);
         if (font) {
             TTF_CloseFont(font);
         }
