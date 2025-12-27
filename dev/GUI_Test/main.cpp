@@ -12,14 +12,13 @@
 #include "../src/matrix_render.hpp"
 #include "../src/matrix_render_efffects.hpp"
 #include "../src/matrix_render_pipes"
+#include "../src/driver_sdl2.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
 using amp::csEffectBase;
 using amp::csRandGen;
 using amp::tMatrixPixelsSize;
-using amp::math::max;
-using amp::math::min;
 using amp::csRenderGradientWaves;
 using amp::csRenderGradientWavesFP;
 using amp::csRenderPlasma;
@@ -36,13 +35,6 @@ using amp::csRenderBlurArea;
 // Screen dimension constants
 constexpr int screenWidth  = 640;
 constexpr int screenHeight = 480;
-
-struct RenderLayout {
-    int step;   // distance between cells (grid pitch)
-    int fill;   // size of the filled square
-    int offsX;  // top-left offset to center grid horizontally
-    int offsY;  // top-left offset to center grid vertically
-};
 
 // Simple SDL wrapper to draw matrix_pixels with a time-based gradient
 class csMainProgramSDL {
@@ -357,38 +349,6 @@ public:
         }
     }
 
-    [[nodiscard]] RenderLayout makeLayout() const noexcept {
-        // Keep a small padding; fit grid into logical renderer size.
-        constexpr int padding = 10;
-        const int matrixW = static_cast<int>(matrix.width());
-        const int matrixH = static_cast<int>(matrix.height());
-
-        const int availW = max(screenWidth - padding * 2, 1);
-        const int availH = max(screenHeight - padding * 2, 1);
-
-        const int step = max(1, min(availW / matrixW, availH / matrixH));
-        const int fill = max(1, step - max(2, step / 4)); // leave a border
-
-        const int totalW = step * matrixW;
-        const int totalH = step * matrixH;
-        const int offsX = (screenWidth - totalW) / 2;
-        const int offsY = (screenHeight - totalH) / 2;
-
-        return RenderLayout{step, fill, offsX, offsY};
-    }
-
-    void drawPixel(int x, int y, int step, int fill, csColorRGBA c) {
-        SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
-        SDL_Rect rectBorder = {x, y, step - 1, step - 1};
-        SDL_RenderDrawRect(renderer, &rectBorder);
-
-        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, SDL_ALPHA_OPAQUE);
-        SDL_Rect rectFill = {x + (step - fill) / 2,
-                             y + (step - fill) / 2,
-                             fill,
-                             fill};
-        SDL_RenderFillRect(renderer, &rectFill);
-    }
 
     void drawNumber(int x, int y, float value) {
         // Format number as string
@@ -412,23 +372,11 @@ public:
     }
 
     void renderProc() {
-        const RenderLayout layout = makeLayout();
-
-        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(renderer);
-
-        const int matrixW = static_cast<int>(matrix.width());
-        const int matrixH = static_cast<int>(matrix.height());
-        for (int x = 0; x < matrixW; ++x) {
-            for (int y = 0; y < matrixH; ++y) {
-                const csColorRGBA c = matrix.getPixel(x, y);
-                drawPixel(layout.offsX + x * layout.step,
-                          layout.offsY + y * layout.step,
-                          layout.step,
-                          layout.fill,
-                          c);
-            }
-        }
+        // Render matrix using driver_sdl2 module
+        amp::renderMatrixToSDL(matrix, renderer, screenWidth, screenHeight,
+                                true,  // clearBeforeRender
+                                false  // presentAfterRender - we'll call it after drawing scale
+                               );
 
         // Draw scale parameter
         if (effect) {
