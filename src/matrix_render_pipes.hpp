@@ -3,6 +3,26 @@
 #include "matrix_render.hpp"
 #include "matrix_types.hpp"
 
+// Arduino PROGMEM support (AVR/ESP8266/ESP32).
+// Platform-specific header inclusion for PROGMEM support.
+#if defined(__AVR__)
+    // AVR-based boards (Arduino Nano, Uno, etc.)
+    #include <avr/pgmspace.h>
+#elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+    // ESP8266/ESP32 boards
+    #include <pgmspace.h>
+#elif defined(ARDUINO)
+    // Other Arduino platforms: Arduino.h should provide PROGMEM
+    #include <Arduino.h>
+#else
+    // Non-Arduino context: PROGMEM may not be available
+    // Define PROGMEM as empty and pgm_read functions as direct access for non-Arduino builds
+    #define PROGMEM
+    #define pgm_read_byte(addr) (*(const uint8_t *)(addr))
+    #define pgm_read_word(addr) (*(const uint16_t *)(addr))
+    #define pgm_read_dword(addr) (*(const uint32_t *)(addr))
+#endif
+
 namespace amp {
 
 // Base class for effects that use a source matrix.
@@ -370,7 +390,8 @@ public:
         }
 
         // Get remap x coordinate from array, y is always 0 for 1D matrix
-        dst_x = remapArray[src_y * remapWidth + src_x];
+        // Read from PROGMEM using pgm_read_dword (tMatrixPixelsCoord is int32_t)
+        dst_x = static_cast<tMatrixPixelsCoord>(pgm_read_dword(&remapArray[src_y * remapWidth + src_x]));
         if (dst_x == 0)
             return false;
         dst_x -= 1;

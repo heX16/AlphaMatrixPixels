@@ -4,6 +4,26 @@
 #include "led_config.hpp"
 #include "matrix_render_pipes.hpp"
 
+// Arduino PROGMEM support (AVR/ESP8266/ESP32).
+// Platform-specific header inclusion for PROGMEM support.
+#if defined(__AVR__)
+    // AVR-based boards (Arduino Nano, Uno, etc.)
+    #include <avr/pgmspace.h>
+#elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+    // ESP8266/ESP32 boards
+    #include <pgmspace.h>
+#elif defined(ARDUINO)
+    // Other Arduino platforms: Arduino.h should provide PROGMEM
+    #include <Arduino.h>
+#else
+    // Non-Arduino context: PROGMEM may not be available
+    // Define PROGMEM as empty and pgm_read functions as direct access for non-Arduino builds
+    #define PROGMEM
+    #define pgm_read_byte(addr) (*(const uint8_t *)(addr))
+    #define pgm_read_word(addr) (*(const uint16_t *)(addr))
+    #define pgm_read_dword(addr) (*(const uint32_t *)(addr))
+#endif
+
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.
 #ifndef AMP_ENABLE_GAMMA
@@ -44,16 +64,9 @@ public:
     amp::csRenderRemap1DByConstArray remapEffect;
 
     // Remap array: src(x,y) -> dst x (row-major order, 1-based indexing)
+    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
     static constexpr amp::tMatrixPixelsSize RemapIndexLen = 133; // 19x7
-    static constexpr amp::tMatrixPixelsCoord remapArray[133] = {
-        0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
-        7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
-        8, 0, 0, 3, 0, 22, 0, 0, 17, 0, 36, 0, 0, 31, 0, 50, 0, 0, 45,
-        0, 1, 2, 0, 0, 0, 15, 16, 0, 0, 0, 29, 30, 0, 0, 0, 43, 44, 0,
-        9, 0, 0, 14, 0, 23, 0, 0, 28, 0, 37, 0, 0, 42, 0, 51, 0, 0, 56,
-        10, 0, 0, 13, 0, 24, 0, 0, 27, 0, 38, 0, 0, 41, 0, 52, 0, 0, 55,
-        0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
-    };
+    static const amp::tMatrixPixelsCoord remapArray[RemapIndexLen] PROGMEM;
 
     // Remap array dimensions
     static constexpr amp::tMatrixPixelsSize remapWidth = 19;
@@ -80,6 +93,17 @@ public:
         remapEffect.matrixSource = &sourceMatrix;
         remapEffect.render(randGen, currTime);
     }
+};
+
+// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
+const amp::tMatrixPixelsCoord csRemap1DHelper::remapArray[csRemap1DHelper::RemapIndexLen] PROGMEM = {
+    0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
+    7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
+    8, 0, 0, 3, 0, 22, 0, 0, 17, 0, 36, 0, 0, 31, 0, 50, 0, 0, 45,
+    0, 1, 2, 0, 0, 0, 15, 16, 0, 0, 0, 29, 30, 0, 0, 0, 43, 44, 0,
+    9, 0, 0, 14, 0, 23, 0, 0, 28, 0, 37, 0, 0, 42, 0, 51, 0, 0, 56,
+    10, 0, 0, 13, 0, 24, 0, 0, 27, 0, 38, 0, 0, 41, 0, 52, 0, 0, 55,
+    0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
 };
 
 csRemap1DHelper remapHelper;

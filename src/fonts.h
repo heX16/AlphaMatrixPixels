@@ -4,6 +4,24 @@
 
 #include "font_base.hpp"
 
+// Arduino PROGMEM support (AVR/ESP8266/ESP32).
+// Platform-specific header inclusion for PROGMEM support.
+#if defined(__AVR__)
+    // AVR-based boards (Arduino Nano, Uno, etc.)
+    #include <avr/pgmspace.h>
+#elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+    // ESP8266/ESP32 boards
+    #include <pgmspace.h>
+#elif defined(ARDUINO)
+    // Other Arduino platforms: Arduino.h should provide PROGMEM
+    #include <Arduino.h>
+#else
+    // Non-Arduino context: PROGMEM may not be available
+    // Define PROGMEM as empty and pgm_read_byte as direct access for non-Arduino builds
+    #define PROGMEM
+    #define pgm_read_byte(addr) (*(const uint8_t *)(addr))
+#endif
+
 namespace amp {
 
 // Template function for font accessors: avoids global objects and ODR issues in header-only mode.
@@ -384,103 +402,107 @@ public:
             return 0;
         }
         // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        return static_cast<uint32_t>(kRows[glyphIndex][y]) << 24;
+        // Read from PROGMEM using pgm_read_byte
+        return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
-    static constexpr Row kRows[kCount][kHeight] = {
-        { // 0
-            0b01100000,
-            0b10010000,
-            0b10010000,
-            0b00000000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-        },
-        { // 1
-            0b00000000,
-            0b00010000,
-            0b00010000,
-            0b00000000,
-            0b00010000,
-            0b00010000,
-            0b00000000,
-        },
-        { // 2
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b01100000,
-            0b10000000,
-            0b10000000,
-            0b01100000,
-        },
-        { // 3
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b01100000,
-        },
-        { // 4
-            0b00000000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b00000000,
-        },
-        { // 5
-            0b01100000,
-            0b10000000,
-            0b10000000,
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b01100000,
-        },
-        { // 6
-            0b01100000,
-            0b10000000,
-            0b10000000,
-            0b01100000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-        },
-        { // 7
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b00000000,
-            0b00010000,
-            0b00010000,
-            0b00000000,
-        },
-        { // 8
-            0b01100000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-        },
-        { // 9
-            0b01100000,
-            0b10010000,
-            0b10010000,
-            0b01100000,
-            0b00010000,
-            0b00010000,
-            0b01100000,
-        },
-    };
+    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
+    static const Row kRows[kCount][kHeight] PROGMEM;
+};
+
+// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
+const csFont4x7DigitClock::Row csFont4x7DigitClock::kRows[csFont4x7DigitClock::kCount][csFont4x7DigitClock::kHeight] PROGMEM = {
+    { // 0
+        0b01100000,
+        0b10010000,
+        0b10010000,
+        0b00000000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+    },
+    { // 1
+        0b00000000,
+        0b00010000,
+        0b00010000,
+        0b00000000,
+        0b00010000,
+        0b00010000,
+        0b00000000,
+    },
+    { // 2
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b01100000,
+        0b10000000,
+        0b10000000,
+        0b01100000,
+    },
+    { // 3
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b01100000,
+    },
+    { // 4
+        0b00000000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b00000000,
+    },
+    { // 5
+        0b01100000,
+        0b10000000,
+        0b10000000,
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b01100000,
+    },
+    { // 6
+        0b01100000,
+        0b10000000,
+        0b10000000,
+        0b01100000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+    },
+    { // 7
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b00000000,
+        0b00010000,
+        0b00010000,
+        0b00000000,
+    },
+    { // 8
+        0b01100000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+    },
+    { // 9
+        0b01100000,
+        0b10010000,
+        0b10010000,
+        0b01100000,
+        0b00010000,
+        0b00010000,
+        0b01100000,
+    },
 };
 
 } // namespace amp
