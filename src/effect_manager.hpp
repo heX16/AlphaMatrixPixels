@@ -2,9 +2,10 @@
 #ifndef EFFECT_MANAGER_HPP
 #define EFFECT_MANAGER_HPP
 
-#include <cstddef>
-#include <cstdint>
-#include <climits>
+// Use C headers for compatibility with older Arduino IDE versions (AVR)
+#include <stddef.h>
+#include <stdint.h>
+#include <limits.h>
 #include "matrix_pixels.hpp"
 #include "matrix_render.hpp"
 
@@ -187,9 +188,7 @@ private:
         if (!eff) {
             return;
         }
-        if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
-            m->setMatrix(matrix);
-        }
+        eff->setMatrixIfSupported(&matrix);
     }
 
     // incapsulation of `delete`

@@ -164,6 +164,24 @@ public:
     virtual void receiveEvent(const csEventBase& event) {
         (void)event;
     }
+
+    // Set matrix if effect supports it (for effects derived from csRenderMatrixBase)
+    // Uses parameter introspection system to check and set paramMatrixDest
+    // paramMatrixDest = 1 (from csEffectBaseStdParams)
+    void setMatrixIfSupported(csMatrixPixels* m) {
+        if (!m) {
+            return;
+        }
+        csParamInfo info;
+        getParamInfo(1, info);  // paramMatrixDest = 1
+        // Check if parameter is enabled and has correct type
+        if (!info.disabled && info.ptr != nullptr && info.type == ParamType::Matrix) {
+            // Write new matrix pointer value
+            *(csMatrixPixels**)info.ptr = m;
+            // Notify about parameter change
+            paramChanged(1);  // paramMatrixDest = 1
+        }
+    }
 };
 
 // Contains standard parameter types without the actual fields - only their parameter ID.

@@ -1065,9 +1065,7 @@ public:
         if (paramNum == csRenderMatrixBase::paramMatrixDest) {
             for (uint8_t i = 0; i < maxEffects; ++i) {
                 if (effects[i] != nullptr) {
-                    if (auto* matrixEffect = dynamic_cast<csRenderMatrixBase*>(effects[i])) {
-                        matrixEffect->setMatrix(matrix);
-                    }
+                    effects[i]->setMatrixIfSupported(matrix);
                 }
             }
         }

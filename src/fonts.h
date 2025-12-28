@@ -39,8 +39,8 @@ public:
     }
 
 private:
-    // Header-only safe in C++17: inline variable, no multiple-definition issues.
-    inline static constexpr Row kRows[kCount][kHeight] = {
+    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
+    static constexpr Row kRows[kCount][kHeight] = {
         { // 0
             0b11100000,
             0b10100000,
@@ -140,8 +140,8 @@ public:
     }
 
 private:
-    // Header-only safe in C++17: inline variable, no multiple-definition issues.
-    inline static constexpr Row kRows[kCount][kHeight] = {
+    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
+    static constexpr Row kRows[kCount][kHeight] = {
         { // 0
             0b11110000,
             0b10010000,
@@ -261,8 +261,8 @@ public:
     }
 
 private:
-    // Header-only safe in C++17: inline variable, no multiple-definition issues.
-    inline static constexpr Row kRows[kCount][kHeight] = {
+    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
+    static constexpr Row kRows[kCount][kHeight] = {
         { // 0
             0b01100000,
             0b10010000,
@@ -388,8 +388,8 @@ public:
     }
 
 private:
-    // Header-only safe in C++17: inline variable, no multiple-definition issues.
-    inline static constexpr Row kRows[kCount][kHeight] = {
+    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
+    static constexpr Row kRows[kCount][kHeight] = {
         { // 0
             0b01100000,
             0b10010000,

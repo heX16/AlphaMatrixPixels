@@ -159,7 +159,7 @@ public:
     fp_type raw{0};
 
     static constexpr int frac_bits = 16;
-    static constexpr fp_type scale = static_cast<fp_type>(1 << frac_bits); // 65536
+    static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits); // 65536
     static constexpr fp_type min_raw = static_cast<fp_type>(-2147483647 - 1);
     static constexpr fp_type max_raw = static_cast<fp_type>(2147483647);
 
