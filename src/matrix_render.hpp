@@ -277,12 +277,10 @@ public:
     void setMatrix(csMatrixPixels* m) noexcept {
         matrix = m;
         paramChanged(paramMatrixDest);
-        paramChanged(paramRectDest);
     }
     void setMatrix(csMatrixPixels& m) noexcept {
         matrix = &m;
         paramChanged(paramMatrixDest);
-        paramChanged(paramRectDest);
     }
 
     // NOTE: uint8_t getParamsCount() - count dont changed

@@ -1060,6 +1060,17 @@ public:
         }
         // Call base implementation for other parameters
         csRenderMatrixBase::paramChanged(paramNum);
+        
+        // If matrix destination changed, bind matrix to all nested effects
+        if (paramNum == csRenderMatrixBase::paramMatrixDest) {
+            for (uint8_t i = 0; i < maxEffects; ++i) {
+                if (effects[i] != nullptr) {
+                    if (auto* matrixEffect = dynamic_cast<csRenderMatrixBase*>(effects[i])) {
+                        matrixEffect->setMatrix(matrix);
+                    }
+                }
+            }
+        }
     }
 
     void recalc(csRandGen& rand, uint16_t currTime) override {

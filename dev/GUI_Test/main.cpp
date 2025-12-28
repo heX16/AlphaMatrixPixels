@@ -57,14 +57,7 @@ public:
     void bindEffectMatrix(csEffectBase* eff) {
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
             m->setMatrix(matrix);
-            // If it's a container, also bind matrix to nested effects
-            if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
-                for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
-                    if (container->effects[i] != nullptr) {
-                        bindEffectMatrix(container->effects[i]);
-                    }
-                }
-            }
+            // Container will automatically bind matrix to nested effects via paramChanged
         }
     }
 
@@ -115,6 +108,123 @@ public:
         averageArea.rectDest = amp::csRect{1, 1, 4, 4};
     }
 
+    void handleKeyPress(SDL_Keysym keysym) {
+        switch (keysym.sym) {
+            case SDLK_ESCAPE:
+                quit = true;
+                break;
+            case SDLK_1:
+                recreateMatrix(16, 16);
+                break;
+            case SDLK_2:
+                recreateMatrix(23, 11);
+                break;
+            case SDLK_3:
+                recreateMatrix(8, 8);
+                break;
+            case SDLK_w:
+                deleteEffect(effect);
+                effect = new csRenderGradientWaves();
+                bindEffectMatrix(effect);
+                break;
+            case SDLK_e:
+                deleteEffect(effect);
+                effect = new csRenderGradientWavesFP();
+                bindEffectMatrix(effect);
+                break;
+            case SDLK_q:
+                deleteEffect(effect);
+                effect = new csRenderPlasma();
+                bindEffectMatrix(effect);
+                break;
+            case SDLK_s:
+                deleteEffect(effect);
+                effect = new csRenderSnowfall();
+                bindEffectMatrix(effect);
+                break;
+            case SDLK_r: {
+                deleteEffect(effect2);
+                auto* glyph = new csRenderGlyph();
+                initGlyphDefaults(*glyph);
+                effect2 = glyph;
+                bindEffectMatrix(effect2);
+                break;
+            }
+            case SDLK_t: {
+                deleteEffect(effect2);
+                // auto* circle = new csRenderCircle();
+                auto* circle = new csRenderCircleGradient();
+                initCircleDefaults(*circle);
+                effect2 = circle;
+                bindEffectMatrix(effect2);
+                break;
+            }
+            case SDLK_c:
+                deleteEffect(effect2);
+                effect2 = createClock();
+                bindEffectMatrix(effect2);
+                break;
+            case SDLK_b: {
+                deleteEffect(effect2);
+                auto* averageArea = new csRenderAverageArea();
+                initAverageAreaDefaults(*averageArea);
+                effect2 = averageArea;
+                bindEffectMatrix(effect2);
+                break;
+            }
+            case SDLK_8:
+                // Toggle debug mode for 2D->1D remapping visualization
+                copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
+                break;
+            case SDLK_KP_PLUS:
+            case SDLK_PLUS:
+                // Increase scale for dynamic effects
+                if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+                    dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{0.1f};
+                }
+                if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
+                    dynamicEffect2->scale = dynamicEffect2->scale + amp::math::csFP16{0.1f};
+                }
+                break;
+            case SDLK_KP_MINUS:
+            case SDLK_MINUS:
+                // Decrease scale for dynamic effects
+                if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+                    dynamicEffect->scale = dynamicEffect->scale - amp::math::csFP16{0.1f};
+                }
+                if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
+                    dynamicEffect2->scale = dynamicEffect2->scale - amp::math::csFP16{0.1f};
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void updateAndRenderEffect(csEffectBase* eff, uint32_t ticks, uint16_t currTime) {
+        if (!eff) {
+            return;
+        }
+
+        if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
+            // Update time for clock inside container
+            for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
+                if (auto* clock = dynamic_cast<csRenderDigitalClock*>(container->effects[i])) {
+                    clock->time = ticks / 1000u;
+                    break;
+                }
+            }
+        } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
+            glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
+        } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(eff)) {
+            snowfall->recalc(randGen, currTime);
+        } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
+            // Update time from SDL ticks (convert to seconds)
+            clock->time = ticks / 1000u;
+        }
+
+        eff->render(randGen, currTime);
+    }
 
     csRenderContainer* createClock() const noexcept {
         // Get font dimensions for clock size calculation
@@ -228,83 +338,7 @@ public:
                 if (event.type == SDL_QUIT || event.type == SDL_APP_TERMINATING) {
                     quit = true;
                 } else if (event.type == SDL_KEYDOWN) {
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
-                        quit = true;
-                    } else if (event.key.keysym.sym == SDLK_1 || event.key.keysym.sym == SDLK_2 || event.key.keysym.sym == SDLK_3) {
-                        tMatrixPixelsSize w = 0;
-                        tMatrixPixelsSize h = 0;
-                        if (event.key.keysym.sym == SDLK_1) {
-                            w = 16;
-                            h = 16;
-                        } else if (event.key.keysym.sym == SDLK_2) {
-                            w = 23;
-                            h = 11;
-                        } else if (event.key.keysym.sym == SDLK_3) {
-                            w = 8;
-                            h = 8;
-                        }
-                        recreateMatrix(w, h);
-                        bindEffectMatrix(effect);
-                        bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_w) {
-                        deleteEffect(effect);
-                        effect = new csRenderGradientWaves();
-                        bindEffectMatrix(effect);
-                    } else if (event.key.keysym.sym == SDLK_e) {
-                        deleteEffect(effect);
-                        effect = new csRenderGradientWavesFP();
-                        bindEffectMatrix(effect);
-                    } else if (event.key.keysym.sym == SDLK_q) {
-                        deleteEffect(effect);
-                        effect = new csRenderPlasma();
-                        bindEffectMatrix(effect);
-                    } else if (event.key.keysym.sym == SDLK_s) {
-                        deleteEffect(effect);
-                        effect = new csRenderSnowfall();
-                        bindEffectMatrix(effect);
-                    } else if (event.key.keysym.sym == SDLK_r) {
-                        deleteEffect(effect2);
-                        auto* glyph = new csRenderGlyph();
-                        initGlyphDefaults(*glyph);
-                        effect2 = glyph;
-                        bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_t) {
-                        deleteEffect(effect2);
-                        // auto* circle = new csRenderCircle();
-                        auto* circle = new csRenderCircleGradient();
-                        initCircleDefaults(*circle);
-                        effect2 = circle;
-                        bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_c) {
-                        deleteEffect(effect2);
-                        effect2 = createClock();
-                        bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_b) {
-                        deleteEffect(effect2);
-                        auto* averageArea = new csRenderAverageArea();
-                        initAverageAreaDefaults(*averageArea);
-                        effect2 = averageArea;
-                        bindEffectMatrix(effect2);
-                    } else if (event.key.keysym.sym == SDLK_8) {
-                        // Toggle debug mode for 2D->1D remapping visualization
-                        copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
-                    } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
-                        // Increase scale for dynamic effects
-                        if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
-                            dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{0.1f};
-                        }
-                        if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
-                            dynamicEffect2->scale = dynamicEffect2->scale + amp::math::csFP16{0.1f};
-                        }
-                    } else if (event.key.keysym.sym == SDLK_KP_MINUS || event.key.keysym.sym == SDLK_MINUS) {
-                        // Decrease scale for dynamic effects
-                        if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
-                            dynamicEffect->scale = dynamicEffect->scale - amp::math::csFP16{0.1f};
-                        }
-                        if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
-                            dynamicEffect2->scale = dynamicEffect2->scale - amp::math::csFP16{0.1f};
-                        }
-                    }
+                    handleKeyPress(event.key.keysym);
                 }
             }
 
@@ -313,54 +347,19 @@ public:
             const uint32_t ticks = SDL_GetTicks();
             const uint16_t currTime = static_cast<uint16_t>(ticks);
 
-            // First render effect2 into matrix (if exists)
-            if (effect2) {
-                if (auto* container = dynamic_cast<csRenderContainer*>(effect2)) {
-                    // Update time for clock inside container
-                    for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
-                        if (auto* clock = dynamic_cast<csRenderDigitalClock*>(container->effects[i])) {
-                            clock->time = ticks / 1000u;
-                            break;
-                        }
-                    }
-                } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
-                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
-                    snowfall->recalc(randGen, currTime);
-                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect2)) {
-                    // Update time from SDL ticks (convert to seconds)
-                    clock->time = ticks / 1000u;
-                }
-                effect2->render(randGen, currTime);
-            }
-
-            // Update remap source and render remap effect if debug mode is active
-            if (copyLineIndexHelper.isActive) {
-                copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
-            }
-
-            // Now render effect (which may use matrix as source after effect2 rendered into it)
-            if (effect) {
-                if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
-                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-                } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
-                    snowfall->recalc(randGen, currTime);
-                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect)) {
-                    // Update time from SDL ticks (convert to seconds)
-                    clock->time = ticks / 1000u;
-                }
-                effect->render(randGen, currTime);
-            }
+            updateAndRenderEffect(effect2, ticks, currTime);
+            updateAndRenderEffect(effect, ticks, currTime);
+            copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
         }
     }
 
 
-    void drawNumber(int x, int y, float value) {
+    void drawNumber(int x, int y, float value, const char* format = "%.2f") {
         // Format number as string
         char buf[32];
-        std::snprintf(buf, sizeof(buf), "scale: %.2f", value);
+        std::snprintf(buf, sizeof(buf), format, value);
         
         if (font) {
             // Use SDL_ttf for rendering
@@ -389,7 +388,7 @@ public:
         if (effect) {
             if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
                 const float scaleValue = dynamicEffect->scale.to_float();
-                drawNumber(10, 10, scaleValue);
+                drawNumber(10, 10, scaleValue, "scale: %.2f");
             }
         }
 
@@ -404,6 +403,8 @@ public:
             return;
         }
         matrix = csMatrixPixels{w, h};
+        bindEffectMatrix(effect);
+        bindEffectMatrix(effect2);
     }
 
     void done() {
