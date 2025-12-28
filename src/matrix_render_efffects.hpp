@@ -1017,7 +1017,7 @@ public:
 
     // Array of pointers to nested effects (nullptr means slot is empty).
     // Container does NOT manage memory - effects must be created/destroyed externally.
-    csEffectBaseStdParams* effects[maxEffects] = {};
+    csEffectBase* effects[maxEffects] = {};
 
     uint8_t getParamsCount() const override {
         return paramLast;

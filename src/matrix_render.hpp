@@ -7,6 +7,7 @@
 #include "matrix_pixels.hpp"
 #include "rect.hpp"
 #include "math.hpp"
+#include "rand_gen.hpp"
 
 
 
@@ -37,9 +38,9 @@ enum class ParamType : uint8_t {
     // `csColorRGBA`
     Color = 15,
     // WIP ...
-    LinkToEffect = 16,
+    LinkToEffectParam = 16,
     // `ParamType`
-    LinkToEffectType = 17,
+    LinkToEffectParamType = 17,
 
     EffectBase = 32,
     EffectMatrixDest = 33,
@@ -56,89 +57,108 @@ struct csParamInfo {
     bool disabled = false;
 };
 
-// Special random generator
-class csRandGen {
-public:
-
-    // X(n+1) = (2053 * X(n)) + 13849)
-    static constexpr auto RAND16_2053 = ((uint16_t)(2053));
-    static constexpr auto RAND16_13849 = ((uint16_t)(13849));
-    static constexpr auto RAND16_SEED = 1337;
-
-    /// random number seed
-    uint16_t rand_seed;
-
-    csRandGen(uint16_t set_rand_seed = RAND16_SEED) {
-        rand_seed = set_rand_seed;
-    };
-
-    /// Generate an 8-bit random number
-    uint8_t rand()
-    {
-        // hard test
-        //return 0;
-        // test
-        //return this->rand_seed++;
-
-        rand_seed = (this->rand_seed * RAND16_2053) + RAND16_13849;
-        // return first uint8_t (for more speed)
-        return (uint8_t)(this->rand_seed & 0xFF);
-
-        // return the sum of the high and low uint8_ts, for better
-        //  mixing and non-sequential correlation
-        //return (uint8_t)(((uint8_t)(this->rand_seed & 0xFF)) +
-        //                 ((uint8_t)(this->rand_seed >> 8)));
-    }
-
-    /// Generate an 8-bit random number between 0 and lim
-    /// @param lim the upper bound (not inclusive) for the result
-    uint8_t rand(uint8_t lim)
-    {
-        uint8_t r = this->rand();
-        r = (r*lim) >> 8;
-        return r;
-    }
-
-    /// Generate an 8-bit random number in the given range
-    /// @param min the lower bound for the random number
-    /// @param max upper bound (inclusive) for the random number
-    uint8_t randRange(uint8_t min, uint8_t max)
-    {
-        uint8_t delta = max - min + 1;
-        uint8_t r = this->rand(delta) + min;
-        return r;
-    }
-
-    /// Add entropy into the random number generator
-    void addEntropy(uint16_t entropy)
-    {
-        this->rand_seed += entropy;
-    }
-
-};
-
 class csEventBase {
     // Empty - WIP
 };
 
 // Base class for all render/effect implementations
+// Contains standard parameter types without the actual fields - only their parameter ID.
+// All these parameters are disabled by default - derived classes can enable them.
+// This reserves a small pool of the most commonly used properties.
 class csEffectBase {
 public:
 
     virtual ~csEffectBase() = default;
 
+    // Standard parameter constants
+    static constexpr uint8_t paramMatrixDest = 1;
+    static constexpr uint8_t paramRectDest = 2;
+    static constexpr uint8_t paramRenderRectAutosize = 3;
+    static constexpr uint8_t paramDisabled = 4;
+    // Scale parameter: 
+    // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
+    // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
+    static constexpr uint8_t paramScale = 5;
+    static constexpr uint8_t paramSpeed = 6;
+    static constexpr uint8_t paramAlpha = 7;
+    static constexpr uint8_t paramColor = 8;
+    static constexpr uint8_t paramColor2 = 9;
+    static constexpr uint8_t paramColor3 = 10;
+    static constexpr uint8_t paramColorBackground = 11;
+
+    // `paramLast` - Special "parameter" - the last one in the list. 
+    // Shadowed in each derived class.
+    // Example of use:
+    // ```
+    //     static constexpr uint8_t base = _prev_class_::paramLast;
+    //     static constexpr uint8_t paramNew = base+1;
+    //     static constexpr uint8_t paramLast = paramNew;
+    // ```
+    static constexpr uint8_t paramLast = paramColorBackground;
+
     // Parameter introspection: returns number of exposed parameters
     // NOTE: parameter indices start at 1 (not 0).
     // If `getParamsCount()==1`, call `getParamInfo(1, ...)`.
     virtual uint8_t getParamsCount() const {
-        return 0;
+        return paramLast;
     }
 
     // Parameter introspection: returns parameter metadata (type/name/pointer)
     // NOTE: parameter indices start at 1 (not 0).
     virtual void getParamInfo(uint8_t paramNum, csParamInfo& info) {
-        (void)paramNum;
-        info = csParamInfo{};
+        info.readOnly = false;
+        info.disabled = true;  // All parameters are disabled by default
+        info.ptr = nullptr;    // No fields in this class
+
+        switch (paramNum) {
+            case paramMatrixDest:
+                info.type = ParamType::Matrix;
+                info.name = "Matrix dest";
+                break;
+            case paramRectDest:
+                info.type = ParamType::Rect;
+                info.name = "Rect dest";
+                break;
+            case paramRenderRectAutosize:
+                info.type = ParamType::Bool;
+                info.name = "Render rect autosize";
+                break;
+            case paramDisabled:
+                info.type = ParamType::Bool;
+                info.name = "Disabled";
+                break;
+            case paramScale:
+                info.type = ParamType::FP16;
+                info.name = "Scale";
+                break;
+            case paramSpeed:
+                info.type = ParamType::FP16;
+                info.name = "Speed";
+                break;
+            case paramAlpha:
+                info.type = ParamType::UInt8;
+                info.name = "Alpha";
+                break;
+            case paramColor:
+                info.type = ParamType::Color;
+                info.name = "Color";
+                break;
+            case paramColor2:
+                info.type = ParamType::Color;
+                info.name = "Color 2";
+                break;
+            case paramColor3:
+                info.type = ParamType::Color;
+                info.name = "Color 3";
+                break;
+            case paramColorBackground:
+                info.type = ParamType::Color;
+                info.name = "Background color";
+                break;
+            default:
+                info = csParamInfo{};
+                break;
+        }
     }
 
     // Notification hook.
@@ -219,104 +239,9 @@ public:
 
 };
 
-// Contains standard parameter types without the actual fields - only their parameter ID.
-// All these parameters are disabled by default - derived classes can enable them.
-// This reserves a small pool of the most commonly used properties.
-class csEffectBaseStdParams : public csEffectBase {
-public:
-
-    // Standard parameter constants
-    static constexpr uint8_t paramMatrixDest = 1;
-    static constexpr uint8_t paramRectDest = 2;
-    static constexpr uint8_t paramRenderRectAutosize = 3;
-    static constexpr uint8_t paramDisabled = 4;
-    // Scale parameter: 
-    // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
-    // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
-    static constexpr uint8_t paramScale = 5;
-    static constexpr uint8_t paramSpeed = 6;
-    static constexpr uint8_t paramAlpha = 7;
-    static constexpr uint8_t paramColor = 8;
-    static constexpr uint8_t paramColor2 = 9;
-    static constexpr uint8_t paramColor3 = 10;
-    static constexpr uint8_t paramColorBackground = 11;
-
-    // `paramLast` - Special "parameter" - the last one in the list. 
-    // Shadowed in each derived class.
-    // Example of use:
-    // ```
-    //     static constexpr uint8_t base = _prev_class_::paramLast;
-    //     static constexpr uint8_t paramNew = base+1;
-    //     static constexpr uint8_t paramLast = paramNew;
-    // ```
-    static constexpr uint8_t paramLast = paramColorBackground;
-    
-    
-    uint8_t getParamsCount() const override {
-        return paramLast;
-    }
-
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        info.readOnly = false;
-        info.disabled = true;  // All parameters are disabled by default
-        info.ptr = nullptr;    // No fields in this class
-
-        switch (paramNum) {
-            case paramMatrixDest:
-                info.type = ParamType::Matrix;
-                info.name = "Matrix dest";
-                break;
-            case paramRectDest:
-                info.type = ParamType::Rect;
-                info.name = "Rect dest";
-                break;
-            case paramRenderRectAutosize:
-                info.type = ParamType::Bool;
-                info.name = "Render rect autosize";
-                break;
-            case paramDisabled:
-                info.type = ParamType::Bool;
-                info.name = "Disabled";
-                break;
-            case paramScale:
-                info.type = ParamType::FP16;
-                info.name = "Scale";
-                break;
-            case paramSpeed:
-                info.type = ParamType::FP16;
-                info.name = "Speed";
-                break;
-            case paramAlpha:
-                info.type = ParamType::UInt8;
-                info.name = "Alpha";
-                break;
-            case paramColor:
-                info.type = ParamType::Color;
-                info.name = "Color";
-                break;
-            case paramColor2:
-                info.type = ParamType::Color;
-                info.name = "Color 2";
-                break;
-            case paramColor3:
-                info.type = ParamType::Color;
-                info.name = "Color 3";
-                break;
-            case paramColorBackground:
-                info.type = ParamType::Color;
-                info.name = "Background color";
-                break;
-            default:
-                csEffectBase::getParamInfo(paramNum, info);
-                break;
-        }
-    }
-
-};
-
 // Base class for matrix-based renderers.
 // All fields are public by design for direct access/performance.
-class csRenderMatrixBase : public csEffectBaseStdParams {
+class csRenderMatrixBase : public csEffectBase {
 public:
     csMatrixPixels* matrix = nullptr;
 
@@ -351,13 +276,13 @@ public:
             return this;
         }
         // Check base class families
-        return csEffectBaseStdParams::queryClassFamily(familyId);
+        return csEffectBase::queryClassFamily(familyId);
     }
 
     // NOTE: uint8_t getParamsCount() - count dont changed
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csEffectBaseStdParams::getParamInfo(paramNum, info);
+        csEffectBase::getParamInfo(paramNum, info);
 
         switch (paramNum) {
             case paramRenderRectAutosize:
