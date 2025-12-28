@@ -164,10 +164,10 @@ public:
     
 // Effect: convert 2D matrix to linear 1D matrix
 //
-// linear 1D matrix size:  (height=1, width=src.height*src.width).
+// linear 1D matrix size:  `height=1`, `width=src.height*src.width`.
 // Index starts from 1. (not 0!)
 // If `index==0` - skip the pixel.
-class csRenderMatrixCopyLine : public csRenderRemapBase {
+class csRenderMatrix2DTo1D : public csRenderRemapBase {
 public:
     bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {
         if (!matrixSource) {
@@ -213,7 +213,7 @@ public:
 // and writes to `matrixDest` at coordinates `(matrixIndex, 0)`.
 // Thus, the matrix `matrixIndex` is a table where each number is the index
 // in the linear matrix where the corresponding pixel should be placed.
-class csRenderMatrixCopyLineIndex : public csRenderMatrixCopyLine {
+class csRenderMatrixCopyLineIndex : public csRenderMatrix2DTo1D {
 public:
     static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
     static constexpr uint8_t paramMatrixIndex = base + 1;
@@ -227,7 +227,7 @@ public:
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixCopyLine::getParamInfo(paramNum, info);
+        csRenderMatrix2DTo1D::getParamInfo(paramNum, info);
         switch (paramNum) {
             case paramMatrixIndex:
                 info.type = ParamType::Matrix;
