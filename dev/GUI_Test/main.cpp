@@ -30,7 +30,7 @@ using amp::csRenderDigitalClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
-using amp::csRenderMatrixCopyLineIndex;
+using amp::csRenderRemapByIndexMatrix;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -51,7 +51,7 @@ public:
     csEffectBase* effect{nullptr};
     csEffectBase* effect2{nullptr};
     
-    // Helper for csRenderMatrixCopyLineIndex functionality
+    // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
 
     void bindEffectMatrix(csEffectBase* eff) {
@@ -287,7 +287,7 @@ public:
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_8) {
                         deleteEffect(effect);
-                        auto* copyLineIndex = new csRenderMatrixCopyLineIndex();
+                        auto* copyLineIndex = new csRenderRemapByIndexMatrix();
                         copyLineIndexHelper.initCopyLineIndexDefaults(*copyLineIndex, matrix, 
                             [this](tMatrixPixelsSize w, tMatrixPixelsSize h) { 
                                 this->recreateMatrix(w, h); 
@@ -346,7 +346,7 @@ public:
             // Now render effect (which may use matrix as source after effect2 rendered into it)
             if (effect) {
                 const uint32_t ticks = SDL_GetTicks();
-                if (auto* copyLineIndexEffect = dynamic_cast<csRenderMatrixCopyLineIndex*>(effect)) {
+                if (auto* copyLineIndexEffect = dynamic_cast<csRenderRemapByIndexMatrix*>(effect)) {
                     // Update matrixSource to point to matrix (which now contains effect2 result)
                     copyLineIndexHelper.updateCopyLineIndexSource(copyLineIndexEffect, matrix);
                 }
