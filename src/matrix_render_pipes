@@ -53,6 +53,21 @@ public:
     }
 };
 
+// Effect: average area by computing average color of source area and filling destination area with it.
+// Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
+class csRenderAverageArea : public csRenderMatrixPipeBase {
+public:
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !matrixSource) {
+            return;
+        }
+
+        // Get average color of source area and fill destination area with it
+        const csColorRGBA areaColor = matrixSource->getAreaColor(rectSource);
+        matrix->fillArea(rectDest, areaColor);
+    }
+};
+    
 // Effect: copy pixels from source matrix to destination matrix with blending.
 class csRenderMatrixCopy : public csRenderMatrixPipeBase {
 public:
@@ -76,6 +91,52 @@ public:
     }
 };
 
+// Effect: copy pixels by some remap function from source matrix to destination matrix.
+class csRenderRemapBase : public csRenderMatrixPipeBase {
+public:
+
+    virtual bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const {
+        (void)src_x;
+        (void)src_y;
+        (void)dst_x;
+        (void)dst_y;
+        return false;
+    }
+
+    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+        if (disabled || !matrix || !matrixSource) {
+            return;
+        }
+    
+        // Clip source rectangle to source matrix bounds
+        const csRect srcBounds = matrixSource->getRect();
+        const csRect srcClipped = rectSource.intersect(srcBounds);
+        if (srcClipped.empty()) {
+            return;
+        }
+    
+        // Iterate over all pixels in source rectangle
+        for (tMatrixPixelsSize y = 0; y < srcClipped.height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < srcClipped.width; ++x) {
+                const tMatrixPixelsCoord src_x = srcClipped.x + to_coord(x);
+                const tMatrixPixelsCoord src_y = srcClipped.y + to_coord(y);
+                
+                // Get remapped destination coordinates
+                tMatrixPixelsCoord dst_x = 0;
+                tMatrixPixelsCoord dst_y = 0;
+                if (!getPixelRemap(src_x, src_y, dst_x, dst_y)) {
+                    continue; // Skip if remap function returns false
+                }
+    
+                // Get source pixel and write to destination with blending
+                const csColorRGBA sourcePixel = matrixSource->getPixel(src_x, src_y);
+                matrix->setPixel(dst_x, dst_y, sourcePixel);
+            }
+        }
+    }
+
+};
+    
 // Effect: convert 2D matrix to linear 1D matrix
 //
 // linear 1D matrix size:  (height=1, width=src.height*src.width).
@@ -163,21 +224,6 @@ public:
             return matrixIndex->getPixel(x, y).value;
         }
         return 0;
-    }
-};
-
-// Effect: average area by computing average color of source area and filling destination area with it.
-// Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
-class csRenderAverageArea : public csRenderMatrixPipeBase {
-public:
-    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix || !matrixSource) {
-            return;
-        }
-
-        // Get average color of source area and fill destination area with it
-        const csColorRGBA areaColor = matrixSource->getAreaColor(rectSource);
-        matrix->fillArea(rectDest, areaColor);
     }
 };
 
