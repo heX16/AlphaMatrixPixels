@@ -66,6 +66,53 @@ public:
         }
     }
 
+    // Delete effect with safety: clears all references to it from other effects' parameters
+    // Before deletion, scans all effects and their parameters, and if any parameter
+    // of type Effect points to the object being deleted, sets it to nullptr and calls paramChanged
+    void deleteSlowAndSafety(size_t index) {
+        if (index >= maxEffects) {
+            return;
+        }
+
+        amp::csEffectBase* eff = effects[index];
+        if (!eff) {
+            return;
+        }
+
+        // Scan all effects and their parameters
+        for (size_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] == nullptr || i == index) {
+                continue; // Skip null or the effect being deleted
+            }
+
+            amp::csEffectBase* currentEff = effects[i];
+            const uint8_t paramCount = currentEff->getParamsCount();
+
+            // Enumerate all parameters
+            for (uint8_t paramNum = 1; paramNum <= paramCount; ++paramNum) {
+                amp::csParamInfo info;
+                currentEff->getParamInfo(paramNum, info);
+
+                // Check if parameter is of type Effect (pointer to effect)
+                if (info.type == amp::ParamType::Effect && info.ptr != nullptr) {
+                    // Compare pointer value with the effect being deleted
+                    amp::csEffectBase** effectPtr = static_cast<amp::csEffectBase**>(info.ptr);
+                    if (*effectPtr == eff) {
+                        // Found reference to the effect being deleted
+                        *effectPtr = nullptr;
+                        currentEff->paramChanged(paramNum);
+                    }
+                }
+            }
+        }
+
+        // Clear from array (before deletion)
+        effects[index] = nullptr;
+
+        // Now safe to delete the effect
+        deleteEffect(eff);
+    }
+
     // Bind matrix to all effects
     void bindMatrix() {
         for (size_t i = 0; i < maxEffects; ++i) {
