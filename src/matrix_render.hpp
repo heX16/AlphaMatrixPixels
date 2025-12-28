@@ -312,24 +312,6 @@ public:
         }
     }
 
-    // Set matrix if effect supports it (for effects derived from csRenderMatrixBase)
-    // Uses parameter introspection system to check and set paramMatrixDest
-    // paramMatrixDest = 1 (from csEffectBaseStdParams)
-    void setMatrixIfSupported(csMatrixPixels* m) {
-        if (!m) {
-            return;
-        }
-        csParamInfo info;
-        getParamInfo(paramMatrixDest, info);  // paramMatrixDest = 1
-        // Check if parameter is enabled and has correct type
-        if (!info.disabled && info.ptr != nullptr && info.type == ParamType::Matrix) {
-            // Write new matrix pointer value
-            *(csMatrixPixels**)info.ptr = m;
-            // Notify about parameter change
-            paramChanged(paramMatrixDest);  // paramMatrixDest = 1
-        }
-    }
-
 };
 
 // Base class for matrix-based renderers.

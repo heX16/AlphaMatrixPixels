@@ -1082,7 +1082,11 @@ public:
         if (paramNum == csRenderMatrixBase::paramMatrixDest) {
             for (uint8_t i = 0; i < maxEffects; ++i) {
                 if (effects[i] != nullptr) {
-                    effects[i]->setMatrixIfSupported(matrix);
+                    if (auto* m = static_cast<csRenderMatrixBase*>(
+                        effects[i]->queryClassFamily(ParamType::EffectMatrixDest)
+                    )) {
+                        m->setMatrix(matrix);
+                    }
                 }
             }
         }

@@ -96,7 +96,9 @@ public:
                 currentEff->getParamInfo(paramNum, info);
 
                 // Check if parameter is of type Effect (pointer to effect)
-                if (info.type == amp::ParamType::Effect && info.ptr != nullptr) {
+                // All effect family types are >= EffectBase ("Effect*")
+                // Using >= ensures we catch all current and future effect family types
+                if ((info.type >= amp::ParamType::EffectBase) && (info.ptr != nullptr)) {
                     // Compare pointer value with the effect being deleted
                     amp::csEffectBase** effectPtr = static_cast<amp::csEffectBase**>(info.ptr);
                     if (*effectPtr == eff) {
@@ -188,7 +190,11 @@ private:
         if (!eff) {
             return;
         }
-        eff->setMatrixIfSupported(&matrix);
+        if (auto* m = static_cast<amp::csRenderMatrixBase*>(
+            eff->queryClassFamily(amp::ParamType::EffectMatrixDest)
+        )) {
+            m->setMatrix(&matrix);
+        }
     }
 
     // incapsulation of `delete`
