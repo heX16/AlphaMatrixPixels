@@ -68,35 +68,8 @@ public:
         delete eff;
     }
 
-    void initGlyphDefaults(csRenderGlyph& glyph) const noexcept {
-        glyph.color = csColorRGBA{255, 255, 255, 255};
-        glyph.backgroundColor = csColorRGBA{196, 0, 0, 0};
-        glyph.symbolIndex = 0;
-        glyph.setFont(amp::getStaticFontTemplate<amp::csFont4x7Digits>());
-        glyph.renderRectAutosize = false;
-        glyph.rectDest = amp::csRect{
-            2,
-            2,
-            amp::to_size(glyph.fontWidth + 2),
-            amp::to_size(glyph.fontHeight + 2)
-        };
-    }
 
-    void initCircleDefaults(csRenderCircleGradient& circle) const noexcept {
-        // circle.color = csColorRGBA{255, 0, 0, 255};
-        circle.color = csColorRGBA{255, 255, 255, 255};
-        circle.backgroundColor = csColorRGBA{0, 0, 0, 0};
-        circle.gradientOffset = 127;
-        circle.renderRectAutosize = true; // использовать весь rect матрицы
-    }
 
-    void initAverageAreaDefaults(csRenderAverageArea& averageArea) noexcept {
-        averageArea.matrix = &matrix;
-        averageArea.matrixSource = &matrix;
-        averageArea.renderRectAutosize = false;
-        averageArea.rectSource = amp::csRect{1, 1, 4, 4};
-        averageArea.rectDest = amp::csRect{1, 1, 4, 4};
-    }
 
     void handleKeyPress(SDL_Keysym keysym) {
         switch (keysym.sym) {
@@ -205,14 +178,28 @@ public:
         switch (eff2) {
             case 1: {
                 auto* glyph = new csRenderGlyph();
-                initGlyphDefaults(*glyph);
+                glyph->color = csColorRGBA{255, 255, 255, 255};
+                glyph->backgroundColor = csColorRGBA{196, 0, 0, 0};
+                glyph->symbolIndex = 0;
+                glyph->setFont(amp::getStaticFontTemplate<amp::csFont4x7Digits>());
+                glyph->renderRectAutosize = false;
+                glyph->rectDest = amp::csRect{
+                    2,
+                    2,
+                    amp::to_size(glyph->fontWidth + 2),
+                    amp::to_size(glyph->fontHeight + 2)
+                };
                 effects[1] = glyph;
                 break;
             }
             case 2: {
                 // auto* circle = new csRenderCircle();
                 auto* circle = new csRenderCircleGradient();
-                initCircleDefaults(*circle);
+                // circle.color = csColorRGBA{255, 0, 0, 255};
+                circle->color = csColorRGBA{255, 255, 255, 255};
+                circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
+                circle->gradientOffset = 127;
+                circle->renderRectAutosize = true; // использовать весь rect матрицы
                 effects[1] = circle;
                 break;
             }
@@ -264,7 +251,11 @@ public:
             }
             case 4: {
                 auto* averageArea = new csRenderAverageArea();
-                initAverageAreaDefaults(*averageArea);
+                averageArea->matrix = &matrix;
+                averageArea->matrixSource = &matrix;
+                averageArea->renderRectAutosize = false;
+                averageArea->rectSource = amp::csRect{1, 1, 4, 4};
+                averageArea->rectDest = amp::csRect{1, 1, 4, 4};
                 effects[1] = averageArea;
                 break;
             }
