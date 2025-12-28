@@ -36,83 +36,87 @@ public:
             return 0;
         }
         // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        return static_cast<uint32_t>(kRows[glyphIndex][y]) << 24;
+        // Read from PROGMEM using pgm_read_byte
+        return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
-    static constexpr Row kRows[kCount][kHeight] = {
-        { // 0
-            0b11100000,
-            0b10100000,
-            0b10100000,
-            0b10100000,
-            0b11100000,
-        },
-        { // 1
-            0b00100000,
-            0b00100000,
-            0b00100000,
-            0b00100000,
-            0b00100000,
-        },
-        { // 2
-            0b11100000,
-            0b00100000,
-            0b11100000,
-            0b10000000,
-            0b11100000,
-        },
-        { // 3
-            0b11100000,
-            0b00100000,
-            0b11100000,
-            0b00100000,
-            0b11100000,
-        },
-        { // 4
-            0b10100000,
-            0b10100000,
-            0b11100000,
-            0b00100000,
-            0b00100000,
-        },
-        { // 5
-            0b11100000,
-            0b10000000,
-            0b11100000,
-            0b00100000,
-            0b11100000,
-        },
-        { // 6
-            0b11100000,
-            0b10000000,
-            0b11100000,
-            0b10100000,
-            0b11100000,
-        },
-        { // 7
-            0b11100000,
-            0b00100000,
-            0b00100000,
-            0b00100000,
-            0b00100000,
-        },
-        { // 8
-            0b11100000,
-            0b10100000,
-            0b11100000,
-            0b10100000,
-            0b11100000,
-        },
-        { // 9
-            0b11100000,
-            0b10100000,
-            0b11100000,
-            0b00100000,
-            0b11100000,
-        },
-    };
+    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
+    static const Row kRows[kCount][kHeight] PROGMEM;
+};
+
+// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
+const csFont3x5Digits::Row csFont3x5Digits::kRows[csFont3x5Digits::kCount][csFont3x5Digits::kHeight] PROGMEM = {
+    { // 0
+        0b11100000,
+        0b10100000,
+        0b10100000,
+        0b10100000,
+        0b11100000,
+    },
+    { // 1
+        0b00100000,
+        0b00100000,
+        0b00100000,
+        0b00100000,
+        0b00100000,
+    },
+    { // 2
+        0b11100000,
+        0b00100000,
+        0b11100000,
+        0b10000000,
+        0b11100000,
+    },
+    { // 3
+        0b11100000,
+        0b00100000,
+        0b11100000,
+        0b00100000,
+        0b11100000,
+    },
+    { // 4
+        0b10100000,
+        0b10100000,
+        0b11100000,
+        0b00100000,
+        0b00100000,
+    },
+    { // 5
+        0b11100000,
+        0b10000000,
+        0b11100000,
+        0b00100000,
+        0b11100000,
+    },
+    { // 6
+        0b11100000,
+        0b10000000,
+        0b11100000,
+        0b10100000,
+        0b11100000,
+    },
+    { // 7
+        0b11100000,
+        0b00100000,
+        0b00100000,
+        0b00100000,
+        0b00100000,
+    },
+    { // 8
+        0b11100000,
+        0b10100000,
+        0b11100000,
+        0b10100000,
+        0b11100000,
+    },
+    { // 9
+        0b11100000,
+        0b10100000,
+        0b11100000,
+        0b00100000,
+        0b11100000,
+    },
 };
 
 // Monospace 4x7 digit font (glyphs 0..9).
@@ -137,103 +141,107 @@ public:
             return 0;
         }
         // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        return static_cast<uint32_t>(kRows[glyphIndex][y]) << 24;
+        // Read from PROGMEM using pgm_read_byte
+        return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
-    static constexpr Row kRows[kCount][kHeight] = {
-        { // 0
-            0b11110000,
-            0b10010000,
-            0b10010000,
-            0b10010000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-        },
-        { // 1
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-        },
-        { // 2
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b11110000,
-            0b10000000,
-            0b10000000,
-            0b11110000,
-        },
-        { // 3
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b11110000,
-        },
-        { // 4
-            0b10010000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-        },
-        { // 5
-            0b11110000,
-            0b10000000,
-            0b10000000,
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b11110000,
-        },
-        { // 6
-            0b11110000,
-            0b10000000,
-            0b10000000,
-            0b11110000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-        },
-        { // 7
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-            0b00010000,
-        },
-        { // 8
-            0b11110000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-        },
-        { // 9
-            0b11110000,
-            0b10010000,
-            0b10010000,
-            0b11110000,
-            0b00010000,
-            0b00010000,
-            0b11110000,
-        },
-    };
+    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
+    static const Row kRows[kCount][kHeight] PROGMEM;
+};
+
+// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
+const csFont4x7Digits::Row csFont4x7Digits::kRows[csFont4x7Digits::kCount][csFont4x7Digits::kHeight] PROGMEM = {
+    { // 0
+        0b11110000,
+        0b10010000,
+        0b10010000,
+        0b10010000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+    },
+    { // 1
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+    },
+    { // 2
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b11110000,
+        0b10000000,
+        0b10000000,
+        0b11110000,
+    },
+    { // 3
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b11110000,
+    },
+    { // 4
+        0b10010000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+    },
+    { // 5
+        0b11110000,
+        0b10000000,
+        0b10000000,
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b11110000,
+    },
+    { // 6
+        0b11110000,
+        0b10000000,
+        0b10000000,
+        0b11110000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+    },
+    { // 7
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+        0b00010000,
+    },
+    { // 8
+        0b11110000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+    },
+    { // 9
+        0b11110000,
+        0b10010000,
+        0b10010000,
+        0b11110000,
+        0b00010000,
+        0b00010000,
+        0b11110000,
+    },
 };
 
 // Monospace 4x7 digit font (glyphs 0..9).
@@ -258,12 +266,17 @@ public:
             return 0;
         }
         // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        return static_cast<uint32_t>(kRows[glyphIndex][y]) << 24;
+        // Read from PROGMEM using pgm_read_byte
+        return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // C++11 compatible: static constexpr (inline removed for Arduino IDE 1.8.18 compatibility).
-    static constexpr Row kRows[kCount][kHeight] = {
+    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
+    static const Row kRows[kCount][kHeight] PROGMEM;
+};
+
+// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
+const csFont4x7DigitsRound::Row csFont4x7DigitsRound::kRows[csFont4x7DigitsRound::kCount][csFont4x7DigitsRound::kHeight] PROGMEM = {
         { // 0
             0b01100000,
             0b10010000,
@@ -354,7 +367,6 @@ private:
             0b00010000,
             0b11100000,
         },
-    };
 };
 
 
