@@ -25,7 +25,8 @@ constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
 CRGB leds[NUM_LEDS];
 
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
-amp::csRenderGlyph glyph;
+amp::csRenderDigitalClock clock;
+amp::csRenderDigitalClockDigit digitGlyph;
 amp::csRandGen rng;
 
 void setup() {
@@ -49,39 +50,50 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    // Configure glyph renderer for clock display
-    glyph.setMatrix(canvas);
-    glyph.color = amp::csColorRGBA{255, 255, 255, 255};
-    glyph.backgroundColor = amp::csColorRGBA{0, 0, 0, 0};
-    glyph.setFont(amp::getStaticFontTemplate<amp::csFont3x5Digits>());
-    glyph.renderRectAutosize = false;
-    glyph.rectDest = amp::csRect{
-        1,
-        1,
-        glyph.fontWidth,
-        glyph.fontHeight
-    };
+    // Get font dimensions for clock size calculation
+    const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
+    const amp::tMatrixPixelsSize fontWidth = static_cast<amp::tMatrixPixelsSize>(font.width());
+    const amp::tMatrixPixelsSize fontHeight = static_cast<amp::tMatrixPixelsSize>(font.height());
+    constexpr amp::tMatrixPixelsSize spacing = 1; // spacing between digits
+    constexpr uint8_t digitCount = 4; // clock displays 4 digits
+    
+    // Calculate clock rect size: 4 digits + 3 spacings between them
+    const amp::tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
+    const amp::tMatrixPixelsSize clockHeight = fontHeight;
+    
+    // Configure clock effect
+    clock.setMatrix(canvas);
+    
+    // Configure glyph effect for rendering digits
+    digitGlyph.setFont(font);
+    digitGlyph.color = amp::csColorRGBA{255, 255, 255, 255};
+    digitGlyph.backgroundColor = amp::csColorRGBA{255, 0, 0, 0};
+    digitGlyph.renderRectAutosize = false;
+    
+    // Set renderDigit via paramRenderDigit parameter
+    clock.renderDigit = &digitGlyph;
+    
+    // Notify clock that paramRenderDigit parameter changed
+    // This will validate the glyph type and update its matrix if needed
+    clock.paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
+    
+    clock.renderRectAutosize = false;
+    clock.rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
 }
 
 void loop() {
     const uint32_t totalSeconds = millis() / 1000u;
     const uint8_t minutes = static_cast<uint8_t>((totalSeconds / 60u) % 60u);
     const uint8_t seconds = static_cast<uint8_t>(totalSeconds % 60u);
+    
+    // Format time as MMSS (4 digits)
+    const uint32_t timeValue = static_cast<uint32_t>(minutes * 100u + seconds);
 
     canvas.clear();
 
-    // Display minutes (left digit) at position (0, 1)
-    glyph.symbolIndex = static_cast<uint8_t>(minutes / 10u);
-    glyph.rectDest = amp::csRect{0, 1, glyph.fontWidth, glyph.fontHeight};
-    glyph.render(rng, static_cast<uint16_t>(millis()));
-
-    // Display minutes (right digit) at position (4, 1)
-    glyph.symbolIndex = static_cast<uint8_t>(minutes % 10u);
-    glyph.rectDest = amp::csRect{4, 1, glyph.fontWidth, glyph.fontHeight};
-    glyph.render(rng, static_cast<uint16_t>(millis()));
-
-    // Note: For 8x8 matrix with 3x5 font, we can display MM (two digits)
-    // For MM:SS format, you would need a larger matrix (at least 10x8)
+    // Set time and render clock
+    clock.time = timeValue;
+    clock.render(rng, static_cast<uint16_t>(millis()));
 
     amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();

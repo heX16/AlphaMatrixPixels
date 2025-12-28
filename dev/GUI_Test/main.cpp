@@ -233,16 +233,16 @@ public:
                 // Create clock effect
                 auto* clock = new csRenderDigitalClock();
                 
-                // Create glyph effect for rendering digits
-                // TODO: leak memory!!!
-                auto* digitGlyph = clock->createGlyph();
+                // Create renderDigit effect for rendering digits
+                auto* digitGlyph = clock->createRenderDigit();
                 digitGlyph->setFont(font);
                 digitGlyph->color = csColorRGBA{255, 255, 255, 255};
                 digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
                 digitGlyph->renderRectAutosize = false;
+                digitGlyph->disabled = true; // Disable direct rendering, only used by clock
                 
-                // Set glyph via paramRenderDigit parameter
-                clock->glyph = digitGlyph;
+                // Set renderDigit via paramRenderDigit parameter
+                clock->renderDigit = digitGlyph;
                 
                 // Notify clock that paramRenderDigit parameter changed
                 // This will validate the glyph type and update its matrix if needed
@@ -253,9 +253,10 @@ public:
                 clock->renderRectAutosize = false;
                 clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
                 
-                // Add effects to array (fill first, then clock on top)
+                // Add effects to array (fill first, then clock on top, then digitGlyph for proper cleanup)
                 effects[1] = fill;
                 effects[2] = clock;
+                effects[3] = digitGlyph;
                 break;
             }
             case 4: {

@@ -1123,41 +1123,45 @@ public:
     // Single glyph renderer reused for all 4 digits
     // Set via paramRenderDigit parameter (external memory management)
     // Mutable pointer because render() modifies it but doesn't change logical state
-    mutable csRenderGlyph* glyph = nullptr;
+    // Note: The associated effect (renderDigit) will always be disabled after rendering.
+    //       The render() method temporarily enables it during rendering and then
+    //       disables it again, so the renderDigit should not be rendered directly in
+    //       the effects loop.
+    mutable csRenderGlyph* renderDigit = nullptr;
 
-    // Virtual factory method to create glyph renderer
+    // Virtual factory method to create renderDigit renderer
     // Derived classes can override to use custom glyph types
     // Public method for external use - caller owns the returned object
-    virtual csRenderGlyph* createGlyph() const {
+    virtual csRenderGlyph* createRenderDigit() const {
         return new csRenderDigitalClockDigit();
     }
 
     csRenderDigitalClock() {
-        // glyph is set externally via paramRenderDigit parameter
+        // renderDigit is set externally via paramRenderDigit parameter
     }
 
     ~csRenderDigitalClock() {
-        // glyph is managed externally, do not delete
+        // renderDigit is managed externally, do not delete
     }
 
     void paramChanged(uint8_t paramNum) override {
         csRenderMatrixBase::paramChanged(paramNum);
         if (paramNum == paramRenderDigit) {
-            // Validate glyph type - must be csRenderGlyph*
-            csRenderGlyph* validGlyph = dynamic_cast<csRenderGlyph*>(glyph);
-            if (validGlyph) {
-                // Update glyph matrix when glyph is set
-                if (matrix && validGlyph) {
-                    validGlyph->setMatrix(matrix);
+            // Validate renderDigit type - must be csRenderGlyph*
+            csRenderGlyph* validRenderDigit = dynamic_cast<csRenderGlyph*>(renderDigit);
+            if (validRenderDigit) {
+                // Update renderDigit matrix when renderDigit is set
+                if (matrix && validRenderDigit) {
+                    validRenderDigit->setMatrix(matrix);
                 }
             } else {
                 // Invalid type or nullptr - ignore
-                glyph = nullptr;
+                renderDigit = nullptr;
             }
         } else if (paramNum == paramMatrixDest) {
-            // Update glyph matrix when matrix destination changes
-            if (matrix && glyph) {
-                glyph->setMatrix(matrix);
+            // Update renderDigit matrix when matrix destination changes
+            if (matrix && renderDigit) {
+                renderDigit->setMatrix(matrix);
             }
         }
     }
@@ -1186,10 +1190,10 @@ public:
             case paramRenderDigit:
                 // Render digit parameter: csEffectBase* pointer to csRenderGlyph effect.
                 // Used for rendering individual digits. Must be csRenderGlyph* or derived.
-                // Memory is managed externally - object does not own the glyph.
+                // Memory is managed externally - object does not own the renderDigit.
                 info.type = ParamType::Effect;
                 info.name = "Render digit";
-                info.ptr = reinterpret_cast<void*>(&glyph);
+                info.ptr = reinterpret_cast<void*>(&renderDigit);
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1197,9 +1201,12 @@ public:
     }
 
     void render(csRandGen& rand, uint16_t currTime) const override {
-        if (disabled || !matrix || !glyph) {
+        if (disabled || !matrix || !renderDigit) {
             return;
         }
+
+        // Temporarily enable renderDigit for rendering
+        renderDigit->disabled = false;
 
         // Extract last 4 decimal digits from time parameter
         // Extract from left to right (most significant first)
@@ -1217,13 +1224,15 @@ public:
             divisor = divisor * 10;
         }
 
-        // Get font dimensions directly from glyph
-        if (!glyph->font) {
+        // Get font dimensions directly from renderDigit
+        if (!renderDigit->font) {
+            // Disable renderDigit before returning
+            renderDigit->disabled = true;
             return;
         }
 
-        const tMatrixPixelsSize fontWidth = to_size(glyph->font->width());
-        const tMatrixPixelsSize fontHeight = to_size(glyph->font->height());
+        const tMatrixPixelsSize fontWidth = to_size(renderDigit->font->width());
+        const tMatrixPixelsSize fontHeight = to_size(renderDigit->font->height());
 
         // Calculate positions for 4 digits horizontally
         // Position them within rectDest bounds
@@ -1231,17 +1240,20 @@ public:
         const tMatrixPixelsCoord startY = rectDest.y;
         const tMatrixPixelsSize spacing = 1; // 1 pixel spacing between digits
 
-        // Render each digit by updating and rendering the single glyph
+        // Render each digit by updating and rendering the single renderDigit
         for (uint8_t i = 0; i < digitCount; ++i) {
-            glyph->symbolIndex = digits[i];
-            glyph->rectDest = csRect{
+            renderDigit->symbolIndex = digits[i];
+            renderDigit->rectDest = csRect{
                 startX + to_coord((fontWidth + spacing) * i),
                 startY,
                 fontWidth,
                 fontHeight
             };
-            glyph->render(rand, currTime);
+            renderDigit->render(rand, currTime);
         }
+
+        // Disable renderDigit after rendering
+        renderDigit->disabled = true;
     }
 };
 
