@@ -209,6 +209,23 @@ public:
         }
     }
 
+    // Class family identifier
+    static constexpr ParamType ClassFamilyId = ParamType::EffectGlyph;
+
+    // Override to return glyph renderer family
+    ParamType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    // Override to check for glyph renderer family
+    void* queryClassFamily(ParamType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        // Check base class (csRenderMatrixBase) family
+        return csRenderMatrixBase::queryClassFamily(familyId);
+    }
+
     uint8_t getParamsCount() const override {
         return paramLast;
     }
@@ -1000,7 +1017,7 @@ public:
 
     // Array of pointers to nested effects (nullptr means slot is empty).
     // Container does NOT manage memory - effects must be created/destroyed externally.
-    csEffectBase* effects[maxEffects] = {};
+    csEffectBaseStdParams* effects[maxEffects] = {};
 
     uint8_t getParamsCount() const override {
         return paramLast;
@@ -1016,35 +1033,35 @@ public:
                 info.disabled = true;
                 break;
             case paramEffect1:
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectBase;
                 info.name = "Effect 1";
                 info.ptr = &effects[0];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramEffect2:
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectBase;
                 info.name = "Effect 2";
                 info.ptr = &effects[1];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramEffect3:
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectBase;
                 info.name = "Effect 3";
                 info.ptr = &effects[2];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramEffect4:
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectBase;
                 info.name = "Effect 4";
                 info.ptr = &effects[3];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case paramEffect5:
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectBase;
                 info.name = "Effect 5";
                 info.ptr = &effects[4];
                 info.readOnly = false;
@@ -1146,15 +1163,19 @@ public:
         csRenderMatrixBase::paramChanged(paramNum);
         if (paramNum == paramRenderDigit) {
             // Validate renderDigit type - must be csRenderGlyph*
-            csRenderGlyph* validRenderDigit = dynamic_cast<csRenderGlyph*>(renderDigit);
-            if (validRenderDigit) {
-                // Update renderDigit matrix when renderDigit is set
-                if (matrix && validRenderDigit) {
-                    validRenderDigit->setMatrix(matrix);
+            if (renderDigit) {
+                csRenderGlyph* validRenderDigit = static_cast<csRenderGlyph*>(
+                    renderDigit->queryClassFamily(ParamType::EffectGlyph)
+                );
+                if (validRenderDigit) {
+                    // Update renderDigit matrix when renderDigit is set
+                    if (matrix) {
+                        validRenderDigit->setMatrix(matrix);
+                    }
+                } else {
+                    // Invalid type - ignore
+                    renderDigit = nullptr;
                 }
-            } else {
-                // Invalid type or nullptr - ignore
-                renderDigit = nullptr;
             }
         } else if (paramNum == paramMatrixDest) {
             // Update renderDigit matrix when matrix destination changes
@@ -1189,7 +1210,7 @@ public:
                 // Render digit parameter: csEffectBase* pointer to csRenderGlyph effect.
                 // Used for rendering individual digits. Must be csRenderGlyph* or derived.
                 // Memory is managed externally - object does not own the renderDigit.
-                info.type = ParamType::Effect;
+                info.type = ParamType::EffectGlyph;
                 info.name = "Render digit";
                 info.ptr = reinterpret_cast<void*>(&renderDigit);
                 info.readOnly = false;

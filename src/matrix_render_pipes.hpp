@@ -51,6 +51,23 @@ public:
             }
         }
     }
+
+    // Class family identifier
+    static constexpr ParamType ClassFamilyId = ParamType::EffectPipe;
+
+    // Override to return pipe renderer family
+    ParamType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    // Override to check for pipe renderer family
+    void* queryClassFamily(ParamType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        // Check base class (csRenderMatrixBase) family
+        return csRenderMatrixBase::queryClassFamily(familyId);
+    }
 };
 
 // Effect: average area by computing average color of source area and filling destination area with it.

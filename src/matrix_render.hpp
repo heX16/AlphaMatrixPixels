@@ -26,13 +26,26 @@ enum class ParamType : uint8_t {
     Int32 = 6,
     FP16 = 7,
     FP32 = 8,
-    Str = 9,
-    Bool = 10,
-    Ptr = 11,
-    Matrix = 12,
-    Rect = 13,
-    Color = 14,
-    Effect = 15
+    Bool = 9,
+    Ptr = 10,
+    StrConst = 11,
+    Str = 12,
+    // `csMatrixPixels`
+    Matrix = 13,
+    // `csRect`
+    Rect = 14,
+    // `csColorRGBA`
+    Color = 15,
+    // WIP ...
+    LinkToEffect = 16,
+    // `ParamType`
+    LinkToEffectType = 17,
+
+    EffectBase = 32,
+    EffectMatrixDest = 33,
+    EffectPipe = 34,
+    EffectGlyph = 35,
+    EffectUserArea = 64,
 };
 
 struct csParamInfo {
@@ -165,23 +178,45 @@ public:
         (void)event;
     }
 
-    // Set matrix if effect supports it (for effects derived from csRenderMatrixBase)
-    // Uses parameter introspection system to check and set paramMatrixDest
-    // paramMatrixDest = 1 (from csEffectBaseStdParams)
-    void setMatrixIfSupported(csMatrixPixels* m) {
-        if (!m) {
-            return;
-        }
-        csParamInfo info;
-        getParamInfo(1, info);  // paramMatrixDest = 1
-        // Check if parameter is enabled and has correct type
-        if (!info.disabled && info.ptr != nullptr && info.type == ParamType::Matrix) {
-            // Write new matrix pointer value
-            *(csMatrixPixels**)info.ptr = m;
-            // Notify about parameter change
-            paramChanged(1);  // paramMatrixDest = 1
-        }
+    // Class family identification system (replacement for dynamic_cast without RTTI)
+    //
+    // PURPOSE:
+    // This system allows type checking and safe downcasting without RTTI (Runtime Type Information).
+    // Arduino compilers use -fno-rtti flag which disables RTTI to save memory, making dynamic_cast unavailable.
+    // This mechanism provides type-safe casting for effect relationships (e.g., checking if an effect
+    // is a csRenderGlyph* when setting up csRenderDigitalClock::renderDigit parameter).
+    //
+    // HOW IT WORKS:
+    // Each class family (e.g., EffectMatrixDest, EffectGlyph, EffectPipe) has a unique ParamType identifier.
+    // Derived classes override getClassFamily() to return their family ID, and queryClassFamily() to
+    // check if the object belongs to a requested family (including base class families via chain of calls).
+    //
+    // USAGE EXAMPLE:
+    //   // Instead of: if (auto* m = dynamic_cast<csRenderMatrixBase*>(eff))
+    //   if (auto* m = static_cast<csRenderMatrixBase*>(
+    //       eff->queryClassFamily(ParamType::EffectMatrixDest)
+    //   )) {
+    //       m->setMatrix(matrix);
+    //   }
+    //
+    // Get class family identifier
+    // Returns ParamType value that identifies the class family
+    // Base implementation returns EffectBase
+    virtual ParamType getClassFamily() const {
+        return ParamType::EffectBase;
     }
+
+    // Query if object belongs to a specific class family
+    // Returns pointer to this object if it belongs to requested family, nullptr otherwise
+    // Works without RTTI by checking class family hierarchy
+    // Derived classes should override to check their own family and call base class implementation
+    virtual void* queryClassFamily(ParamType familyId) {
+        if (familyId == getClassFamily()) {
+            return this;
+        }
+        return nullptr; // Base class doesn't belong to any other family
+    }
+
 };
 
 // Contains standard parameter types without the actual fields - only their parameter ID.
@@ -206,8 +241,9 @@ public:
     static constexpr uint8_t paramColor3 = 10;
     static constexpr uint8_t paramColorBackground = 11;
 
-    // Special "parameter" - the last one in the list. Shadowed in each derived class.
-    // Example:
+    // `paramLast` - Special "parameter" - the last one in the list. 
+    // Shadowed in each derived class.
+    // Example of use:
     // ```
     //     static constexpr uint8_t base = _prev_class_::paramLast;
     //     static constexpr uint8_t paramNew = base+1;
@@ -276,6 +312,24 @@ public:
         }
     }
 
+    // Set matrix if effect supports it (for effects derived from csRenderMatrixBase)
+    // Uses parameter introspection system to check and set paramMatrixDest
+    // paramMatrixDest = 1 (from csEffectBaseStdParams)
+    void setMatrixIfSupported(csMatrixPixels* m) {
+        if (!m) {
+            return;
+        }
+        csParamInfo info;
+        getParamInfo(paramMatrixDest, info);  // paramMatrixDest = 1
+        // Check if parameter is enabled and has correct type
+        if (!info.disabled && info.ptr != nullptr && info.type == ParamType::Matrix) {
+            // Write new matrix pointer value
+            *(csMatrixPixels**)info.ptr = m;
+            // Notify about parameter change
+            paramChanged(paramMatrixDest);  // paramMatrixDest = 1
+        }
+    }
+
 };
 
 // Base class for matrix-based renderers.
@@ -299,6 +353,23 @@ public:
     void setMatrix(csMatrixPixels& m) noexcept {
         matrix = &m;
         paramChanged(paramMatrixDest);
+    }
+
+    // Class family identifier
+    static constexpr ParamType ClassFamilyId = ParamType::EffectMatrixDest;
+
+    // Override to return matrix-based renderer family
+    ParamType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    // Override to check for matrix-based renderer family
+    void* queryClassFamily(ParamType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        // Check base class families
+        return csEffectBaseStdParams::queryClassFamily(familyId);
     }
 
     // NOTE: uint8_t getParamsCount() - count dont changed
