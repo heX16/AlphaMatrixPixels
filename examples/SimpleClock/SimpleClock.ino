@@ -29,6 +29,10 @@ amp::csRenderDigitalClock clock;
 amp::csRenderDigitalClockDigit digitGlyph;
 amp::csRandGen rng;
 
+// Effects array
+static constexpr size_t maxEffects = 10;
+amp::csEffectBase* effects[maxEffects] = {};
+
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
 
@@ -79,6 +83,10 @@ void setup() {
     
     clock.renderRectAutosize = false;
     clock.rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
+    
+    // Add effects to array (clock first, then digitGlyph)
+    effects[0] = &clock;
+    effects[1] = &digitGlyph;
 }
 
 void loop() {
@@ -91,9 +99,22 @@ void loop() {
 
     canvas.clear();
 
-    // Set time and render clock
-    clock.time = timeValue;
-    clock.render(rng, static_cast<uint16_t>(millis()));
+    const uint16_t currTime = static_cast<uint16_t>(millis());
+    
+    // Update and render all effects
+    for (auto* eff : effects) {
+        if (!eff) {
+            continue;
+        }
+        
+        // Update time for clock effect
+        if (auto* clockEffect = dynamic_cast<amp::csRenderDigitalClock*>(eff)) {
+            clockEffect->time = timeValue;
+        }
+        
+        // Render the effect
+        eff->render(rng, currTime);
+    }
 
     amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();

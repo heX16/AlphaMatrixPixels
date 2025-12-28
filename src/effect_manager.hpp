@@ -41,6 +41,23 @@ public:
         effects[index] = nullptr;
     }
 
+    // Set effect at specific index (removes existing effect if present)
+    // NOTE: This is the ONLY way to write/set effects. operator[] is read-only.
+    void set(size_t index, amp::csEffectBase* eff) {
+        if (index >= maxEffects) {
+            return;
+        }
+        if (eff == nullptr) {
+            remove(index);
+            return;
+        }
+        // Remove existing effect at this index
+        deleteEffect(effects[index]);
+        // Set new effect
+        effects[index] = eff;
+        bindEffectMatrix(eff);
+    }
+
     // Clear all effects
     void clearAll() {
         for (size_t i = 0; i < maxEffects; ++i) {
@@ -59,7 +76,7 @@ public:
     }
 
     // Update and render all effects
-    void updateAndRenderAll(amp::csRandGen& randGen, uint32_t ticks, uint16_t currTime) {
+    void updateAndRenderAll(amp::csRandGen& randGen, uint16_t currTime) {
         for (size_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);
@@ -77,10 +94,12 @@ public:
         return (index < maxEffects) ? effects[index] : nullptr;
     }
 
+    // Read-only access via operator[] (for reading only, use set() for writing)
     amp::csEffectBase* operator[](size_t index) {
         return get(index);
     }
 
+    // Read-only access via operator[] (for reading only, use set() for writing)
     const amp::csEffectBase* operator[](size_t index) const {
         return get(index);
     }
