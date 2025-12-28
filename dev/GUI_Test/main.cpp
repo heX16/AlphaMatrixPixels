@@ -179,25 +179,26 @@ public:
             case SDLK_KP_PLUS:
             case SDLK_PLUS:
                 // Increase scale for dynamic effects
-                if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
-                    dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{0.1f};
-                }
-                if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
-                    dynamicEffect2->scale = dynamicEffect2->scale + amp::math::csFP16{0.1f};
-                }
+                adjustEffectScale(effect, 0.1f);
+                adjustEffectScale(effect2, 0.1f);
                 break;
             case SDLK_KP_MINUS:
             case SDLK_MINUS:
                 // Decrease scale for dynamic effects
-                if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
-                    dynamicEffect->scale = dynamicEffect->scale - amp::math::csFP16{0.1f};
-                }
-                if (auto* dynamicEffect2 = dynamic_cast<csRenderDynamic*>(effect2)) {
-                    dynamicEffect2->scale = dynamicEffect2->scale - amp::math::csFP16{0.1f};
-                }
+                adjustEffectScale(effect, -0.1f);
+                adjustEffectScale(effect2, -0.1f);
                 break;
             default:
                 break;
+        }
+    }
+
+    void adjustEffectScale(csEffectBase* eff, float delta) {
+        if (!eff) {
+            return;
+        }
+        if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(eff)) {
+            dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{delta};
         }
     }
 
@@ -206,6 +207,7 @@ public:
             return;
         }
 
+        // Update effect-specific parameters
         if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
             // Update time for clock inside container
             for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
@@ -216,13 +218,15 @@ public:
             }
         } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
             glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-        } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(eff)) {
-            snowfall->recalc(randGen, currTime);
         } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
             // Update time from SDL ticks (convert to seconds)
             clock->time = ticks / 1000u;
         }
 
+        // Always call recalc for all effects
+        eff->recalc(randGen, currTime);
+
+        // Render the effect
         eff->render(randGen, currTime);
     }
 
