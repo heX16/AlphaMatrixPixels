@@ -328,6 +328,31 @@ UCRT64
 
 ---
 
+## Настройка clangd для работы с SDL2
+
+Если clangd показывает ошибку `'SDL2/SDL.h' file not found`, хотя компиляция работает, создайте файл `.clangd` в корне проекта:
+
+```yaml
+CompileFlags:
+  Add:
+    - -I/ucrt64/include
+    - -I/mingw64/include
+    - -I/mingw32/include
+    - -IC:/msys64/ucrt64/include
+    - -IC:/msys64/mingw64/include
+    - -IC:/msys64/mingw32/include
+```
+
+**Где размещать:** Clangd ищет `.clangd` в порядке приоритета: 1) директория файла, 2) родительские директории (вверх по дереву), 3) корень проекта. Рекомендуется: корень проекта (применяется ко всем файлам).
+
+**Дополнительные пути:** Для других библиотек добавьте их пути в список `Add` (например, `-I/ваш/путь`).
+
+**compile_commands.json:** Если у вас есть `compile_commands.json` (Meson создаёт в `builddir/`, CMake с флагом `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`), clangd использует его автоматически, и `.clangd` может не понадобиться.
+
+Перезапустите clangd: `Ctrl+Shift+P` → `clangd: Restart language server`
+
+---
+
 ## Если появляется странный префикс `q` (типа `qls`, `qcd`, `qcommand`)
 
 Это не про алиасы (мы проверяли `type cd; type ls; type command` — там всё нормально), а про "глюк" интеграции терминала/ввода.
