@@ -2,7 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include "../../src/matrix_pixels.hpp"
-#include "../../src/matrix_render_pipes"
+#include "../../src/matrix_render_pipes.hpp"
 #include "../../src/matrix_render.hpp"
 #include "../../src/driver_sdl2.hpp"
 
@@ -33,13 +33,14 @@ class csCopyLineIndexHelper {
 public:
     // Debug mode flag. Toggle to show/hide 1D overlay.
     bool isActive = false;
-    
+
     // 1D matrix storing remapped result. Created in constructor, updated every frame when active.
     csMatrixPixels matrix1D{0, 0};
-    
+
     // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
     // Remap array: src(x,y) -> dst x (row-major order)
+    static constexpr tMatrixPixelsSize RemapIndexLen = 133; // 19x7
     static constexpr tMatrixPixelsCoord remapArray[133] = {
         0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
         7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
@@ -50,29 +51,35 @@ public:
         0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
     };
 
-    // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
+    static constexpr tMatrixPixelsSize RemapDestMatrixLen = 56;
+
+    // Configure remap array dimensions
+    static constexpr tMatrixPixelsSize remapWidth = 19;
+    static constexpr tMatrixPixelsSize remapHeight = 7;
+
+        // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
-        // Configure remap array dimensions
-        constexpr tMatrixPixelsSize remapWidth = 19;
-        constexpr tMatrixPixelsSize remapHeight = 7;
-        // Calculate destination width from maximum value in remap array
-        constexpr tMatrixPixelsSize dstWidth = 57;
-        
+
         // Create 1D destination matrix
-        matrix1D = csMatrixPixels{dstWidth, 1};
-        
+        matrix1D = csMatrixPixels{RemapDestMatrixLen, 1};
+
         // Create remap effect
         remapEffect = new csRenderRemap1DByConstArray();
-        
+
         // Configure remap
         // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
         remapEffect->matrix = &matrix1D;
         remapEffect->remapArray = remapArray;
         remapEffect->remapWidth = remapWidth;
         remapEffect->remapHeight = remapHeight;
-        remapEffect->renderRectAutosize = true;
+        remapEffect->renderRectAutosize = false;
+        remapEffect->rewrite = true;
+        remapEffect->rectSource.x = 2;
+        remapEffect->rectSource.y = 2;
+        remapEffect->rectSource.height = remapHeight;
+        remapEffect->rectSource.width = remapWidth;
     }
-    
+
     ~csCopyLineIndexHelper() {
         if (remapEffect) {
             delete remapEffect;
@@ -87,30 +94,30 @@ public:
         if (!isActive || !remapEffect) {
             return;
         }
-        
+
         // Update matrixSource to point to matrix (which now contains effect2 result)
         remapEffect->matrixSource = &matrix;
         remapEffect->rectSource = matrix.getRect();
-        
+
         // Render remap effect to fill matrix1D
         remapEffect->render(randGen, currTime);
     }
-    
+
     // Render 1D overlay at bottom. Always call every frame - checks isActive internally.
     // Does not clear screen or call SDL_RenderPresent (overlay rendering).
     void render(SDL_Renderer* renderer, int screenWidth, int screenHeight) const {
         if (!isActive || !renderer || matrix1D.width() == 0 || matrix1D.height() == 0) {
             return;
         }
-        
+
         // Calculate layout using calculateLayout for step, fill, and offsX
         RenderLayout layout = amp::calculateLayout(matrix1D, screenWidth, screenHeight);
-        
+
         // Override offsY to position matrix at bottom
         constexpr int padding = 10;
         const int totalH = layout.step * static_cast<int>(matrix1D.height());
         layout.offsY = screenHeight - (totalH + padding);
-        
+
         // Render using renderMatrixToSDL with custom layout
         amp::renderMatrixToSDL(matrix1D, renderer, screenWidth, screenHeight, false, false, &layout);
     }

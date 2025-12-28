@@ -8,7 +8,7 @@
 #include "../../src/color_rgba.hpp"
 #include "../../src/matrix_render.hpp"
 #include "../../src/matrix_render_efffects.hpp"
-#include "../../src/matrix_render_pipes"
+#include "../../src/matrix_render_pipes.hpp"
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
 #include "SDL2/SDL_stdinc.h"
@@ -78,12 +78,19 @@ public:
                 break;
             case SDLK_1:
                 recreateMatrix(16, 16);
+                createEffectBundle(0, 0);
                 break;
             case SDLK_2:
                 recreateMatrix(23, 11);
+                createEffectBundle(0, 0);
                 break;
             case SDLK_3:
                 recreateMatrix(8, 8);
+                createEffectBundle(0, 0);
+                break;
+            case SDLK_4:
+                recreateMatrix(19, 7);
+                createEffectBundle(0, 0);
                 break;
             case SDLK_w:
                 createEffectBundle(1, 0);
@@ -108,6 +115,9 @@ public:
                 break;
             case SDLK_b:
                 createEffectBundle(0, 4);
+                break;
+            case SDLK_n:
+                createEffectBundle(0, 255);
                 break;
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
@@ -259,6 +269,8 @@ public:
                 effects[1] = averageArea;
                 break;
             }
+            case 255:
+                ; // slip - remove "effect2"
             default:
                 ;
         }
