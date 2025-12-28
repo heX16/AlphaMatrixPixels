@@ -90,6 +90,7 @@ inline void drawPixel(
 //   screenHeight - height of the screen/logical renderer size
 //   clearBeforeRender - if true, clear the screen with black before rendering (default: true)
 //   presentAfterRender - if true, call SDL_RenderPresent after rendering (default: false)
+//   layout - optional pre-calculated layout (if nullptr, layout will be calculated automatically)
 //
 // Note: renderer must be valid and initialized. This function does not initialize SDL.
 inline void renderMatrixToSDL(
@@ -98,14 +99,20 @@ inline void renderMatrixToSDL(
     int screenWidth,
     int screenHeight,
     bool clearBeforeRender = true,
-    bool presentAfterRender = false
+    bool presentAfterRender = false,
+    const RenderLayout* layout = nullptr
 ) noexcept {
     if (!renderer) {
         return;
     }
 
-    // Calculate layout for centering and scaling
-    const RenderLayout layout = calculateLayout(matrix, screenWidth, screenHeight);
+    // Calculate layout if not provided
+    RenderLayout calculatedLayout;
+    const RenderLayout* layoutToUse = layout;
+    if (!layoutToUse) {
+        calculatedLayout = calculateLayout(matrix, screenWidth, screenHeight);
+        layoutToUse = &calculatedLayout;
+    }
 
     // Clear screen if requested
     if (clearBeforeRender) {
@@ -120,10 +127,10 @@ inline void renderMatrixToSDL(
         for (int y = 0; y < matrixH; ++y) {
             const csColorRGBA c = matrix.getPixel(x, y);
             drawPixel(renderer,
-                      layout.offsX + x * layout.step,
-                      layout.offsY + y * layout.step,
-                      layout.step,
-                      layout.fill,
+                      layoutToUse->offsX + x * layoutToUse->step,
+                      layoutToUse->offsY + y * layoutToUse->step,
+                      layoutToUse->step,
+                      layoutToUse->fill,
                       c);
         }
     }

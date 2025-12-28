@@ -30,7 +30,7 @@ using amp::csRenderDigitalClock;
 using amp::csRenderContainer;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
-using amp::csRenderRemapByIndexMatrix;
+using amp::csRenderRemap1DByConstArray;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -286,14 +286,8 @@ public:
                         effect2 = averageArea;
                         bindEffectMatrix(effect2);
                     } else if (event.key.keysym.sym == SDLK_8) {
-                        deleteEffect(effect);
-                        auto* copyLineIndex = new csRenderRemapByIndexMatrix();
-                        copyLineIndexHelper.initCopyLineIndexDefaults(*copyLineIndex, matrix, 
-                            [this](tMatrixPixelsSize w, tMatrixPixelsSize h) { 
-                                this->recreateMatrix(w, h); 
-                            });
-                        effect = copyLineIndex;
-                        bindEffectMatrix(effect);
+                        // Toggle debug mode for 2D->1D remapping visualization
+                        copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
                     } else if (event.key.keysym.sym == SDLK_KP_PLUS || event.key.keysym.sym == SDLK_PLUS) {
                         // Increase scale for dynamic effects
                         if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
@@ -316,9 +310,11 @@ public:
 
             matrix.clear();
 
+            const uint32_t ticks = SDL_GetTicks();
+            const uint16_t currTime = static_cast<uint16_t>(ticks);
+
             // First render effect2 into matrix (if exists)
             if (effect2) {
-                const uint32_t ticks = SDL_GetTicks();
                 if (auto* container = dynamic_cast<csRenderContainer*>(effect2)) {
                     // Update time for clock inside container
                     for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
@@ -327,43 +323,33 @@ public:
                             break;
                         }
                     }
-                    container->render(randGen, static_cast<uint16_t>(ticks));
                 } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect2)) {
                     glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-                    glyph->render(randGen, static_cast<uint16_t>(ticks));
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect2)) {
-                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
-                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
+                    snowfall->recalc(randGen, currTime);
                 } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect2)) {
                     // Update time from SDL ticks (convert to seconds)
                     clock->time = ticks / 1000u;
-                    clock->render(randGen, static_cast<uint16_t>(ticks));
-                } else {
-                    effect2->render(randGen, static_cast<uint16_t>(ticks));
                 }
+                effect2->render(randGen, currTime);
+            }
+
+            // Update remap source and render remap effect if debug mode is active
+            if (copyLineIndexHelper.isActive) {
+                copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
             }
 
             // Now render effect (which may use matrix as source after effect2 rendered into it)
             if (effect) {
-                const uint32_t ticks = SDL_GetTicks();
-                if (auto* copyLineIndexEffect = dynamic_cast<csRenderRemapByIndexMatrix*>(effect)) {
-                    // Update matrixSource to point to matrix (which now contains effect2 result)
-                    copyLineIndexHelper.updateCopyLineIndexSource(copyLineIndexEffect, matrix);
-                }
-                
                 if (auto* glyph = dynamic_cast<csRenderGlyph*>(effect)) {
                     glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-                    glyph->render(randGen, static_cast<uint16_t>(ticks));
                 } else if (auto* snowfall = dynamic_cast<csRenderSnowfall*>(effect)) {
-                    snowfall->recalc(randGen, static_cast<uint16_t>(ticks));
-                    snowfall->render(randGen, static_cast<uint16_t>(ticks));
+                    snowfall->recalc(randGen, currTime);
                 } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(effect)) {
                     // Update time from SDL ticks (convert to seconds)
                     clock->time = ticks / 1000u;
-                    clock->render(randGen, static_cast<uint16_t>(ticks));
-                } else {
-                    effect->render(randGen, static_cast<uint16_t>(ticks));
                 }
+                effect->render(randGen, currTime);
             }
             renderProc();
             SDL_Delay(16); // ~60 FPS
@@ -406,6 +392,9 @@ public:
                 drawNumber(10, 10, scaleValue);
             }
         }
+
+        // Render 1D matrix overlay if debug mode is active
+        copyLineIndexHelper.render(renderer, screenWidth, screenHeight);
 
         SDL_RenderPresent(renderer);
     }
