@@ -27,32 +27,36 @@ using amp::RenderLayout;
 //
 // Important:
 //   - Call order: updateCopyLineIndexSource() AFTER effects render, BEFORE render()
-//   - Only reads pixels from rectSource area (by default entire matrix, but remap array limits to 2x2)
+//   - Only reads pixels from rectSource area (by default entire matrix, but remap array limits the area)
 //   - Not thread-safe
 class csCopyLineIndexHelper {
 public:
     // Debug mode flag. Toggle to show/hide 1D overlay.
     bool isActive = false;
     
-    // 1D matrix (4x1) storing remapped result. Created in constructor, updated every frame when active.
+    // 1D matrix storing remapped result. Created in constructor, updated every frame when active.
     csMatrixPixels matrix1D{0, 0};
     
     // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
-    // 2x2 remap array: src(x,y) -> dst x (row-major: 0,1,2,3)
-    static constexpr tMatrixPixelsCoord remapArray2x2[4] = {
-        0,  // src(0,0) -> dst x=0
-        1,  // src(1,0) -> dst x=1
-        2,  // src(0,1) -> dst x=2
-        3   // src(1,1) -> dst x=3
+    // Remap array: src(x,y) -> dst x (row-major order)
+    static constexpr tMatrixPixelsCoord remapArray[133] = {
+        0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
+        7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
+        8, 0, 0, 3, 0, 22, 0, 0, 17, 0, 36, 0, 0, 31, 0, 50, 0, 0, 45,
+        0, 1, 2, 0, 0, 0, 15, 16, 0, 0, 0, 29, 30, 0, 0, 0, 43, 44, 0,
+        9, 0, 0, 14, 0, 23, 0, 0, 28, 0, 37, 0, 0, 42, 0, 51, 0, 0, 56,
+        10, 0, 0, 13, 0, 24, 0, 0, 27, 0, 38, 0, 0, 41, 0, 52, 0, 0, 55,
+        0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
     };
 
-    // Creates 4x1 matrix and configures remap effect. Effect ready but inactive until isActive=true.
+    // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
-        // Configure remap with 2x2 array
-        constexpr tMatrixPixelsSize remapWidth = 2;
-        constexpr tMatrixPixelsSize remapHeight = 2;
-        const tMatrixPixelsSize dstWidth = remapWidth * remapHeight; // 4 for 2x2
+        // Configure remap array dimensions
+        constexpr tMatrixPixelsSize remapWidth = 19;
+        constexpr tMatrixPixelsSize remapHeight = 7;
+        // Calculate destination width from maximum value in remap array
+        constexpr tMatrixPixelsSize dstWidth = 57;
         
         // Create 1D destination matrix
         matrix1D = csMatrixPixels{dstWidth, 1};
@@ -63,7 +67,7 @@ public:
         // Configure remap
         // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
         remapEffect->matrix = &matrix1D;
-        remapEffect->remapArray = remapArray2x2;
+        remapEffect->remapArray = remapArray;
         remapEffect->remapWidth = remapWidth;
         remapEffect->remapHeight = remapHeight;
         remapEffect->renderRectAutosize = true;
