@@ -24,8 +24,6 @@ constexpr uint8_t WIDTH = 19;
 constexpr uint8_t HEIGHT = 7;
 constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
 
-CRGB leds[NUM_LEDS];
-
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
 amp::csRenderDigitalClock clock;
 amp::csRenderDigitalClockDigit digitGlyph;
@@ -85,6 +83,8 @@ public:
 };
 
 csRemap1DHelper remapHelper;
+
+CRGB leds[csRemap1DHelper::RemapDestMatrixLen];
 
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
@@ -161,7 +161,7 @@ void loop() {
     // Remap 2D matrix to 1D matrix (after effects render)
     remapHelper.update(canvas, rng, currTime);
 
-    amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
+    amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
     delay(16); // ~60 FPS
 }
