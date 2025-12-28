@@ -201,25 +201,26 @@ public:
     }
 };
     
-// Effect: convert 2D matrix to linear 1D matrix (height=1, width=src.height*src.width).
-// Index mode with custom index mapping via matrixIndex.
+// Effect: remap 2D matrix to 2D matrix using custom index mapping via matrixIndex.
 //
-// `csRenderMatrixCopyLineIndex` contains the matrix `matrixIndex`.
+// `csRenderRemapByIndexMatrix` contains the matrix `matrixIndex`.
 // It is desirable that its size matches `matrixSource`.
 // But this is not required.
 //
-// `csRenderMatrixCopyLineIndex` copies pixels from `matrixSource` to `matrixDest`.
-// For this, it takes the pixel `(x, y)`, then takes the number from `matrixIndex`,
-// and writes to `matrixDest` at coordinates `(matrixIndex, 0)`.
-// Thus, the matrix `matrixIndex` is a table where each number is the index
-// in the linear matrix where the corresponding pixel should be placed.
-class csRenderMatrixCopyLineIndex : public csRenderMatrix2DTo1D {
+// `csRenderRemapByIndexMatrix` copies pixels from `matrixSource` to `matrixDest`.
+// For this, it takes the pixel `(x, y)`, then takes the color from `matrixIndex`,
+// and extracts destination coordinates from color components:
+// - dst_x from g, b components (green, blue)
+// - dst_y from a, r components (alpha, red)
+// Thus, the matrix `matrixIndex` is a table where each color encodes
+// the destination coordinates where the corresponding pixel should be placed.
+class csRenderRemapByIndexMatrix : public csRenderRemapBase {
 public:
     static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
     static constexpr uint8_t paramMatrixIndex = base + 1;
     static constexpr uint8_t paramLast = paramMatrixIndex;
 
-    // Index matrix pointer (nullptr means use default index calculation).
+    // Index matrix pointer (nullptr means skip remapping).
     csMatrixPixels* matrixIndex = nullptr;
 
     uint8_t getParamsCount() const override {
@@ -227,7 +228,7 @@ public:
     }
 
     void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrix2DTo1D::getParamInfo(paramNum, info);
+        csRenderRemapBase::getParamInfo(paramNum, info);
         switch (paramNum) {
             case paramMatrixIndex:
                 info.type = ParamType::Matrix;
@@ -244,14 +245,62 @@ public:
             return false;
         }
 
-        uint32_t linearIndex = matrixIndex->getPixel(src_x, src_y).value;
+        const csColorRGBA indexColor = matrixIndex->getPixel(src_x, src_y);
         
-        if (linearIndex == 0) {
-            return false; // Skip pixel
+        // Extract dst_x from g, b components (16-bit value: g in high byte, b in low byte)
+        dst_x = to_coord((static_cast<uint16_t>(indexColor.g) << 8) | indexColor.b);
+        
+        // Extract dst_y from a, r components (16-bit value: a in high byte, r in low byte)
+        dst_y = to_coord((static_cast<uint16_t>(indexColor.a) << 8) | indexColor.r);
+        
+        return true;
+    }
+};
+
+// Effect: remap 2D matrix to 2D matrix using custom index mapping via 2D array.
+//
+// `csRenderRemap` contains a pointer to a const 2D array of remap coordinates.
+// Each element in the array contains destination coordinates (x, y) for the corresponding source pixel.
+// The array dimensions are specified by `remapWidth` and `remapHeight` fields.
+class csRenderRemapByConstArray : public csRenderRemapBase {
+public:
+    // Structure for storing remap coordinates
+    struct RemapCoord {
+        tMatrixPixelsCoord x;
+        tMatrixPixelsCoord y;
+    };
+
+    // Pointer to const 2D array of remap coordinates (nullptr means skip remapping).
+    // Array is indexed as: remapArray[y * remapWidth + x]
+    const RemapCoord* remapArray = nullptr;
+
+    // Dimensions of the remap array
+    tMatrixPixelsSize remapWidth = 0;
+    tMatrixPixelsSize remapHeight = 0;
+
+    // Default constructor
+    csRenderRemapByConstArray() = default;
+
+    // Constructor with remap array and dimensions
+    csRenderRemapByConstArray(const RemapCoord* array, tMatrixPixelsSize width, tMatrixPixelsSize height) 
+        : remapArray(array), remapWidth(width), remapHeight(height) {}
+
+    bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {
+        if (!matrixSource || !remapArray) {
+            return false;
         }
 
-        dst_x = to_coord(linearIndex - 1);
-        dst_y = 0;
+        // Check bounds
+        if (src_x < 0 || src_y < 0 || 
+            src_x >= static_cast<tMatrixPixelsCoord>(remapWidth) || 
+            src_y >= static_cast<tMatrixPixelsCoord>(remapHeight)) {
+            return false;
+        }
+
+        // Get remap coordinates from array
+        const RemapCoord& coord = remapArray[src_y * remapWidth + src_x];
+        dst_x = coord.x;
+        dst_y = coord.y;
         return true;
     }
 };
