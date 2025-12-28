@@ -4,12 +4,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <climits>
 #include "matrix_pixels.hpp"
 #include "matrix_render.hpp"
 
 class csEffectManager {
 public:
-    static constexpr size_t maxEffects = 10;
+    static constexpr uint8_t maxEffects = 10;
+    static constexpr uint8_t notFound = UINT8_MAX;
 
     explicit csEffectManager(amp::csMatrixPixels& matrix) : matrix(matrix) {}
 
@@ -17,23 +19,22 @@ public:
         clearAll();
     }
 
-    // Add effect (returns index or maxEffects if array is full)
-    size_t add(amp::csEffectBase* eff) {
+    // Add effect (returns index or notFound if array is full or effect is null)
+    uint8_t add(amp::csEffectBase* eff) {
         if (!eff) {
-            return maxEffects;
+            return notFound;
         }
-        for (size_t i = 0; i < maxEffects; ++i) {
-            if (effects[i] == nullptr) {
-                effects[i] = eff;
-                bindEffectMatrix(eff);
-                return i;
-            }
+        uint8_t freeIndex = findFreeSlot();
+        if (freeIndex != notFound) {
+            effects[freeIndex] = eff;
+            bindEffectMatrix(eff);
+            return freeIndex;
         }
-        return maxEffects; // Array is full
+        return notFound; // Array is full
     }
 
     // Remove effect by index
-    void remove(size_t index) {
+    void remove(uint8_t index) {
         if (index >= maxEffects) {
             return;
         }
@@ -43,7 +44,7 @@ public:
 
     // Set effect at specific index (removes existing effect if present)
     // NOTE: This is the ONLY way to write/set effects. operator[] is read-only.
-    void set(size_t index, amp::csEffectBase* eff) {
+    void set(uint8_t index, amp::csEffectBase* eff) {
         if (index >= maxEffects) {
             return;
         }
@@ -60,7 +61,7 @@ public:
 
     // Clear all effects
     void clearAll() {
-        for (size_t i = 0; i < maxEffects; ++i) {
+        for (uint8_t i = 0; i < maxEffects; ++i) {
             deleteEffect(effects[i]);
             effects[i] = nullptr;
         }
@@ -69,7 +70,7 @@ public:
     // Delete effect with safety: clears all references to it from other effects' parameters
     // Before deletion, scans all effects and their parameters, and if any parameter
     // of type Effect points to the object being deleted, sets it to nullptr and calls paramChanged
-    void deleteSlowAndSafety(size_t index) {
+    void deleteSlowAndSafety(uint8_t index) {
         if (index >= maxEffects) {
             return;
         }
@@ -80,7 +81,7 @@ public:
         }
 
         // Scan all effects and their parameters
-        for (size_t i = 0; i < maxEffects; ++i) {
+        for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] == nullptr || i == index) {
                 continue; // Skip null or the effect being deleted
             }
@@ -115,7 +116,7 @@ public:
 
     // Bind matrix to all effects
     void bindMatrix() {
-        for (size_t i = 0; i < maxEffects; ++i) {
+        for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 bindEffectMatrix(effects[i]);
             }
@@ -124,7 +125,7 @@ public:
 
     // Update and render all effects
     void updateAndRenderAll(amp::csRandGen& randGen, uint16_t currTime) {
-        for (size_t i = 0; i < maxEffects; ++i) {
+        for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);
                 effects[i]->render(randGen, currTime);
@@ -132,22 +133,32 @@ public:
         }
     }
 
+    // Find first free slot (returns index or notFound if array is full)
+    virtual uint8_t findFreeSlot() const {
+        for (uint8_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] == nullptr) {
+                return i;
+            }
+        }
+        return notFound; // Array is full
+    }
+
     // Access effects
-    amp::csEffectBase* get(size_t index) {
+    amp::csEffectBase* get(uint8_t index) {
         return (index < maxEffects) ? effects[index] : nullptr;
     }
 
-    const amp::csEffectBase* get(size_t index) const {
+    const amp::csEffectBase* get(uint8_t index) const {
         return (index < maxEffects) ? effects[index] : nullptr;
     }
 
     // Read-only access via operator[] (for reading only, use set() for writing)
-    amp::csEffectBase* operator[](size_t index) {
+    amp::csEffectBase* operator[](uint8_t index) {
         return get(index);
     }
 
     // Read-only access via operator[] (for reading only, use set() for writing)
-    const amp::csEffectBase* operator[](size_t index) const {
+    const amp::csEffectBase* operator[](uint8_t index) const {
         return get(index);
     }
 
@@ -181,6 +192,7 @@ private:
         }
     }
 
+    // incapsulation of `delete`
     void deleteEffect(amp::csEffectBase* eff) {
         if (!eff) {
             return;

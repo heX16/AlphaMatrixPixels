@@ -1,5 +1,6 @@
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
+#include "effect_manager.hpp"
 #include "led_config.hpp"
 
 // Output gamma correction (applied to FastLED output buffer right before show()).
@@ -29,9 +30,8 @@ amp::csRenderDigitalClock clock;
 amp::csRenderDigitalClockDigit digitGlyph;
 amp::csRandGen rng;
 
-// Effects array
-static constexpr size_t maxEffects = 10;
-amp::csEffectBase* effects[maxEffects] = {};
+// Effect manager
+csEffectManager effectManager(canvas);
 
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
@@ -65,9 +65,6 @@ void setup() {
     const amp::tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
     const amp::tMatrixPixelsSize clockHeight = fontHeight;
     
-    // Configure clock effect
-    clock.setMatrix(canvas);
-    
     // Configure glyph effect for rendering digits
     digitGlyph.setFont(font);
     digitGlyph.color = amp::csColorRGBA{255, 255, 255, 255};
@@ -84,9 +81,10 @@ void setup() {
     clock.renderRectAutosize = false;
     clock.rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
     
-    // Add effects to array (clock first, then digitGlyph)
-    effects[0] = &clock;
-    effects[1] = &digitGlyph;
+    // Add effects to manager (clock first, then digitGlyph)
+    // Note: effectManager automatically binds matrix to effects via bindEffectMatrix()
+    effectManager.set(0, &clock);
+    effectManager.set(1, &digitGlyph);
 }
 
 void loop() {
@@ -101,20 +99,11 @@ void loop() {
 
     const uint16_t currTime = static_cast<uint16_t>(millis());
     
+    // Update time for clock effect
+    clock.time = timeValue;
+    
     // Update and render all effects
-    for (auto* eff : effects) {
-        if (!eff) {
-            continue;
-        }
-        
-        // Update time for clock effect
-        if (auto* clockEffect = dynamic_cast<amp::csRenderDigitalClock*>(eff)) {
-            clockEffect->time = timeValue;
-        }
-        
-        // Render the effect
-        eff->render(rng, currTime);
-    }
+    effectManager.updateAndRenderAll(rng, currTime);
 
     amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
