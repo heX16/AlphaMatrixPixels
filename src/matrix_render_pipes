@@ -132,16 +132,15 @@ public:
     
         // Clip source rectangle to source matrix bounds
         const csRect srcBounds = matrixSource->getRect();
-        const csRect srcClipped = rectSource.intersect(srcBounds);
-        if (srcClipped.empty()) {
+        if (srcBounds.empty()) {
             return;
         }
     
         // Iterate over all pixels in source rectangle
-        for (tMatrixPixelsSize y = 0; y < srcClipped.height; ++y) {
-            for (tMatrixPixelsSize x = 0; x < srcClipped.width; ++x) {
-                const tMatrixPixelsCoord src_x = srcClipped.x + to_coord(x);
-                const tMatrixPixelsCoord src_y = srcClipped.y + to_coord(y);
+        for (tMatrixPixelsSize y = 0; y < srcBounds.height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < srcBounds.width; ++x) {
+                const tMatrixPixelsCoord src_x = srcBounds.x + to_coord(x);
+                const tMatrixPixelsCoord src_y = srcBounds.y + to_coord(y);
                 
                 // Get remapped destination coordinates
                 tMatrixPixelsCoord dst_x = 0;
