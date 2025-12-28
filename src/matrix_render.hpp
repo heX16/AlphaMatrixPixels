@@ -5,6 +5,7 @@
 
 #include "color_rgba.hpp"
 #include "matrix_pixels.hpp"
+#include "matrix_types.hpp"
 #include "rect.hpp"
 #include "math.hpp"
 #include "rand_gen.hpp"
@@ -168,13 +169,13 @@ public:
     }
 
     // Precomputation step
-    virtual void recalc(csRandGen& rand, uint16_t currTime) {
+    virtual void recalc(csRandGen& rand, tTime currTime) {
         (void)rand;
         (void)currTime;
     }
 
     // Render one frame
-    virtual void render(csRandGen& rand, uint16_t currTime) const {
+    virtual void render(csRandGen& rand, tTime currTime) const {
         (void)rand;
         (void)currTime;
     }
@@ -182,7 +183,7 @@ public:
     // Event generation hook
     // generate one event to external object
     virtual bool getEvent(csRandGen& rand,
-                          uint16_t currTime,
+                          tTime currTime,
                           csEventBase& event,
                           uint16_t eventNum) const {
         (void)rand;

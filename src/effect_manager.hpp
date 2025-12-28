@@ -127,7 +127,7 @@ public:
     }
 
     // Update and render all effects
-    void updateAndRenderAll(amp::csRandGen& randGen, uint16_t currTime) {
+    void updateAndRenderAll(amp::csRandGen& randGen, amp::tTime currTime) {
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);

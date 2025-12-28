@@ -50,17 +50,15 @@
 		<Linker>
 			<Add option="-m64" />
 			<Add option="-lSDL2main -lSDL2 -lSDL2_ttf -lfreetype -lharfbuzz -lgraphite2 -lpng -lbz2 -lbrotlidec -lbrotlicommon -lz -lmingw32 -lgdi32 -lsetupapi -lwinmm -limm32 -lole32 -loleaut32 -lrpcrt4 -ldwrite -lversion" />
-			<Add directory="C:/msys64/mingw64/lib" />
 			<Add option="-static" />
 			<Add option="-static-libstdc++" />
 			<Add option="-static-libgcc" />
+			<Add directory="C:/msys64/mingw64/lib" />
 		</Linker>
+		<Unit filename="copy_line_index_helper.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
-			<code_completion />
-			<envvars />
-			<debugger />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

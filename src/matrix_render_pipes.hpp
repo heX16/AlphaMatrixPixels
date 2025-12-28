@@ -75,7 +75,7 @@ public:
 // Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
 class csRenderAverageArea : public csRenderMatrixPipeBase {
 public:
-    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrix || !matrixSource) {
             return;
         }
@@ -90,7 +90,7 @@ public:
 class csRenderMatrixCopy : public csRenderMatrixPipeBase {
 public:
 
-    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrix || !matrixSource) {
             return;
         }
@@ -143,7 +143,7 @@ public:
         return false;
     }
 
-    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrix || !matrixSource) {
             return;
         }

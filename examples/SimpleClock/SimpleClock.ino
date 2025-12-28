@@ -70,7 +70,7 @@ public:
 
     // Update remap source and render to fill matrix1D
     // Call AFTER effects render into source matrix
-    void update(amp::csMatrixPixels& sourceMatrix, amp::csRandGen& randGen, uint16_t currTime) {
+    void update(amp::csMatrixPixels& sourceMatrix, amp::csRandGen& randGen, amp::tTime currTime) {
         remapEffect.matrixSource = &sourceMatrix;
         remapEffect.render(randGen, currTime);
     }
@@ -155,7 +155,7 @@ void loop() {
 
     canvas.clear();
 
-    const uint16_t currTime = static_cast<uint16_t>(millis());
+    const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
     // Update time for clock effect
     clock.time = timeValue;

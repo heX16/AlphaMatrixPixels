@@ -281,7 +281,7 @@ public:
         }
     }
 
-    void updateAndRenderEffect(csEffectBase* eff, uint32_t ticks, uint16_t currTime) {
+    void updateAndRenderEffect(csEffectBase* eff, uint32_t ticks, amp::tTime currTime) {
         if (!eff) {
             return;
         }
@@ -368,7 +368,7 @@ public:
             matrix.clear();
 
             const uint32_t ticks = SDL_GetTicks();
-            const uint16_t currTime = static_cast<uint16_t>(ticks);
+            const amp::tTime currTime = static_cast<amp::tTime>(ticks);
 
             for (auto* eff : effects) {
                 updateAndRenderEffect(eff, ticks, currTime);

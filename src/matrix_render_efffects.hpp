@@ -47,7 +47,7 @@ public:
 // Simple animated RGB gradient (float).
 class csRenderGradientWaves : public csRenderDynamic {
 public:
-    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+    void render(csRandGen& /*rand*/, tTime currTime) const override {
         if (disabled || !matrix) {
             return;
         }
@@ -98,7 +98,7 @@ public:
         return static_cast<uint8_t>(v);
     }
 
-    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+    void render(csRandGen& /*rand*/, tTime currTime) const override {
         if (disabled || !matrix) {
             return;
         }
@@ -146,7 +146,7 @@ public:
 // Simple sinusoidal plasma effect (float).
 class csRenderPlasma : public csRenderDynamic {
 public:
-    void render(csRandGen& /*rand*/, uint16_t currTime) const override {
+    void render(csRandGen& /*rand*/, tTime currTime) const override {
         if (disabled || !matrix) {
             return;
         }
@@ -729,7 +729,7 @@ public:
         }
     }
 
-    void recalc(csRandGen& rand, uint16_t currTime) override {
+    void recalc(csRandGen& rand, tTime currTime) override {
         if (disabled) {
             return;
         }
@@ -1092,7 +1092,7 @@ public:
         }
     }
 
-    void recalc(csRandGen& rand, uint16_t currTime) override {
+    void recalc(csRandGen& rand, tTime currTime) override {
         if (disabled) {
             return;
         }
@@ -1103,7 +1103,7 @@ public:
         }
     }
 
-    void render(csRandGen& rand, uint16_t currTime) const override {
+    void render(csRandGen& rand, tTime currTime) const override {
         if (disabled) {
             return;
         }
@@ -1223,7 +1223,7 @@ public:
         }
     }
 
-    void render(csRandGen& rand, uint16_t currTime) const override {
+    void render(csRandGen& rand, tTime currTime) const override {
         if (disabled || !matrix || !renderDigit) {
             return;
         }

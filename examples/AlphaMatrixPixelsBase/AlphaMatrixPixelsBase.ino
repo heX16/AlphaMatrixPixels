@@ -99,17 +99,18 @@ void loop() {
     const uint16_t t = static_cast<uint16_t>(millis());
 
     canvas.clear();
-    gradientWaves.render(rng, t);
-    /*
+    //gradientWaves.render(rng, t);
+    
     if (effectIndex == 0) {
         plasma.render(rng, t);
     } else if (effectIndex == 1) {
         gradientWaves.render(rng, t);
     } else {
+        gradientWaves.render(rng, t);
         snowfall.recalc(rng, t);
         snowfall.render(rng, t);
     }
-    */
+    
 
     /*
     // Show one digit (0..9), switching once per second (same rule as GUI_Test).

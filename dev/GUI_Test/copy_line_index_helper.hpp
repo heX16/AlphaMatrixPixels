@@ -90,7 +90,7 @@ public:
     // Update remap source and render to fill matrix1D.
     // Call AFTER effects render into source matrix, BEFORE render().
     // Only reads from rectSource area of source matrix (by default entire matrix bounds).
-    void updateCopyLineIndexSource(csMatrixPixels& matrix, csRandGen& randGen, uint16_t currTime) {
+    void updateCopyLineIndexSource(csMatrixPixels& matrix, csRandGen& randGen, amp::tTime currTime) {
         if (!isActive || !remapEffect) {
             return;
         }

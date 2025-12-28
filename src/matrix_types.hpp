@@ -9,6 +9,7 @@ using ::uint16_t;
 
 using tMatrixPixelsCoord = int32_t;
 using tMatrixPixelsSize = uint16_t;
+using tTime = uint16_t;
 
 template <typename T>
 constexpr tMatrixPixelsCoord to_coord(T v) noexcept {

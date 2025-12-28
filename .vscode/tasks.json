@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "meson setup --reconfigure builddir --buildtype=debug && meson compile -C builddir"
+                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=debug && meson compile -C builddir"
             ],
             "group": {
                 "kind": "build",
@@ -25,7 +25,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "meson setup --reconfigure builddir --buildtype=release && meson compile -C builddir"
+                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=release && meson compile -C builddir"
             ],
             "group": "build",
             "problemMatcher": ["$gcc"],
@@ -37,10 +37,10 @@
         {
             "label": "Clean",
             "type": "shell",
-            "command": "rm",
+            "command": "bash",
             "args": [
-                "-rf",
-                "builddir"
+                "-c",
+                "rm -rf dev/GUI_Test/builddir"
             ],
             "group": "build",
             "presentation": {
