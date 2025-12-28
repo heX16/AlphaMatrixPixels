@@ -305,4 +305,62 @@ public:
     }
 };
 
+// Effect: remap 2D matrix to 1D matrix (height=1) using custom index mapping via 2D array.
+//
+// `csRenderRemap1DByConstArray` contains a pointer to a const 2D array of x coordinates.
+// Each element in the array contains destination x coordinate for the corresponding source pixel.
+// The y coordinate is always 0 (1D matrix).
+// The array dimensions are specified by `remapWidth` and `remapHeight` fields.
+// This class is optimized for 2D->1D remapping, saving memory compared to storing both x and y.
+class csRenderRemap1DByConstArray : public csRenderRemapBase {
+public:
+    // Pointer to const 2D array of x coordinates (nullptr means skip remapping).
+    // Array is indexed as: remapArray[y * remapWidth + x]
+    const tMatrixPixelsCoord* remapArray = nullptr;
+
+    // Dimensions of the remap array
+    tMatrixPixelsSize remapWidth = 0;
+    tMatrixPixelsSize remapHeight = 0;
+
+    // Default constructor
+    csRenderRemap1DByConstArray() = default;
+
+    // Constructor with remap array and dimensions
+    csRenderRemap1DByConstArray(const tMatrixPixelsCoord* array, tMatrixPixelsSize width, tMatrixPixelsSize height) 
+        : remapArray(array), remapWidth(width), remapHeight(height) {}
+
+    bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {
+        if (!matrixSource || !remapArray) {
+            return false;
+        }
+
+        // Check bounds
+        if (src_x < 0 || src_y < 0 || 
+            src_x >= static_cast<tMatrixPixelsCoord>(remapWidth) || 
+            src_y >= static_cast<tMatrixPixelsCoord>(remapHeight)) {
+            return false;
+        }
+
+        // Get remap x coordinate from array, y is always 0 for 1D matrix
+        dst_x = remapArray[src_y * remapWidth + src_x];
+        dst_y = 0;
+        return true;
+    }
+
+    void paramChanged(uint8_t paramNum) override {
+        // Validate matrix size when matrix or matrixSource changes
+        if (paramNum == csRenderMatrixBase::paramMatrixDest || 
+            paramNum == csRenderMatrixPipeBase::paramMatrixSource) {
+            if (matrix != nullptr) {
+                // Matrix must have height == 1 for 1D remapping
+                if (matrix->height() != 1) {
+                    matrix = nullptr;
+                }
+            }
+        }
+
+        csRenderRemapBase::paramChanged(paramNum);
+    }
+};
+
 } // namespace amp
