@@ -11,6 +11,7 @@
 #include "../../src/matrix_render_pipes"
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
+#include "SDL2/SDL_stdinc.h"
 #include "copy_line_index_helper.hpp"
 
 using amp::csColorRGBA;
@@ -27,7 +28,6 @@ using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
 using amp::csRenderSnowfall;
 using amp::csRenderDigitalClock;
-using amp::csRenderContainer;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
 using amp::csRenderRemap1DByConstArray;
@@ -57,22 +57,12 @@ public:
     void bindEffectMatrix(csEffectBase* eff) {
         if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
             m->setMatrix(matrix);
-            // Container will automatically bind matrix to nested effects via paramChanged
         }
     }
 
     void deleteEffect(csEffectBase* eff) {
         if (!eff) {
             return;
-        }
-        // If it's a container, delete all nested effects first
-        if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
-            for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
-                if (container->effects[i] != nullptr) {
-                    deleteEffect(container->effects[i]);
-                    container->effects[i] = nullptr;
-                }
-            }
         }
         // Delete the effect itself
         delete eff;
@@ -122,56 +112,30 @@ public:
             case SDLK_3:
                 recreateMatrix(8, 8);
                 break;
-                    case SDLK_w:
-                        deleteEffect(effects[0]);
-                        effects[0] = new csRenderGradientWaves();
-                        bindEffectMatrix(effects[0]);
-                        break;
-                    case SDLK_e:
-                        deleteEffect(effects[0]);
-                        effects[0] = new csRenderGradientWavesFP();
-                        bindEffectMatrix(effects[0]);
-                        break;
-                    case SDLK_q:
-                        deleteEffect(effects[0]);
-                        effects[0] = new csRenderPlasma();
-                        bindEffectMatrix(effects[0]);
-                        break;
-                    case SDLK_s:
-                        deleteEffect(effects[0]);
-                        effects[0] = new csRenderSnowfall();
-                        bindEffectMatrix(effects[0]);
-                        break;
-                    case SDLK_r: {
-                        deleteEffect(effects[1]);
-                        auto* glyph = new csRenderGlyph();
-                        initGlyphDefaults(*glyph);
-                        effects[1] = glyph;
-                        bindEffectMatrix(effects[1]);
-                        break;
-                    }
-                    case SDLK_t: {
-                        deleteEffect(effects[1]);
-                        // auto* circle = new csRenderCircle();
-                        auto* circle = new csRenderCircleGradient();
-                        initCircleDefaults(*circle);
-                        effects[1] = circle;
-                        bindEffectMatrix(effects[1]);
-                        break;
-                    }
-                    case SDLK_c:
-                        deleteEffect(effects[1]);
-                        effects[1] = createClock();
-                        bindEffectMatrix(effects[1]);
-                        break;
-                    case SDLK_b: {
-                        deleteEffect(effects[1]);
-                        auto* averageArea = new csRenderAverageArea();
-                        initAverageAreaDefaults(*averageArea);
-                        effects[1] = averageArea;
-                        bindEffectMatrix(effects[1]);
-                        break;
-                    }
+            case SDLK_w:
+                createEffectBundle(1, 0);
+                break;
+            case SDLK_e:
+                createEffectBundle(2, 0);
+                break;
+            case SDLK_q:
+                createEffectBundle(3, 0);
+                break;
+            case SDLK_s:
+                createEffectBundle(4, 0);
+                break;
+            case SDLK_r:
+                createEffectBundle(0, 1);
+                break;
+            case SDLK_t:
+                createEffectBundle(0, 2);
+                break;
+            case SDLK_c:
+                createEffectBundle(0, 3);
+                break;
+            case SDLK_b:
+                createEffectBundle(0, 4);
+                break;
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
                 copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
@@ -202,21 +166,125 @@ public:
         }
     }
 
+    uint8_t eff1_base = 1;
+    uint8_t eff2 = 1;
+
+    void createEffectBundle(uint8_t a_eff1_base, uint8_t a_eff2) {
+        if (a_eff1_base != 0) {
+            eff1_base = a_eff1_base;
+        }
+        if (a_eff2 != 0) {
+            eff2 = a_eff2;
+        }
+
+        // Clear all effects
+        for (auto*& eff : effects) {
+            deleteEffect(eff);
+            eff = nullptr;
+        }
+
+        // Create base effect based on number
+        switch (eff1_base) {
+            case 1:
+                effects[0] = new csRenderGradientWaves();
+                break;
+            case 2:
+                effects[0] = new csRenderGradientWavesFP();
+                break;
+            case 3:
+                effects[0] = new csRenderPlasma();
+                break;
+            case 4:
+                effects[0] = new csRenderSnowfall();
+                break;
+            default:
+                ;
+        }
+
+        // Create effect based on number
+        switch (eff2) {
+            case 1: {
+                auto* glyph = new csRenderGlyph();
+                initGlyphDefaults(*glyph);
+                effects[1] = glyph;
+                break;
+            }
+            case 2: {
+                // auto* circle = new csRenderCircle();
+                auto* circle = new csRenderCircleGradient();
+                initCircleDefaults(*circle);
+                effects[1] = circle;
+                break;
+            }
+            case 3: {
+                // Get font dimensions for clock size calculation
+                const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
+                const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
+                const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
+                constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
+                constexpr uint8_t digitCount = 4; // clock displays 4 digits
+                
+                // Calculate clock rect size: 4 digits + 3 spacings between them
+                const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
+                const tMatrixPixelsSize clockHeight = fontHeight;
+                
+                // Create fill effect (background) - covers clock rect
+                auto* fill = new csRenderFill();
+                fill->color = csColorRGBA{192, 0, 0, 0};
+                fill->renderRectAutosize = false;
+                fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
+                
+                // Create clock effect
+                auto* clock = new csRenderDigitalClock();
+                
+                // Create glyph effect for rendering digits
+                // TODO: leak memory!!!
+                auto* digitGlyph = clock->createGlyph();
+                digitGlyph->setFont(font);
+                digitGlyph->color = csColorRGBA{255, 255, 255, 255};
+                digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
+                digitGlyph->renderRectAutosize = false;
+                
+                // Set glyph via paramRenderDigit parameter
+                clock->glyph = digitGlyph;
+                
+                // Notify clock that paramRenderDigit parameter changed
+                // This will validate the glyph type and update its matrix if needed
+                if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
+                    digitalClock->paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
+                }
+                
+                clock->renderRectAutosize = false;
+                clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
+                
+                // Add effects to array (fill first, then clock on top)
+                effects[1] = fill;
+                effects[2] = clock;
+                break;
+            }
+            case 4: {
+                auto* averageArea = new csRenderAverageArea();
+                initAverageAreaDefaults(*averageArea);
+                effects[1] = averageArea;
+                break;
+            }
+            default:
+                ;
+        }
+
+        // Bind matrix to the created effects
+        for (auto* eff : effects) {
+            bindEffectMatrix(eff);
+        }
+    }
+
     void updateAndRenderEffect(csEffectBase* eff, uint32_t ticks, uint16_t currTime) {
         if (!eff) {
             return;
         }
 
         // Update effect-specific parameters
-        if (auto* container = dynamic_cast<csRenderContainer*>(eff)) {
-            // Update time for clock inside container
-            for (uint8_t i = 0; i < csRenderContainer::maxEffects; ++i) {
-                if (auto* clock = dynamic_cast<csRenderDigitalClock*>(container->effects[i])) {
-                    clock->time = ticks / 1000u;
-                    break;
-                }
-            }
-        } else if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
+        if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
             glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
         } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
             // Update time from SDL ticks (convert to seconds)
@@ -230,56 +298,6 @@ public:
         eff->render(randGen, currTime);
     }
 
-    csRenderContainer* createClock() const noexcept {
-        // Get font dimensions for clock size calculation
-        const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
-        const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
-        const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
-        constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
-        constexpr uint8_t digitCount = 4; // clock displays 4 digits
-        
-        // Calculate clock rect size: 4 digits + 3 spacings between them
-        const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
-        const tMatrixPixelsSize clockHeight = fontHeight;
-        
-        // Create container
-        auto* container = new csRenderContainer();
-        
-        // Create fill effect (background) - covers clock rect
-        auto* fill = new csRenderFill();
-        fill->color = csColorRGBA{192, 0, 0, 0};
-        fill->renderRectAutosize = false;
-        fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
-        
-        // Create clock effect
-        auto* clock = new csRenderDigitalClock();
-        
-        // Create glyph effect for rendering digits
-        // TODO: leak memory!!!
-        auto* digitGlyph = clock->createGlyph();
-        digitGlyph->setFont(font);
-        digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-        digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
-        digitGlyph->renderRectAutosize = false;
-        
-        // Set glyph via paramRenderDigit parameter
-        clock->glyph = digitGlyph;
-        
-        // Notify clock that paramRenderDigit parameter changed
-        // This will validate the glyph type and update its matrix if needed
-        if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
-            digitalClock->paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
-        }
-        
-        clock->renderRectAutosize = false;
-        clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
-        
-        // Add effects to container (fill first, then clock on top)
-        container->effects[0] = fill;
-        container->effects[1] = clock;
-        
-        return container;
-    }
 
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -330,9 +348,7 @@ public:
         }
         
         recreateMatrix(16, 16);
-        deleteEffect(effects[0]);
-        effects[0] = new csRenderGradientWaves();
-        bindEffectMatrix(effects[0]);
+        createEffectBundle(1, 0);
         return true;
     }
 
