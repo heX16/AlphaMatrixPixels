@@ -305,13 +305,23 @@ public:
     }
 };
 
-// Effect: remap 2D matrix to 1D matrix (height=1) using custom index mapping via 2D array.
-//
-// `csRenderRemap1DByConstArray` contains a pointer to a const 2D array of x coordinates.
-// Each element in the array contains destination x coordinate for the corresponding source pixel.
-// The y coordinate is always 0 (1D matrix).
-// The array dimensions are specified by `remapWidth` and `remapHeight` fields.
-// This class is optimized for 2D->1D remapping, saving memory compared to storing both x and y.
+/*
+Effect: remap 2D matrix to 1D matrix (height=1) using custom index mapping via 2D array.
+
+`csRenderRemap1DByConstArray` contains a pointer to a const 2D array of x coordinates.
+Each element in the array contains destination x coordinate for the corresponding source pixel.
+The y coordinate is always 0 (1D matrix).
+The array dimensions are specified by `remapWidth` and `remapHeight` fields.
+This class is optimized for 2D->1D remapping, saving memory compared to storing both x and y.
+
+Example:
+   2x2 remap array that transforms:
+    src(0,0) -> dst x=0
+    src(1,0) -> dst x=1
+    src(0,1) -> dst x=2
+    src(1,1) -> dst x=3
+ Result: 2x2 source matrix becomes 1x4 (height=1) destination matrix.
+*/
 class csRenderRemap1DByConstArray : public csRenderRemapBase {
 public:
     // Pointer to const 2D array of x coordinates (nullptr means skip remapping).

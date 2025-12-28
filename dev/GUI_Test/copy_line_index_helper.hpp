@@ -14,23 +14,32 @@ using amp::csRandGen;
 using amp::csColorRGBA;
 using amp::RenderLayout;
 
-// Helper class for csRenderRemap1DByConstArray functionality
+// Debug visualization for 2D->1D matrix remapping.
+// Displays 1D matrix overlay at bottom when isActive=true.
+//
+// Design: Main program always calls render() - helper checks isActive internally.
+// This keeps main code simple and independent of debug mode.
+//
+// How it works:
+//   - Internal 1D matrix stores remapped result from external 2D matrix via remap effect
+//   - Remap effect reads from source matrix and writes to matrix1D according to remap array
+//   - When active, 1D matrix is rendered as overlay at bottom of screen
+//
+// Important:
+//   - Call order: updateCopyLineIndexSource() AFTER effects render, BEFORE render()
+//   - Only reads pixels from rectSource area (by default entire matrix, but remap array limits to 2x2)
+//   - Not thread-safe
 class csCopyLineIndexHelper {
 public:
-    // Debug mode state
+    // Debug mode flag. Toggle to show/hide 1D overlay.
     bool isActive = false;
     
-    // 1D matrix for displaying remap result
+    // 1D matrix (4x1) storing remapped result. Created in constructor, updated every frame when active.
     csMatrixPixels matrix1D{0, 0};
     
-    // Remap effect pointer
+    // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
-    // 2x2 remap array: src(x,y) -> dst x coordinate (1D matrix, y is always 0)
-    // Layout (row-major order):
-    //   src(0,0) -> dst x=0
-    //   src(1,0) -> dst x=1
-    //   src(0,1) -> dst x=2
-    //   src(1,1) -> dst x=3
+    // 2x2 remap array: src(x,y) -> dst x (row-major: 0,1,2,3)
     static constexpr tMatrixPixelsCoord remapArray2x2[4] = {
         0,  // src(0,0) -> dst x=0
         1,  // src(1,0) -> dst x=1
@@ -38,7 +47,7 @@ public:
         3   // src(1,1) -> dst x=3
     };
 
-    // Constructor: initialize 1D matrix and remap effect
+    // Creates 4x1 matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
         // Configure remap with 2x2 array
         constexpr tMatrixPixelsSize remapWidth = 2;
@@ -60,7 +69,6 @@ public:
         remapEffect->renderRectAutosize = true;
     }
     
-    // Destructor: cleanup remap effect
     ~csCopyLineIndexHelper() {
         if (remapEffect) {
             delete remapEffect;
@@ -68,8 +76,9 @@ public:
         }
     }
 
-    // Update matrixSource for csRenderRemap1DByConstArray in render loop
-    // Also calls render to fill matrix1D
+    // Update remap source and render to fill matrix1D.
+    // Call AFTER effects render into source matrix, BEFORE render().
+    // Only reads from rectSource area of source matrix (by default entire matrix bounds).
     void updateCopyLineIndexSource(csMatrixPixels& matrix, csRandGen& randGen, uint16_t currTime) {
         if (!isActive || !remapEffect) {
             return;
@@ -83,7 +92,8 @@ public:
         remapEffect->render(randGen, currTime);
     }
     
-    // Render 1D matrix at the bottom of the screen (overlay)
+    // Render 1D overlay at bottom. Always call every frame - checks isActive internally.
+    // Does not clear screen or call SDL_RenderPresent (overlay rendering).
     void render(SDL_Renderer* renderer, int screenWidth, int screenHeight) const {
         if (!isActive || !renderer || matrix1D.width() == 0 || matrix1D.height() == 0) {
             return;
