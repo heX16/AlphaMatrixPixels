@@ -9,10 +9,10 @@ namespace amp {
 // Base class for effects that use a source matrix.
 class csRenderMatrixPipeBase : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramMatrixSource = base + 1;
-    static constexpr uint8_t paramRectSource = base + 2;
-    static constexpr uint8_t paramLast = paramRectSource;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propMatrixSource = base + 1;
+    static constexpr uint8_t propRectSource = base + 2;
+    static constexpr uint8_t propLast = propRectSource;
 
     // Source matrix pointer (nullptr means no source).
     csMatrixPixels* matrixSource = nullptr;
@@ -20,22 +20,22 @@ public:
     // Source rectangle (defines area to copy from source matrix).
     csRect rectSource;
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramMatrixSource:
-                info.type = ParamType::Matrix;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propMatrixSource:
+                info.type = PropType::Matrix;
                 info.name = "Matrix source";
                 info.ptr = &matrixSource;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramRectSource:
-                info.type = ParamType::Rect;
+            case propRectSource:
+                info.type = PropType::Rect;
                 info.name = "Rect source";
                 info.ptr = &rectSource;
                 info.readOnly = false;
@@ -44,9 +44,9 @@ public:
         }
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramMatrixSource) {
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixBase::propChanged(propNum);
+        if (propNum == propMatrixSource) {
             if (renderRectAutosize && matrixSource) {
                 rectDest = matrixSource->getRect();
             }
@@ -54,15 +54,15 @@ public:
     }
 
     // Class family identifier
-    static constexpr ParamType ClassFamilyId = ParamType::EffectPipe;
+    static constexpr PropType ClassFamilyId = PropType::EffectPipe;
 
     // Override to return pipe renderer family
-    ParamType getClassFamily() const override {
+    PropType getClassFamily() const override {
         return ClassFamilyId;
     }
 
     // Override to check for pipe renderer family
-    void* queryClassFamily(ParamType familyId) override {
+    void* queryClassFamily(PropType familyId) override {
         if (familyId == ClassFamilyId) {
             return this;
         }
@@ -112,21 +112,21 @@ public:
 // Effect: copy pixels by some remap function from source matrix to destination matrix.
 class csRenderRemapBase : public csRenderMatrixPipeBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
-    static constexpr uint8_t paramRewrite = base + 1;
-    static constexpr uint8_t paramLast = paramRewrite;
+    static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
+    static constexpr uint8_t propRewrite = base + 1;
+    static constexpr uint8_t propLast = propRewrite;
 
     bool rewrite = false;
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixPipeBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramRewrite:
-                info.type = ParamType::Bool;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixPipeBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRewrite:
+                info.type = PropType::Bool;
                 info.name = "Rewrite";
                 info.ptr = &rewrite;
                 info.readOnly = false;
@@ -200,10 +200,10 @@ public:
         return true;
     }
 
-    void paramChanged(uint8_t paramNum) override {
+    void propChanged(uint8_t propNum) override {
         // Validate matrix size when matrix or matrixSource changes
-        if (paramNum == csRenderMatrixBase::paramMatrixDest ||
-            paramNum == csRenderMatrixPipeBase::paramMatrixSource) {
+        if (propNum == csRenderMatrixBase::propMatrixDest ||
+            propNum == csRenderMatrixPipeBase::propMatrixSource) {
             if (matrix != nullptr && matrixSource != nullptr) {
                 // If size is incorrect, disable effect by setting matrix to nullptr
                 if ((matrix->height() != 1) ||
@@ -213,7 +213,7 @@ public:
             }
         }
 
-        csRenderRemapBase::paramChanged(paramNum);
+        csRenderRemapBase::propChanged(propNum);
     }
 };
 
@@ -232,22 +232,22 @@ public:
 // the destination coordinates where the corresponding pixel should be placed.
 class csRenderRemapByIndexMatrix : public csRenderRemapBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
-    static constexpr uint8_t paramMatrixIndex = base + 1;
-    static constexpr uint8_t paramLast = paramMatrixIndex;
+    static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
+    static constexpr uint8_t propMatrixIndex = base + 1;
+    static constexpr uint8_t propLast = propMatrixIndex;
 
     // Index matrix pointer (nullptr means skip remapping).
     csMatrixPixels* matrixIndex = nullptr;
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderRemapBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramMatrixIndex:
-                info.type = ParamType::Matrix;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderRemapBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propMatrixIndex:
+                info.type = PropType::Matrix;
                 info.name = "Matrix index";
                 info.ptr = &matrixIndex;
                 info.readOnly = false;
@@ -380,10 +380,10 @@ public:
         return true;
     }
 
-    void paramChanged(uint8_t paramNum) override {
+    void propChanged(uint8_t propNum) override {
         // Validate matrix size when matrix or matrixSource changes
-        if (paramNum == csRenderMatrixBase::paramMatrixDest ||
-            paramNum == csRenderMatrixPipeBase::paramMatrixSource) {
+        if (propNum == csRenderMatrixBase::propMatrixDest ||
+            propNum == csRenderMatrixPipeBase::propMatrixSource) {
             if (matrix != nullptr) {
                 // Matrix must have height == 1 for 1D remapping
                 if (matrix->height() != 1) {
@@ -392,7 +392,7 @@ public:
             }
         }
 
-        csRenderRemapBase::paramChanged(paramNum);
+        csRenderRemapBase::propChanged(propNum);
     }
 };
 

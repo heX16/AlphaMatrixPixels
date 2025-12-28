@@ -68,9 +68,9 @@ public:
         }
     }
 
-    // Delete effect with safety: clears all references to it from other effects' parameters
-    // Before deletion, scans all effects and their parameters, and if any parameter
-    // of type Effect points to the object being deleted, sets it to nullptr and calls paramChanged
+    // Delete effect with safety: clears all references to it from other effects' properties
+    // Before deletion, scans all effects and their properties, and if any property
+    // of type Effect points to the object being deleted, sets it to nullptr and calls propChanged
     void deleteSlowAndSafety(uint8_t index) {
         if (index >= maxEffects) {
             return;
@@ -81,30 +81,30 @@ public:
             return;
         }
 
-        // Scan all effects and their parameters
+        // Scan all effects and their properties
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] == nullptr || i == index) {
                 continue; // Skip null or the effect being deleted
             }
 
             amp::csEffectBase* currentEff = effects[i];
-            const uint8_t paramCount = currentEff->getParamsCount();
+            const uint8_t propCount = currentEff->getPropsCount();
 
-            // Enumerate all parameters
-            for (uint8_t paramNum = 1; paramNum <= paramCount; ++paramNum) {
-                amp::csParamInfo info;
-                currentEff->getParamInfo(paramNum, info);
+            // Enumerate all properties
+            for (uint8_t propNum = 1; propNum <= propCount; ++propNum) {
+                amp::csPropInfo info;
+                currentEff->getPropInfo(propNum, info);
 
-                // Check if parameter is of type Effect (pointer to effect)
+                // Check if property is of type Effect (pointer to effect)
                 // All effect family types are >= EffectBase ("Effect*")
                 // Using >= ensures we catch all current and future effect family types
-                if ((info.type >= amp::ParamType::EffectBase) && (info.ptr != nullptr)) {
+                if ((info.type >= amp::PropType::EffectBase) && (info.ptr != nullptr)) {
                     // Compare pointer value with the effect being deleted
                     amp::csEffectBase** effectPtr = static_cast<amp::csEffectBase**>(info.ptr);
                     if (*effectPtr == eff) {
                         // Found reference to the effect being deleted
                         *effectPtr = nullptr;
-                        currentEff->paramChanged(paramNum);
+                        currentEff->propChanged(propNum);
                     }
                 }
             }
@@ -191,7 +191,7 @@ private:
             return;
         }
         if (auto* m = static_cast<amp::csRenderMatrixBase*>(
-            eff->queryClassFamily(amp::ParamType::EffectMatrixDest)
+            eff->queryClassFamily(amp::PropType::EffectMatrixDest)
         )) {
             m->setMatrix(&matrix);
         }

@@ -241,13 +241,13 @@ public:
                 digitGlyph->renderRectAutosize = false;
                 digitGlyph->disabled = true; // Disable direct rendering, only used by clock
                 
-                // Set renderDigit via paramRenderDigit parameter
+                // Set renderDigit via propRenderDigit property
                 clock->renderDigit = digitGlyph;
                 
-                // Notify clock that paramRenderDigit parameter changed
+                // Notify clock that propRenderDigit property changed
                 // This will validate the glyph type and update its matrix if needed
                 if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
-                    digitalClock->paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
+                    digitalClock->propChanged(amp::csRenderDigitalClock::propRenderDigit);
                 }
                 
                 clock->renderRectAutosize = false;
@@ -286,7 +286,7 @@ public:
             return;
         }
 
-        // Update effect-specific parameters
+        // Update effect-specific properties
         if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
             glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
         } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
@@ -408,7 +408,7 @@ public:
                                 false  // presentAfterRender - we'll call it after drawing scale
                                );
 
-        // Draw scale parameter
+        // Draw scale property
         if (effects[0]) {
             if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effects[0])) {
                 const float scaleValue = dynamicEffect->scale.to_float();

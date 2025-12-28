@@ -17,26 +17,26 @@
 
 namespace amp {
 
-// Base class for gradient effects with scale parameter.
+// Base class for gradient effects with scale property.
 class csRenderDynamic : public csRenderMatrixBase {
 public:
-    // Scale parameter for effect size (FP16, default 1.0).
+    // Scale property for effect size (FP16, default 1.0).
     // Increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
     // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
     math::csFP16 scale{1.0f};
-    // Speed parameter for effect animation speed (FP16, default 1.0).
+    // Speed property for effect animation speed (FP16, default 1.0).
     math::csFP16 speed{1.0f};
 
-    // NOTE: uint8_t getParamsCount() - count dont changed
+    // NOTE: uint8_t getPropsCount() - count dont changed
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        if (paramNum == paramScale) {
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        if (propNum == propScale) {
             info.ptr = &scale;
             info.disabled = false;
             return;
         }
-        if (paramNum == paramSpeed) {
+        if (propNum == propSpeed) {
             info.ptr = &speed;
             info.disabled = false;
             return;
@@ -179,11 +179,11 @@ public:
 // Effect: draw a single digit glyph using the 3x5 font.
 class csRenderGlyph : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramSymbolIndex = base+1;
-    static constexpr uint8_t paramFontWidth = base+2;
-    static constexpr uint8_t paramFontHeight = base+3;
-    static constexpr uint8_t paramLast = paramFontHeight;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propSymbolIndex = base+1;
+    static constexpr uint8_t propFontWidth = base+2;
+    static constexpr uint8_t propFontHeight = base+3;
+    static constexpr uint8_t propLast = propFontHeight;
 
     uint8_t symbolIndex = 0;
     csColorRGBA color{255, 255, 255, 255};
@@ -210,15 +210,15 @@ public:
     }
 
     // Class family identifier
-    static constexpr ParamType ClassFamilyId = ParamType::EffectGlyph;
+    static constexpr PropType ClassFamilyId = PropType::EffectGlyph;
 
     // Override to return glyph renderer family
-    ParamType getClassFamily() const override {
+    PropType getClassFamily() const override {
         return ClassFamilyId;
     }
 
     // Override to check for glyph renderer family
-    void* queryClassFamily(ParamType familyId) override {
+    void* queryClassFamily(PropType familyId) override {
         if (familyId == ClassFamilyId) {
             return this;
         }
@@ -226,43 +226,43 @@ public:
         return csRenderMatrixBase::queryClassFamily(familyId);
     }
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramRenderRectAutosize:
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRenderRectAutosize:
                 info.disabled = true;
                 break;
-            case paramSymbolIndex:
-                info.type = ParamType::UInt8;
+            case propSymbolIndex:
+                info.type = PropType::UInt8;
                 info.name = "Glyph index";
                 info.ptr = &symbolIndex;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramColor:
-                info.type = ParamType::Color;
+            case propColor:
+                info.type = PropType::Color;
                 info.name = "Symbol color";
                 info.ptr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramColorBackground:
+            case propColorBackground:
                 info.ptr = &backgroundColor;
                 info.disabled = false;
                 break;
-            case paramFontWidth:
-                info.type = ParamType::UInt16;
+            case propFontWidth:
+                info.type = PropType::UInt16;
                 info.name = "Font width";
                 info.ptr = &fontWidth;
                 info.readOnly = true;
                 info.disabled = false;
                 break;
-            case paramFontHeight:
-                info.type = ParamType::UInt16;
+            case propFontHeight:
+                info.type = PropType::UInt16;
                 info.name = "Font height";
                 info.ptr = &fontHeight;
                 info.readOnly = true;
@@ -271,12 +271,12 @@ public:
         }
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        csRenderMatrixBase::paramChanged(paramNum);
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixBase::propChanged(propNum);
         if (!font) {
             return;
         }
-        if (paramNum == paramSymbolIndex && symbolIndex >= font->count()) {
+        if (propNum == propSymbolIndex && symbolIndex >= font->count()) {
             symbolIndex = static_cast<uint8_t>((font->count() == 0) ? 0 : (font->count() - 1));
         }
     }
@@ -397,40 +397,40 @@ public:
 // Effect: draw a filled circle inscribed into rect.
 class csRenderCircle : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramSmoothEdges = base + 1;
-    static constexpr uint8_t paramLast = paramSmoothEdges;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propSmoothEdges = base + 1;
+    static constexpr uint8_t propLast = propSmoothEdges;
 
     csColorRGBA color{255, 255, 255, 255};
     csColorRGBA backgroundColor{0, 0, 0, 0};
     bool smoothEdges = true;
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        switch (paramNum) {
-            case paramColor:
-                info.type = ParamType::Color;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        switch (propNum) {
+            case propColor:
+                info.type = PropType::Color;
                 info.name = "Circle color";
                 info.ptr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramColorBackground:
+            case propColorBackground:
                 info.ptr = &backgroundColor;
                 info.disabled = false;
                 break;
-            case paramSmoothEdges:
-                info.type = ParamType::Bool;
+            case propSmoothEdges:
+                info.type = PropType::Bool;
                 info.name = "Smooth edges";
                 info.ptr = &smoothEdges;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             default:
-                csRenderMatrixBase::getParamInfo(paramNum, info);
+                csRenderMatrixBase::getPropInfo(propNum, info);
                 break;
         }
     }
@@ -589,27 +589,27 @@ public:
 // Radial gradient circle: interpolates from color (center) to backgroundColor (edge).
 class csRenderCircleGradient : public csRenderCircle {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramGradientOffset = base+1;
-    static constexpr uint8_t paramLast = paramGradientOffset;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propGradientOffset = base+1;
+    static constexpr uint8_t propLast = propGradientOffset;
 
     // Offset of gradient start from center, normalized: 0..255 -> 0..1 of radius.
     uint8_t gradientOffset = 0;
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        if (paramNum == paramGradientOffset) {
-            info.type = ParamType::UInt8;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        if (propNum == propGradientOffset) {
+            info.type = PropType::UInt8;
             info.name = "Gradient offset";
             info.ptr = &gradientOffset;
             info.readOnly = false;
             info.disabled = false;
             return;
         }
-        csRenderCircle::getParamInfo(paramNum, info);
+        csRenderCircle::getPropInfo(propNum, info);
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
@@ -673,9 +673,9 @@ public:
 // Snowfall effect: single snowflake falls down, accumulates at bottom, restarts at specified fill percentage.
 class csRenderSnowfall : public csRenderDynamic {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramSnowflake_WIP = base + 1;
-    static constexpr uint8_t paramLast = paramSnowflake_WIP;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propSnowflake_WIP = base + 1;
+    static constexpr uint8_t propLast = propSnowflake_WIP;
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
     static constexpr uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
@@ -698,33 +698,33 @@ public:
         delete bitmap;
     }
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderDynamic::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramRenderRectAutosize:
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderDynamic::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRenderRectAutosize:
                 info.disabled = true;
                 break;
-            case paramColor:
-                info.type = ParamType::Color;
+            case propColor:
+                info.type = PropType::Color;
                 info.name = "Snowflake color";
                 info.ptr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramSnowflake_WIP:
+            case propSnowflake_WIP:
                 // WIP
                 info.disabled = true;
                 break;
     }
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramRectDest) {
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixBase::propChanged(propNum);
+        if (propNum == propRectDest) {
             updateBitmap();
         }
     }
@@ -981,11 +981,11 @@ class csRenderFill : public csRenderMatrixBase {
 public:
     csColorRGBA color{255, 255, 255, 255};
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramColor:
-                info.type = ParamType::Color;
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propColor:
+                info.type = PropType::Color;
                 info.name = "Fill color";
                 info.ptr = &color;
                 info.readOnly = false;
@@ -1007,61 +1007,61 @@ public:
 class csRenderContainer : public csRenderMatrixBase {
 public:
     static constexpr uint8_t maxEffects = 5;
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramEffect1 = base + 1;
-    static constexpr uint8_t paramEffect2 = base + 2;
-    static constexpr uint8_t paramEffect3 = base + 3;
-    static constexpr uint8_t paramEffect4 = base + 4;
-    static constexpr uint8_t paramEffect5 = base + 5;
-    static constexpr uint8_t paramLast = paramEffect5;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propEffect1 = base + 1;
+    static constexpr uint8_t propEffect2 = base + 2;
+    static constexpr uint8_t propEffect3 = base + 3;
+    static constexpr uint8_t propEffect4 = base + 4;
+    static constexpr uint8_t propEffect5 = base + 5;
+    static constexpr uint8_t propLast = propEffect5;
 
     // Array of pointers to nested effects (nullptr means slot is empty).
     // Container does NOT manage memory - effects must be created/destroyed externally.
     csEffectBase* effects[maxEffects] = {};
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramRectDest:
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRectDest:
                 info.disabled = true;
                 break;
-            case paramRenderRectAutosize:
+            case propRenderRectAutosize:
                 info.disabled = true;
                 break;
-            case paramEffect1:
-                info.type = ParamType::EffectBase;
+            case propEffect1:
+                info.type = PropType::EffectBase;
                 info.name = "Effect 1";
                 info.ptr = &effects[0];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramEffect2:
-                info.type = ParamType::EffectBase;
+            case propEffect2:
+                info.type = PropType::EffectBase;
                 info.name = "Effect 2";
                 info.ptr = &effects[1];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramEffect3:
-                info.type = ParamType::EffectBase;
+            case propEffect3:
+                info.type = PropType::EffectBase;
                 info.name = "Effect 3";
                 info.ptr = &effects[2];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramEffect4:
-                info.type = ParamType::EffectBase;
+            case propEffect4:
+                info.type = PropType::EffectBase;
                 info.name = "Effect 4";
                 info.ptr = &effects[3];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramEffect5:
-                info.type = ParamType::EffectBase;
+            case propEffect5:
+                info.type = PropType::EffectBase;
                 info.name = "Effect 5";
                 info.ptr = &effects[4];
                 info.readOnly = false;
@@ -1070,20 +1070,20 @@ public:
         }
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        // Ignore paramRectDest and paramRenderRectAutosize - they are disabled
-        if (paramNum == paramRectDest || paramNum == paramRenderRectAutosize) {
+    void propChanged(uint8_t propNum) override {
+        // Ignore propRectDest and propRenderRectAutosize - they are disabled
+        if (propNum == propRectDest || propNum == propRenderRectAutosize) {
             return;
         }
-        // Call base implementation for other parameters
-        csRenderMatrixBase::paramChanged(paramNum);
+        // Call base implementation for other properties
+        csRenderMatrixBase::propChanged(propNum);
         
         // If matrix destination changed, bind matrix to all nested effects
-        if (paramNum == csRenderMatrixBase::paramMatrixDest) {
+        if (propNum == csRenderMatrixBase::propMatrixDest) {
             for (uint8_t i = 0; i < maxEffects; ++i) {
                 if (effects[i] != nullptr) {
                     if (auto* m = static_cast<csRenderMatrixBase*>(
-                        effects[i]->queryClassFamily(ParamType::EffectMatrixDest)
+                        effects[i]->queryClassFamily(PropType::EffectMatrixDest)
                     )) {
                         m->setMatrix(matrix);
                     }
@@ -1116,17 +1116,17 @@ public:
 };
 
 // Effect: display 4 digits clock using glyph renderer.
-// Time value is passed via 'time' parameter (int32_t).
-// Extracts last 4 decimal digits from time parameter.
+// Time value is passed via 'time' property (int32_t).
+// Extracts last 4 decimal digits from time property.
 // Does not use system time - time must be set externally.
 class csRenderDigitalClock : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::paramLast;
-    static constexpr uint8_t paramTime = base + 1;
-    static constexpr uint8_t paramRenderDigit = base + 2;
-    static constexpr uint8_t paramLast = paramRenderDigit;
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propTime = base + 1;
+    static constexpr uint8_t propRenderDigit = base + 2;
+    static constexpr uint8_t propLast = propRenderDigit;
 
-    // Time parameter (uint32_t): stores time value for clock display.
+    // Time property (uint32_t): stores time value for clock display.
     //
     // Examples:
     //   - time = 1234 → extracts [1, 2, 3, 4] → displays "1234"
@@ -1140,7 +1140,7 @@ public:
     static constexpr uint8_t digitCount = 4;
 
     // Single glyph renderer reused for all 4 digits
-    // Set via paramRenderDigit parameter (external memory management)
+    // Set via propRenderDigit property (external memory management)
     // Mutable pointer because render() modifies it but doesn't change logical state
     // Note: The associated effect (renderDigit) will always be disabled after rendering.
     //       The render() method temporarily enables it during rendering and then
@@ -1156,20 +1156,20 @@ public:
     }
 
     csRenderDigitalClock() {
-        // renderDigit is set externally via paramRenderDigit parameter
+        // renderDigit is set externally via propRenderDigit property
     }
 
     ~csRenderDigitalClock() {
         // renderDigit is managed externally, do not delete
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        csRenderMatrixBase::paramChanged(paramNum);
-        if (paramNum == paramRenderDigit) {
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixBase::propChanged(propNum);
+        if (propNum == propRenderDigit) {
             // Validate renderDigit type - must be csRenderGlyph*
             if (renderDigit) {
                 csRenderGlyph* validRenderDigit = static_cast<csRenderGlyph*>(
-                    renderDigit->queryClassFamily(ParamType::EffectGlyph)
+                    renderDigit->queryClassFamily(PropType::EffectGlyph)
                 );
                 if (validRenderDigit) {
                     // Update renderDigit matrix when renderDigit is set
@@ -1181,7 +1181,7 @@ public:
                     renderDigit = nullptr;
                 }
             }
-        } else if (paramNum == paramMatrixDest) {
+        } else if (propNum == propMatrixDest) {
             // Update renderDigit matrix when matrix destination changes
             if (matrix && renderDigit) {
                 renderDigit->setMatrix(matrix);
@@ -1189,32 +1189,32 @@ public:
         }
     }
 
-    uint8_t getParamsCount() const override {
-        return paramLast;
+    uint8_t getPropsCount() const override {
+        return propLast;
     }
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csRenderMatrixBase::getParamInfo(paramNum, info);
-        switch (paramNum) {
-            case paramRenderRectAutosize:
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRenderRectAutosize:
                 info.disabled = true;
                 break;
-            case paramTime:
-                // Time parameter: uint32_t value containing time data.
+            case propTime:
+                // Time property: uint32_t value containing time data.
                 // Extracts last 4 decimal digits (rightmost) from the value.
                 // Digits are extracted right-to-left and displayed left-to-right.
                 // Examples: time=1234 → "4321", time=567 → "7650", time=99 → "9900"
-                info.type = ParamType::UInt32;
+                info.type = PropType::UInt32;
                 info.name = "Time";
                 info.ptr = &time;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case paramRenderDigit:
-                // Render digit parameter: csEffectBase* pointer to csRenderGlyph effect.
+            case propRenderDigit:
+                // Render digit property: csEffectBase* pointer to csRenderGlyph effect.
                 // Used for rendering individual digits. Must be csRenderGlyph* or derived.
                 // Memory is managed externally - object does not own the renderDigit.
-                info.type = ParamType::EffectGlyph;
+                info.type = PropType::EffectGlyph;
                 info.name = "Render digit";
                 info.ptr = reinterpret_cast<void*>(&renderDigit);
                 info.readOnly = false;
@@ -1231,7 +1231,7 @@ public:
         // Temporarily enable renderDigit for rendering
         renderDigit->disabled = false;
 
-        // Extract last 4 decimal digits from time parameter
+        // Extract last 4 decimal digits from time property
         // Extract from left to right (most significant first)
         uint8_t digits[digitCount];
 

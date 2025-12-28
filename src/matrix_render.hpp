@@ -13,11 +13,11 @@
 
 namespace amp {
 
-// Generic parameter pointer type for render parameter introspection (WIP).
-using paramPtr = void*;
+// Generic property pointer type for render property introspection (WIP).
+using propPtr = void*;
 
-// Parameter type for render parameter introspection (WIP).
-enum class ParamType : uint8_t {
+// Property type for render property introspection (WIP).
+enum class PropType : uint8_t {
     None = 0,
     UInt8 = 1,
     UInt16 = 2,
@@ -38,9 +38,9 @@ enum class ParamType : uint8_t {
     // `csColorRGBA`
     Color = 15,
     // WIP ...
-    LinkToEffectParam = 16,
-    // `ParamType`
-    LinkToEffectParamType = 17,
+    LinkToEffectProp = 16,
+    // `PropType`
+    LinkToEffectPropType = 17,
 
     EffectBase = 32,
     EffectMatrixDest = 33,
@@ -49,9 +49,9 @@ enum class ParamType : uint8_t {
     EffectUserArea = 64,
 };
 
-struct csParamInfo {
-    ParamType type = ParamType::None;
-    paramPtr ptr = nullptr;
+struct csPropInfo {
+    PropType type = PropType::None;
+    propPtr ptr = nullptr;
     const char* name = nullptr;
     bool readOnly = false;
     bool disabled = false;
@@ -62,109 +62,109 @@ class csEventBase {
 };
 
 // Base class for all render/effect implementations
-// Contains standard parameter types without the actual fields - only their parameter ID.
-// All these parameters are disabled by default - derived classes can enable them.
+// Contains standard property types without the actual fields - only their property ID.
+// All these properties are disabled by default - derived classes can enable them.
 // This reserves a small pool of the most commonly used properties.
 class csEffectBase {
 public:
 
     virtual ~csEffectBase() = default;
 
-    // Standard parameter constants
-    static constexpr uint8_t paramMatrixDest = 1;
-    static constexpr uint8_t paramRectDest = 2;
-    static constexpr uint8_t paramRenderRectAutosize = 3;
-    static constexpr uint8_t paramDisabled = 4;
-    // Scale parameter: 
+    // Standard property constants
+    static constexpr uint8_t propMatrixDest = 1;
+    static constexpr uint8_t propRectDest = 2;
+    static constexpr uint8_t propRenderRectAutosize = 3;
+    static constexpr uint8_t propDisabled = 4;
+    // Scale property: 
     // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
     // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
-    static constexpr uint8_t paramScale = 5;
-    static constexpr uint8_t paramSpeed = 6;
-    static constexpr uint8_t paramAlpha = 7;
-    static constexpr uint8_t paramColor = 8;
-    static constexpr uint8_t paramColor2 = 9;
-    static constexpr uint8_t paramColor3 = 10;
-    static constexpr uint8_t paramColorBackground = 11;
+    static constexpr uint8_t propScale = 5;
+    static constexpr uint8_t propSpeed = 6;
+    static constexpr uint8_t propAlpha = 7;
+    static constexpr uint8_t propColor = 8;
+    static constexpr uint8_t propColor2 = 9;
+    static constexpr uint8_t propColor3 = 10;
+    static constexpr uint8_t propColorBackground = 11;
 
-    // `paramLast` - Special "parameter" - the last one in the list. 
+    // `propLast` - Special "property" - the last one in the list. 
     // Shadowed in each derived class.
     // Example of use:
     // ```
-    //     static constexpr uint8_t base = _prev_class_::paramLast;
-    //     static constexpr uint8_t paramNew = base+1;
-    //     static constexpr uint8_t paramLast = paramNew;
+    //     static constexpr uint8_t base = _prev_class_::propLast;
+    //     static constexpr uint8_t propNew = base+1;
+    //     static constexpr uint8_t propLast = propNew;
     // ```
-    static constexpr uint8_t paramLast = paramColorBackground;
+    static constexpr uint8_t propLast = propColorBackground;
 
-    // Parameter introspection: returns number of exposed parameters
-    // NOTE: parameter indices start at 1 (not 0).
-    // If `getParamsCount()==1`, call `getParamInfo(1, ...)`.
-    virtual uint8_t getParamsCount() const {
-        return paramLast;
+    // Property introspection: returns number of exposed properties
+    // NOTE: property indices start at 1 (not 0).
+    // If `getPropsCount()==1`, call `getPropInfo(1, ...)`.
+    virtual uint8_t getPropsCount() const {
+        return propLast;
     }
 
-    // Parameter introspection: returns parameter metadata (type/name/pointer)
-    // NOTE: parameter indices start at 1 (not 0).
-    virtual void getParamInfo(uint8_t paramNum, csParamInfo& info) {
+    // Property introspection: returns property metadata (type/name/pointer)
+    // NOTE: property indices start at 1 (not 0).
+    virtual void getPropInfo(uint8_t propNum, csPropInfo& info) {
         info.readOnly = false;
-        info.disabled = true;  // All parameters are disabled by default
+        info.disabled = true;  // All properties are disabled by default
         info.ptr = nullptr;    // No fields in this class
 
-        switch (paramNum) {
-            case paramMatrixDest:
-                info.type = ParamType::Matrix;
+        switch (propNum) {
+            case propMatrixDest:
+                info.type = PropType::Matrix;
                 info.name = "Matrix dest";
                 break;
-            case paramRectDest:
-                info.type = ParamType::Rect;
+            case propRectDest:
+                info.type = PropType::Rect;
                 info.name = "Rect dest";
                 break;
-            case paramRenderRectAutosize:
-                info.type = ParamType::Bool;
+            case propRenderRectAutosize:
+                info.type = PropType::Bool;
                 info.name = "Render rect autosize";
                 break;
-            case paramDisabled:
-                info.type = ParamType::Bool;
+            case propDisabled:
+                info.type = PropType::Bool;
                 info.name = "Disabled";
                 break;
-            case paramScale:
-                info.type = ParamType::FP16;
+            case propScale:
+                info.type = PropType::FP16;
                 info.name = "Scale";
                 break;
-            case paramSpeed:
-                info.type = ParamType::FP16;
+            case propSpeed:
+                info.type = PropType::FP16;
                 info.name = "Speed";
                 break;
-            case paramAlpha:
-                info.type = ParamType::UInt8;
+            case propAlpha:
+                info.type = PropType::UInt8;
                 info.name = "Alpha";
                 break;
-            case paramColor:
-                info.type = ParamType::Color;
+            case propColor:
+                info.type = PropType::Color;
                 info.name = "Color";
                 break;
-            case paramColor2:
-                info.type = ParamType::Color;
+            case propColor2:
+                info.type = PropType::Color;
                 info.name = "Color 2";
                 break;
-            case paramColor3:
-                info.type = ParamType::Color;
+            case propColor3:
+                info.type = PropType::Color;
                 info.name = "Color 3";
                 break;
-            case paramColorBackground:
-                info.type = ParamType::Color;
+            case propColorBackground:
+                info.type = PropType::Color;
                 info.name = "Background color";
                 break;
             default:
-                info = csParamInfo{};
+                info = csPropInfo{};
                 break;
         }
     }
 
     // Notification hook.
-    // Must be called when a parameter value changes
-    virtual void paramChanged(uint8_t paramNum) {
-        (void)paramNum;
+    // Must be called when a property value changes
+    virtual void propChanged(uint8_t propNum) {
+        (void)propNum;
     }
 
     // Precomputation step
@@ -204,33 +204,33 @@ public:
     // This system allows type checking and safe downcasting without RTTI (Runtime Type Information).
     // Arduino compilers use -fno-rtti flag which disables RTTI to save memory, making dynamic_cast unavailable.
     // This mechanism provides type-safe casting for effect relationships (e.g., checking if an effect
-    // is a csRenderGlyph* when setting up csRenderDigitalClock::renderDigit parameter).
+    // is a csRenderGlyph* when setting up csRenderDigitalClock::renderDigit property).
     //
     // HOW IT WORKS:
-    // Each class family (e.g., EffectMatrixDest, EffectGlyph, EffectPipe) has a unique ParamType identifier.
+    // Each class family (e.g., EffectMatrixDest, EffectGlyph, EffectPipe) has a unique PropType identifier.
     // Derived classes override getClassFamily() to return their family ID, and queryClassFamily() to
     // check if the object belongs to a requested family (including base class families via chain of calls).
     //
     // USAGE EXAMPLE:
     //   // Instead of: if (auto* m = dynamic_cast<csRenderMatrixBase*>(eff))
     //   if (auto* m = static_cast<csRenderMatrixBase*>(
-    //       eff->queryClassFamily(ParamType::EffectMatrixDest)
+    //       eff->queryClassFamily(PropType::EffectMatrixDest)
     //   )) {
     //       m->setMatrix(matrix);
     //   }
     //
     // Get class family identifier
-    // Returns ParamType value that identifies the class family
+    // Returns PropType value that identifies the class family
     // Base implementation returns EffectBase
-    virtual ParamType getClassFamily() const {
-        return ParamType::EffectBase;
+    virtual PropType getClassFamily() const {
+        return PropType::EffectBase;
     }
 
     // Query if object belongs to a specific class family
     // Returns pointer to this object if it belongs to requested family, nullptr otherwise
     // Works without RTTI by checking class family hierarchy
     // Derived classes should override to check their own family and call base class implementation
-    virtual void* queryClassFamily(ParamType familyId) {
+    virtual void* queryClassFamily(PropType familyId) {
         if (familyId == getClassFamily()) {
             return this;
         }
@@ -255,23 +255,23 @@ public:
 
     void setMatrix(csMatrixPixels* m) noexcept {
         matrix = m;
-        paramChanged(paramMatrixDest);
+        propChanged(propMatrixDest);
     }
     void setMatrix(csMatrixPixels& m) noexcept {
         matrix = &m;
-        paramChanged(paramMatrixDest);
+        propChanged(propMatrixDest);
     }
 
     // Class family identifier
-    static constexpr ParamType ClassFamilyId = ParamType::EffectMatrixDest;
+    static constexpr PropType ClassFamilyId = PropType::EffectMatrixDest;
 
     // Override to return matrix-based renderer family
-    ParamType getClassFamily() const override {
+    PropType getClassFamily() const override {
         return ClassFamilyId;
     }
 
     // Override to check for matrix-based renderer family
-    void* queryClassFamily(ParamType familyId) override {
+    void* queryClassFamily(PropType familyId) override {
         if (familyId == ClassFamilyId) {
             return this;
         }
@@ -279,25 +279,25 @@ public:
         return csEffectBase::queryClassFamily(familyId);
     }
 
-    // NOTE: uint8_t getParamsCount() - count dont changed
+    // NOTE: uint8_t getPropsCount() - count dont changed
 
-    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
-        csEffectBase::getParamInfo(paramNum, info);
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csEffectBase::getPropInfo(propNum, info);
 
-        switch (paramNum) {
-            case paramRenderRectAutosize:
+        switch (propNum) {
+            case propRenderRectAutosize:
                 info.ptr = &renderRectAutosize;
                 info.disabled = false;
                 break;
-            case paramRectDest:
+            case propRectDest:
                 info.ptr = &rectDest;
                 info.disabled = false;
                 break;
-            case paramMatrixDest:
+            case propMatrixDest:
                 info.ptr = &matrix;
                 info.disabled = false;
                 break;
-            case paramDisabled:
+            case propDisabled:
                 info.ptr = &disabled;
                 info.disabled = false;
                 break;
@@ -306,10 +306,10 @@ public:
         }
     }
 
-    void paramChanged(uint8_t paramNum) override {
-        switch (paramNum) {
-            case paramRenderRectAutosize:
-            case paramMatrixDest:
+    void propChanged(uint8_t propNum) override {
+        switch (propNum) {
+            case propRenderRectAutosize:
+            case propMatrixDest:
                 if (renderRectAutosize) {
                     updateRenderRect();
                 }

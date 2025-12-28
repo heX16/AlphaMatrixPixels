@@ -129,12 +129,12 @@ void setup() {
     digitGlyph.backgroundColor = amp::csColorRGBA{255, 0, 0, 0};
     digitGlyph.renderRectAutosize = false;
     
-    // Set renderDigit via paramRenderDigit parameter
+    // Set renderDigit via propRenderDigit property
     clock.renderDigit = &digitGlyph;
     
-    // Notify clock that paramRenderDigit parameter changed
+    // Notify clock that propRenderDigit property changed
     // This will validate the glyph type and update its matrix if needed
-    clock.paramChanged(amp::csRenderDigitalClock::paramRenderDigit);
+    clock.propChanged(amp::csRenderDigitalClock::propRenderDigit);
     
     clock.renderRectAutosize = false;
     clock.rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
