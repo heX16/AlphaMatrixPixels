@@ -11,7 +11,6 @@
 #include "../../src/matrix_render_pipes.hpp"
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
-#include "SDL2/SDL_stdinc.h"
 #include "copy_line_index_helper.hpp"
 
 using amp::csColorRGBA;

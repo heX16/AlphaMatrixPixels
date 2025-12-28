@@ -69,10 +69,10 @@ public:
         // Configure remap
         // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
         remapEffect->matrix = &matrix1D;
+        remapEffect->renderRectAutosize = false;
         remapEffect->remapArray = remapArray;
         remapEffect->remapWidth = remapWidth;
         remapEffect->remapHeight = remapHeight;
-        remapEffect->renderRectAutosize = false;
         remapEffect->rewrite = true;
         remapEffect->rectSource.x = 2;
         remapEffect->rectSource.y = 2;
@@ -94,11 +94,8 @@ public:
         if (!isActive || !remapEffect) {
             return;
         }
-
-        // Update matrixSource to point to matrix (which now contains effect2 result)
+        // Update matrixSource to point to matrix
         remapEffect->matrixSource = &matrix;
-        remapEffect->rectSource = matrix.getRect();
-
         // Render remap effect to fill matrix1D
         remapEffect->render(randGen, currTime);
     }
