@@ -94,6 +94,28 @@ public:
 // Effect: copy pixels by some remap function from source matrix to destination matrix.
 class csRenderRemapBase : public csRenderMatrixPipeBase {
 public:
+    static constexpr uint8_t base = csRenderMatrixPipeBase::paramLast;
+    static constexpr uint8_t paramRewrite = base + 1;
+    static constexpr uint8_t paramLast = paramRewrite;
+
+    bool rewrite = false;
+
+    uint8_t getParamsCount() const override {
+        return paramLast;
+    }
+
+    void getParamInfo(uint8_t paramNum, csParamInfo& info) override {
+        csRenderMatrixPipeBase::getParamInfo(paramNum, info);
+        switch (paramNum) {
+            case paramRewrite:
+                info.type = ParamType::Bool;
+                info.name = "Rewrite";
+                info.ptr = &rewrite;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
 
     virtual bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const {
         (void)src_x;
@@ -130,7 +152,10 @@ public:
     
                 // Get source pixel and write to destination with blending
                 const csColorRGBA sourcePixel = matrixSource->getPixel(src_x, src_y);
-                matrix->setPixel(dst_x, dst_y, sourcePixel);
+                if (rewrite)
+                    matrix->setPixelRewrite(dst_x, dst_y, sourcePixel);
+                else
+                    matrix->setPixel(dst_x, dst_y, sourcePixel);
             }
         }
     }
@@ -142,41 +167,37 @@ public:
 // linear 1D matrix size:  (height=1, width=src.height*src.width).
 // Index starts from 1. (not 0!)
 // If `index==0` - skip the pixel.
-class csRenderMatrixCopyLine : public csRenderMatrixPipeBase {
+class csRenderMatrixCopyLine : public csRenderRemapBase {
 public:
-    // Calculate linear index from 2D coordinates (row-major order).
-    virtual uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const {
-        return 
-            (y * srcWidth + x) + 1;
+    bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {
+        if (!matrixSource) {
+            return false;
+        }
+
+        // Calculate linear index from 2D coordinates (row-major order), index starts from 1
+        const uint32_t linearIndex = (src_y * matrixSource->width() + src_x) + 1;
+        if (linearIndex == 0) {
+            return false; // Skip pixel
+        }
+        dst_x = to_coord(linearIndex - 1);
+        dst_y = 0;
+        return true;
     }
 
-    void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix || !matrixSource) {
-            return;
-        }
-
-        // Validate matrixDest: height must be 1, width must be src.height * src.width
-        const tMatrixPixelsSize destHeight = matrix->height();
-        const tMatrixPixelsSize destWidth = matrix->width();
-        const tMatrixPixelsSize srcHeight = matrixSource->height();
-        const tMatrixPixelsSize srcWidth = matrixSource->width();
-        const tMatrixPixelsSize expectedWidth = srcHeight * srcWidth;
-
-        if (destHeight != 1 || destWidth != expectedWidth) {
-            return;
-        }
-
-        // Copy all pixels from 2D source to linear destination
-        for (tMatrixPixelsSize y = 0; y < srcHeight; ++y) {
-            for (tMatrixPixelsSize x = 0; x < srcWidth; ++x) {
-                const csColorRGBA sourcePixel = matrixSource->getPixel(x, y);
-                const uint32_t linearIndex = getPixelLineIndex(x, y, srcWidth);
-                if (linearIndex == 0) {
-                    continue;
+    void paramChanged(uint8_t paramNum) override {
+        // Validate matrix size when matrix or matrixSource changes
+        if (paramNum == csRenderMatrixBase::paramMatrixDest || 
+            paramNum == csRenderMatrixPipeBase::paramMatrixSource) {
+            if (matrix != nullptr && matrixSource != nullptr) {
+                // If size is incorrect, disable effect by setting matrix to nullptr
+                if ((matrix->height() != 1) || 
+                    (matrix->width() != matrixSource->height() * matrixSource->width())) {
+                    matrix = nullptr;
                 }
-                matrix->setPixelRewrite(to_coord(linearIndex - 1), 0, sourcePixel);
             }
         }
+
+        csRenderRemapBase::paramChanged(paramNum);
     }
 };
     
@@ -218,12 +239,20 @@ public:
         }
     }
 
-    // Calculate linear index from 2D coordinates (row-major order).
-    uint32_t getPixelLineIndex(tMatrixPixelsCoord x, tMatrixPixelsCoord y, tMatrixPixelsSize srcWidth) const override {
-        if (matrixIndex) {
-            return matrixIndex->getPixel(x, y).value;
+    bool getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {
+        if (!matrixSource || !matrixIndex) {
+            return false;
         }
-        return 0;
+
+        uint32_t linearIndex = matrixIndex->getPixel(src_x, src_y).value;
+        
+        if (linearIndex == 0) {
+            return false; // Skip pixel
+        }
+
+        dst_x = to_coord(linearIndex - 1);
+        dst_y = 0;
+        return true;
     }
 };
 
