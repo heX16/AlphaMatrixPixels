@@ -48,8 +48,8 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    csEffectBase* effect{nullptr};
-    csEffectBase* effect2{nullptr};
+    static constexpr size_t maxEffects = 10;
+    csEffectBase* effects[maxEffects] = {};
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
@@ -122,56 +122,56 @@ public:
             case SDLK_3:
                 recreateMatrix(8, 8);
                 break;
-            case SDLK_w:
-                deleteEffect(effect);
-                effect = new csRenderGradientWaves();
-                bindEffectMatrix(effect);
-                break;
-            case SDLK_e:
-                deleteEffect(effect);
-                effect = new csRenderGradientWavesFP();
-                bindEffectMatrix(effect);
-                break;
-            case SDLK_q:
-                deleteEffect(effect);
-                effect = new csRenderPlasma();
-                bindEffectMatrix(effect);
-                break;
-            case SDLK_s:
-                deleteEffect(effect);
-                effect = new csRenderSnowfall();
-                bindEffectMatrix(effect);
-                break;
-            case SDLK_r: {
-                deleteEffect(effect2);
-                auto* glyph = new csRenderGlyph();
-                initGlyphDefaults(*glyph);
-                effect2 = glyph;
-                bindEffectMatrix(effect2);
-                break;
-            }
-            case SDLK_t: {
-                deleteEffect(effect2);
-                // auto* circle = new csRenderCircle();
-                auto* circle = new csRenderCircleGradient();
-                initCircleDefaults(*circle);
-                effect2 = circle;
-                bindEffectMatrix(effect2);
-                break;
-            }
-            case SDLK_c:
-                deleteEffect(effect2);
-                effect2 = createClock();
-                bindEffectMatrix(effect2);
-                break;
-            case SDLK_b: {
-                deleteEffect(effect2);
-                auto* averageArea = new csRenderAverageArea();
-                initAverageAreaDefaults(*averageArea);
-                effect2 = averageArea;
-                bindEffectMatrix(effect2);
-                break;
-            }
+                    case SDLK_w:
+                        deleteEffect(effects[0]);
+                        effects[0] = new csRenderGradientWaves();
+                        bindEffectMatrix(effects[0]);
+                        break;
+                    case SDLK_e:
+                        deleteEffect(effects[0]);
+                        effects[0] = new csRenderGradientWavesFP();
+                        bindEffectMatrix(effects[0]);
+                        break;
+                    case SDLK_q:
+                        deleteEffect(effects[0]);
+                        effects[0] = new csRenderPlasma();
+                        bindEffectMatrix(effects[0]);
+                        break;
+                    case SDLK_s:
+                        deleteEffect(effects[0]);
+                        effects[0] = new csRenderSnowfall();
+                        bindEffectMatrix(effects[0]);
+                        break;
+                    case SDLK_r: {
+                        deleteEffect(effects[1]);
+                        auto* glyph = new csRenderGlyph();
+                        initGlyphDefaults(*glyph);
+                        effects[1] = glyph;
+                        bindEffectMatrix(effects[1]);
+                        break;
+                    }
+                    case SDLK_t: {
+                        deleteEffect(effects[1]);
+                        // auto* circle = new csRenderCircle();
+                        auto* circle = new csRenderCircleGradient();
+                        initCircleDefaults(*circle);
+                        effects[1] = circle;
+                        bindEffectMatrix(effects[1]);
+                        break;
+                    }
+                    case SDLK_c:
+                        deleteEffect(effects[1]);
+                        effects[1] = createClock();
+                        bindEffectMatrix(effects[1]);
+                        break;
+                    case SDLK_b: {
+                        deleteEffect(effects[1]);
+                        auto* averageArea = new csRenderAverageArea();
+                        initAverageAreaDefaults(*averageArea);
+                        effects[1] = averageArea;
+                        bindEffectMatrix(effects[1]);
+                        break;
+                    }
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
                 copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
@@ -179,14 +179,14 @@ public:
             case SDLK_KP_PLUS:
             case SDLK_PLUS:
                 // Increase scale for dynamic effects
-                adjustEffectScale(effect, 0.1f);
-                adjustEffectScale(effect2, 0.1f);
+                adjustEffectScale(effects[0], 0.1f);
+                adjustEffectScale(effects[1], 0.1f);
                 break;
             case SDLK_KP_MINUS:
             case SDLK_MINUS:
                 // Decrease scale for dynamic effects
-                adjustEffectScale(effect, -0.1f);
-                adjustEffectScale(effect2, -0.1f);
+                adjustEffectScale(effects[0], -0.1f);
+                adjustEffectScale(effects[1], -0.1f);
                 break;
             default:
                 break;
@@ -330,9 +330,9 @@ public:
         }
         
         recreateMatrix(16, 16);
-        deleteEffect(effect);
-        effect = new csRenderGradientWaves();
-        bindEffectMatrix(effect);
+        deleteEffect(effects[0]);
+        effects[0] = new csRenderGradientWaves();
+        bindEffectMatrix(effects[0]);
         return true;
     }
 
@@ -351,8 +351,9 @@ public:
             const uint32_t ticks = SDL_GetTicks();
             const uint16_t currTime = static_cast<uint16_t>(ticks);
 
-            updateAndRenderEffect(effect2, ticks, currTime);
-            updateAndRenderEffect(effect, ticks, currTime);
+            for (auto* eff : effects) {
+                updateAndRenderEffect(eff, ticks, currTime);
+            }
             copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
@@ -389,8 +390,8 @@ public:
                                );
 
         // Draw scale parameter
-        if (effect) {
-            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effect)) {
+        if (effects[0]) {
+            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effects[0])) {
                 const float scaleValue = dynamicEffect->scale.to_float();
                 drawNumber(10, 10, scaleValue, "scale: %.2f");
             }
@@ -407,13 +408,15 @@ public:
             return;
         }
         matrix = csMatrixPixels{w, h};
-        bindEffectMatrix(effect);
-        bindEffectMatrix(effect2);
+        for (auto* eff : effects) {
+            bindEffectMatrix(eff);
+        }
     }
 
     void done() {
-        deleteEffect(effect);
-        deleteEffect(effect2);
+        for (auto* eff : effects) {
+            deleteEffect(eff);
+        }
         if (font) {
             TTF_CloseFont(font);
         }
