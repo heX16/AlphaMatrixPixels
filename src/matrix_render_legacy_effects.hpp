@@ -1321,14 +1321,13 @@ public:
         
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        const tMatrixPixelsSize matrixWidth = matrix->width();
         
-        uint32_t pixelIdx = 0;
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const uint32_t shuffled = shuffle32(static_cast<uint32_t>(pixelIdx));
+                const uint32_t shuffled = shuffle32(static_cast<uint32_t>(x + y * matrixWidth));
                 const uint8_t brightness = sin8(static_cast<uint8_t>(shuffled * 8 + offset));
                 matrix->setPixel(x, y, csColorRGBA{255, brightness, brightness, brightness});
-                ++pixelIdx;
             }
         }
     }
