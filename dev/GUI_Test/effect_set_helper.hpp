@@ -8,6 +8,7 @@
 #include "../../src/color_rgba.hpp"
 #include "../../src/matrix_render.hpp"
 #include "../../src/matrix_render_efffects.hpp"
+#include "../../src/matrix_render_pipes.hpp"
 #include "../../src/fixed_point.hpp"
 #include "../../src/fonts.h"
 
@@ -27,35 +28,30 @@ using amp::csRenderAverageArea;
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects
 // matrix: reference to matrix (used for some effects like AverageArea)
-// effectId: ID of the effect to create
-// isBaseEffect: true for base effects (eff1_base), false for secondary effects (eff2)
-void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId, bool isBaseEffect) {
+// effectId: ID of the effect to create (1-4: base effects, 5-8: secondary effects, 255: skip)
+void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId) {
     if (effectId == 0) {
         return;
     }
 
-    if (isBaseEffect) {
-        // Create base effect based on number
-        switch (effectId) {
-            case 1:
-                effectManager.add(new csRenderGradientWaves());
-                break;
-            case 2:
-                effectManager.add(new csRenderGradientWavesFP());
-                break;
-            case 3:
-                effectManager.add(new csRenderPlasma());
-                break;
-            case 4:
-                effectManager.add(new csRenderSnowfall());
-                break;
-            default:
-                ;
-        }
-    } else {
-        // Create secondary effect based on number
-        switch (effectId) {
-            case 1: {
+    switch (effectId) {
+        // Base effects (1-4)
+        case 1: // GradientWaves
+            effectManager.add(new csRenderGradientWaves());
+            break;
+        case 2: // GradientWavesFP
+            effectManager.add(new csRenderGradientWavesFP());
+            break;
+        case 3: // Plasma
+            effectManager.add(new csRenderPlasma());
+            break;
+        case 4: // Snowfall
+            effectManager.add(new csRenderSnowfall());
+            break;
+        
+        // Secondary effects (5-8)
+        case 5: // Glyph
+            {
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
                 glyph->backgroundColor = csColorRGBA{196, 0, 0, 0};
@@ -71,16 +67,18 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 effectManager.add(glyph);
                 break;
             }
-            case 2: {
-                auto* circle = new csRenderCircleGradient();
-                circle->color = csColorRGBA{255, 255, 255, 255};
-                circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
-                circle->gradientOffset = 127;
-                circle->renderRectAutosize = true; // использовать весь rect матрицы
-                effectManager.add(circle);
-                break;
-            }
-            case 3: {
+        case 6: // Circle
+            {
+            auto* circle = new csRenderCircleGradient();
+            circle->color = csColorRGBA{255, 255, 255, 255};
+            circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
+            circle->gradientOffset = 127;
+            circle->renderRectAutosize = true; // использовать весь rect матрицы
+            effectManager.add(circle);
+            break;
+        }
+        case 7: // Clock
+            {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -127,21 +125,21 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 effectManager.add(digitGlyph);
                 break;
             }
-            case 4: {
-                auto* averageArea = new csRenderAverageArea();
-                averageArea->matrix = &matrix;
-                averageArea->matrixSource = &matrix;
-                averageArea->renderRectAutosize = false;
-                averageArea->rectSource = amp::csRect{1, 1, 4, 4};
-                averageArea->rectDest = amp::csRect{1, 1, 4, 4};
-                effectManager.add(averageArea);
-                break;
-            }
-            case 255:
-                ; // slip - remove "effect2"
-            default:
-                ;
+        case 8: // AverageArea
+            {
+            auto* averageArea = new csRenderAverageArea();
+            averageArea->matrix = &matrix;
+            averageArea->matrixSource = &matrix;
+            averageArea->renderRectAutosize = false;
+            averageArea->rectSource = amp::csRect{1, 1, 4, 4};
+            averageArea->rectDest = amp::csRect{1, 1, 4, 4};
+            effectManager.add(averageArea);
+            break;
         }
+        case 255:
+            ; // slip - remove "effect2"
+        default:
+            ;
     }
 }
 

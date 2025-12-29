@@ -88,16 +88,16 @@ public:
                 createEffectBundleDouble(4, 0);
                 break;
             case SDLK_r:
-                createEffectBundleDouble(0, 1);
+                createEffectBundleDouble(0, 5);
                 break;
             case SDLK_t:
-                createEffectBundleDouble(0, 2);
+                createEffectBundleDouble(0, 6);
                 break;
             case SDLK_c:
-                createEffectBundleDouble(0, 3);
+                createEffectBundleDouble(0, 7);
                 break;
             case SDLK_b:
-                createEffectBundleDouble(0, 4);
+                createEffectBundleDouble(0, 8);
                 break;
             case SDLK_n:
                 createEffectBundleDouble(0, 255);
@@ -133,7 +133,7 @@ public:
     }
 
     uint8_t eff1_base = 1;
-    uint8_t eff2 = 1;
+    uint8_t eff2 = 5;
 
     void createEffectBundleDouble(uint8_t a_eff1_base, uint8_t a_eff2) {
         if (a_eff1_base != 0) {
@@ -148,12 +148,12 @@ public:
 
         // Add base effect if eff1_base is set
         if (eff1_base != 0) {
-            loadEffectPreset(effectManager, matrix, eff1_base, true);
+            loadEffectPreset(effectManager, matrix, eff1_base);
         }
 
         // Add secondary effect if eff2 is set
         if (eff2 != 0) {
-            loadEffectPreset(effectManager, matrix, eff2, false);
+            loadEffectPreset(effectManager, matrix, eff2);
         }
     }
 
