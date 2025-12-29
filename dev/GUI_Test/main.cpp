@@ -11,6 +11,7 @@
 #include "../../src/matrix_render_pipes.hpp"
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
+#include "../../src/effect_manager.hpp"
 #include "copy_line_index_helper.hpp"
 
 using amp::csColorRGBA;
@@ -47,28 +48,10 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    static constexpr size_t maxEffects = 10;
-    csEffectBase* effects[maxEffects] = {};
+    csEffectManager effectManager{matrix};
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
-
-    void bindEffectMatrix(csEffectBase* eff) {
-        if (auto* m = dynamic_cast<amp::csRenderMatrixBase*>(eff)) {
-            m->setMatrix(matrix);
-        }
-    }
-
-    void deleteEffect(csEffectBase* eff) {
-        if (!eff) {
-            return;
-        }
-        // Delete the effect itself
-        delete eff;
-    }
-
-
-
 
     void handleKeyPress(SDL_Keysym keysym) {
         switch (keysym.sym) {
@@ -125,14 +108,14 @@ public:
             case SDLK_KP_PLUS:
             case SDLK_PLUS:
                 // Increase scale for dynamic effects
-                adjustEffectScale(effects[0], 0.1f);
-                adjustEffectScale(effects[1], 0.1f);
+                adjustEffectScale(effectManager[0], 0.1f);
+                adjustEffectScale(effectManager[1], 0.1f);
                 break;
             case SDLK_KP_MINUS:
             case SDLK_MINUS:
                 // Decrease scale for dynamic effects
-                adjustEffectScale(effects[0], -0.1f);
-                adjustEffectScale(effects[1], -0.1f);
+                adjustEffectScale(effectManager[0], -0.1f);
+                adjustEffectScale(effectManager[1], -0.1f);
                 break;
             default:
                 break;
@@ -160,24 +143,21 @@ public:
         }
 
         // Clear all effects
-        for (auto*& eff : effects) {
-            deleteEffect(eff);
-            eff = nullptr;
-        }
+        effectManager.clearAll();
 
         // Create base effect based on number
         switch (eff1_base) {
             case 1:
-                effects[0] = new csRenderGradientWaves();
+                effectManager.set(0, new csRenderGradientWaves());
                 break;
             case 2:
-                effects[0] = new csRenderGradientWavesFP();
+                effectManager.set(0, new csRenderGradientWavesFP());
                 break;
             case 3:
-                effects[0] = new csRenderPlasma();
+                effectManager.set(0, new csRenderPlasma());
                 break;
             case 4:
-                effects[0] = new csRenderSnowfall();
+                effectManager.set(0, new csRenderSnowfall());
                 break;
             default:
                 ;
@@ -198,7 +178,7 @@ public:
                     amp::to_size(glyph->fontWidth + 2),
                     amp::to_size(glyph->fontHeight + 2)
                 };
-                effects[1] = glyph;
+                effectManager.set(1, glyph);
                 break;
             }
             case 2: {
@@ -209,7 +189,7 @@ public:
                 circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
                 circle->gradientOffset = 127;
                 circle->renderRectAutosize = true; // использовать весь rect матрицы
-                effects[1] = circle;
+                effectManager.set(1, circle);
                 break;
             }
             case 3: {
@@ -254,9 +234,9 @@ public:
                 clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
                 
                 // Add effects to array (fill first, then clock on top, then digitGlyph for proper cleanup)
-                effects[1] = fill;
-                effects[2] = clock;
-                effects[3] = digitGlyph;
+                effectManager.set(1, fill);
+                effectManager.set(2, clock);
+                effectManager.set(3, digitGlyph);
                 break;
             }
             case 4: {
@@ -266,18 +246,13 @@ public:
                 averageArea->renderRectAutosize = false;
                 averageArea->rectSource = amp::csRect{1, 1, 4, 4};
                 averageArea->rectDest = amp::csRect{1, 1, 4, 4};
-                effects[1] = averageArea;
+                effectManager.set(1, averageArea);
                 break;
             }
             case 255:
                 ; // slip - remove "effect2"
             default:
                 ;
-        }
-
-        // Bind matrix to the created effects
-        for (auto* eff : effects) {
-            bindEffectMatrix(eff);
         }
     }
 
@@ -370,7 +345,7 @@ public:
             const uint32_t ticks = SDL_GetTicks();
             const amp::tTime currTime = static_cast<amp::tTime>(ticks);
 
-            for (auto* eff : effects) {
+            for (auto* eff : effectManager) {
                 updateAndRenderEffect(eff, ticks, currTime);
             }
             copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
@@ -409,8 +384,8 @@ public:
                                );
 
         // Draw scale property
-        if (effects[0]) {
-            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effects[0])) {
+        if (effectManager[0]) {
+            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effectManager[0])) {
                 const float scaleValue = dynamicEffect->scale.to_float();
                 drawNumber(10, 10, scaleValue, "scale: %.2f");
             }
@@ -427,15 +402,11 @@ public:
             return;
         }
         matrix = csMatrixPixels{w, h};
-        for (auto* eff : effects) {
-            bindEffectMatrix(eff);
-        }
+        effectManager.bindMatrix();
     }
 
     void done() {
-        for (auto* eff : effects) {
-            deleteEffect(eff);
-        }
+        effectManager.clearAll();
         if (font) {
             TTF_CloseFont(font);
         }
