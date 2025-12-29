@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
 #include "effect_manager.hpp"
+#include "effect_presets.hpp"
 #include "led_config.hpp"
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
@@ -26,8 +27,6 @@ constexpr uint8_t HEIGHT = 7;
 constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
 
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
-amp::csRenderDigitalClock clock;
-amp::csRenderDigitalClockDigit digitGlyph;
 amp::csRandGen rng;
 
 // Effect manager
@@ -112,37 +111,8 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    // Get font dimensions for clock size calculation
-    const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
-    const amp::tMatrixPixelsSize fontWidth = static_cast<amp::tMatrixPixelsSize>(font.width());
-    const amp::tMatrixPixelsSize fontHeight = static_cast<amp::tMatrixPixelsSize>(font.height());
-    constexpr amp::tMatrixPixelsSize spacing = 1; // spacing between digits
-    constexpr uint8_t digitCount = 4; // clock displays 4 digits
-    
-    // Calculate clock rect size: 4 digits + 3 spacings between them
-    const amp::tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
-    const amp::tMatrixPixelsSize clockHeight = fontHeight;
-    
-    // Configure glyph effect for rendering digits
-    digitGlyph.setFont(font);
-    digitGlyph.color = amp::csColorRGBA{255, 255, 255, 255};
-    digitGlyph.backgroundColor = amp::csColorRGBA{255, 0, 0, 0};
-    digitGlyph.renderRectAutosize = false;
-    
-    // Set renderDigit via propRenderDigit property
-    clock.renderDigit = &digitGlyph;
-    
-    // Notify clock that propRenderDigit property changed
-    // This will validate the glyph type and update its matrix if needed
-    clock.propChanged(amp::csRenderDigitalClock::propRenderDigit);
-    
-    clock.renderRectAutosize = false;
-    clock.rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
-    
-    // Add effects to manager (clock first, then digitGlyph)
-    // Note: effectManager automatically binds matrix to effects via bindEffectMatrix()
-    effectManager.set(0, &clock);
-    effectManager.set(1, &digitGlyph);
+    // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
+    loadEffectPreset(effectManager, canvas, 1);
 }
 
 void loop() {
@@ -158,7 +128,9 @@ void loop() {
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
     // Update time for clock effect
-    clock.time = timeValue;
+    if (auto* clock = dynamic_cast<amp::csRenderDigitalClock*>(effectManager[0])) {
+        clock->time = timeValue;
+    }
     
     // Update and render all effects
     effectManager.updateAndRenderAll(rng, currTime);

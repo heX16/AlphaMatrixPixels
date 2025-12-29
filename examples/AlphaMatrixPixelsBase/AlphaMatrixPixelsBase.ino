@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
 #include "effect_manager.hpp"
+#include "effect_presets.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
 
@@ -27,10 +28,6 @@ constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
 CRGB leds[NUM_LEDS];
 
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
-amp::csRenderPlasma plasma;
-amp::csRenderGradientWaves gradientWaves;
-amp::csRenderSnowfall snowfall;
-amp::csRenderGlyph glyph;
 amp::csRandGen rng;
 csEffectManager effectManager(canvas);
 
@@ -61,28 +58,6 @@ CLEDController* controller = nullptr;
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    // Configure effects (setMatrix will be called automatically by manager)
-    plasma.scale = amp::math::csFP16(0.3f);
-    plasma.speed = amp::math::csFP16(1.0f);
-
-    gradientWaves.scale = amp::math::csFP16(0.5f);
-    gradientWaves.speed = amp::math::csFP16(1.0f);
-
-    snowfall.color = amp::csColorRGBA{255, 255, 255, 255};
-
-    // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
-    glyph.color = amp::csColorRGBA{255, 255, 255, 255};
-    glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
-    glyph.symbolIndex = 0;
-    glyph.setFont(amp::getStaticFontTemplate<amp::csFont3x5Digits>());
-    glyph.renderRectAutosize = false;
-    glyph.rectDest = amp::csRect{
-        1,
-        1,
-        glyph.fontWidth,
-        glyph.fontHeight
-    };
-
     amp::wifi_ota::setup();
 }
 
@@ -102,12 +77,12 @@ void loop() {
     // Clear all effects and add needed ones based on effectIndex
     effectManager.clearAll();
     if (effectIndex == 0) {
-        effectManager.set(0, &plasma);
+        loadEffectPreset(effectManager, canvas, 1); // Plasma
     } else if (effectIndex == 1) {
-        effectManager.set(0, &gradientWaves);
+        loadEffectPreset(effectManager, canvas, 2); // GradientWaves
     } else {
-        effectManager.set(0, &gradientWaves);
-        effectManager.set(1, &snowfall);
+        loadEffectPreset(effectManager, canvas, 2); // GradientWaves
+        loadEffectPreset(effectManager, canvas, 3); // Snowfall
     }
     
     // Update and render all effects
