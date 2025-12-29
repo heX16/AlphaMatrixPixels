@@ -29,7 +29,7 @@ using amp::csRenderAverageArea;
 // matrix: reference to matrix (used for some effects like AverageArea)
 // effectId: ID of the effect to create
 // isBaseEffect: true for base effects (eff1_base), false for secondary effects (eff2)
-void addEffectSet(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId, bool isBaseEffect) {
+void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId, bool isBaseEffect) {
     if (effectId == 0) {
         return;
     }

@@ -148,12 +148,12 @@ public:
 
         // Add base effect if eff1_base is set
         if (eff1_base != 0) {
-            addEffectSet(effectManager, matrix, eff1_base, true);
+            loadEffectPreset(effectManager, matrix, eff1_base, true);
         }
 
         // Add secondary effect if eff2 is set
         if (eff2 != 0) {
-            addEffectSet(effectManager, matrix, eff2, false);
+            loadEffectPreset(effectManager, matrix, eff2, false);
         }
     }
 
