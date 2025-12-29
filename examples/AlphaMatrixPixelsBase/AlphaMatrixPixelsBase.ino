@@ -1,5 +1,6 @@
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
+#include "effect_manager.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
 
@@ -31,6 +32,7 @@ amp::csRenderGradientWaves gradientWaves;
 amp::csRenderSnowfall snowfall;
 amp::csRenderGlyph glyph;
 amp::csRandGen rng;
+csEffectManager effectManager(canvas);
 
 void setup() {
     constexpr uint16_t cLedCount = NUM_LEDS;
@@ -59,19 +61,16 @@ CLEDController* controller = nullptr;
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    plasma.setMatrix(canvas);
+    // Configure effects (setMatrix will be called automatically by manager)
     plasma.scale = amp::math::csFP16(0.3f);
     plasma.speed = amp::math::csFP16(1.0f);
 
-    gradientWaves.setMatrix(canvas);
     gradientWaves.scale = amp::math::csFP16(0.5f);
     gradientWaves.speed = amp::math::csFP16(1.0f);
 
-    snowfall.setMatrix(canvas);
     snowfall.color = amp::csColorRGBA{255, 255, 255, 255};
 
     // Digit overlay configuration matches GUI_Test/main.cpp (csRenderGlyph defaults).
-    glyph.setMatrix(canvas);
     glyph.color = amp::csColorRGBA{255, 255, 255, 255};
     glyph.backgroundColor = amp::csColorRGBA{128, 0, 0, 0};
     glyph.symbolIndex = 0;
@@ -96,20 +95,23 @@ void loop() {
 #endif
 
     const uint8_t effectIndex = static_cast<uint8_t>((millis() / 20000u) % 3u);
-    const uint16_t t = static_cast<uint16_t>(millis());
+    const amp::tTime currTime = static_cast<amp::tTime>(millis());
 
     canvas.clear();
-    //gradientWaves.render(rng, t);
     
+    // Clear all effects and add needed ones based on effectIndex
+    effectManager.clearAll();
     if (effectIndex == 0) {
-        plasma.render(rng, t);
+        effectManager.set(0, &plasma);
     } else if (effectIndex == 1) {
-        gradientWaves.render(rng, t);
+        effectManager.set(0, &gradientWaves);
     } else {
-        gradientWaves.render(rng, t);
-        snowfall.recalc(rng, t);
-        snowfall.render(rng, t);
+        effectManager.set(0, &gradientWaves);
+        effectManager.set(1, &snowfall);
     }
+    
+    // Update and render all effects
+    effectManager.updateAndRenderAll(rng, currTime);
     
 
     /*

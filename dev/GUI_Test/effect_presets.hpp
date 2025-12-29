@@ -1,6 +1,6 @@
-// Helper function for adding effect sets to effect manager
-#ifndef EFFECT_SET_HELPER_HPP
-#define EFFECT_SET_HELPER_HPP
+// Helper function for adding effect presets to effect manager
+#ifndef EFFECT_PRESETS_HPP
+#define EFFECT_PRESETS_HPP
 
 #include <stdint.h>
 #include "../../src/effect_manager.hpp"
@@ -143,5 +143,5 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
     }
 }
 
-#endif // EFFECT_SET_HELPER_HPP
+#endif // EFFECT_PRESETS_HPP
 
