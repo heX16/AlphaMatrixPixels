@@ -13,6 +13,7 @@
 #include "../../src/fixed_point.hpp"
 #include "../../src/effect_manager.hpp"
 #include "copy_line_index_helper.hpp"
+#include "effect_set_helper.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
@@ -60,46 +61,46 @@ public:
                 break;
             case SDLK_1:
                 recreateMatrix(16, 16);
-                createEffectBundle(0, 0);
+                createEffectBundleDouble(0, 0);
                 break;
             case SDLK_2:
                 recreateMatrix(23, 11);
-                createEffectBundle(0, 0);
+                createEffectBundleDouble(0, 0);
                 break;
             case SDLK_3:
                 recreateMatrix(8, 8);
-                createEffectBundle(0, 0);
+                createEffectBundleDouble(0, 0);
                 break;
             case SDLK_4:
                 recreateMatrix(19, 7);
-                createEffectBundle(0, 0);
+                createEffectBundleDouble(0, 0);
                 break;
             case SDLK_w:
-                createEffectBundle(1, 0);
+                createEffectBundleDouble(1, 0);
                 break;
             case SDLK_e:
-                createEffectBundle(2, 0);
+                createEffectBundleDouble(2, 0);
                 break;
             case SDLK_q:
-                createEffectBundle(3, 0);
+                createEffectBundleDouble(3, 0);
                 break;
             case SDLK_s:
-                createEffectBundle(4, 0);
+                createEffectBundleDouble(4, 0);
                 break;
             case SDLK_r:
-                createEffectBundle(0, 1);
+                createEffectBundleDouble(0, 1);
                 break;
             case SDLK_t:
-                createEffectBundle(0, 2);
+                createEffectBundleDouble(0, 2);
                 break;
             case SDLK_c:
-                createEffectBundle(0, 3);
+                createEffectBundleDouble(0, 3);
                 break;
             case SDLK_b:
-                createEffectBundle(0, 4);
+                createEffectBundleDouble(0, 4);
                 break;
             case SDLK_n:
-                createEffectBundle(0, 255);
+                createEffectBundleDouble(0, 255);
                 break;
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
@@ -134,125 +135,7 @@ public:
     uint8_t eff1_base = 1;
     uint8_t eff2 = 1;
 
-    // Abstract function: adds effects to the array based on effect ID
-    // isBaseEffect: true for base effects (eff1_base), false for secondary effects (eff2)
-    void addEffectSet(uint8_t effectId, bool isBaseEffect) {
-        if (effectId == 0) {
-            return;
-        }
-
-        if (isBaseEffect) {
-            // Create base effect based on number
-            switch (effectId) {
-                case 1:
-                    effectManager.add(new csRenderGradientWaves());
-                    break;
-                case 2:
-                    effectManager.add(new csRenderGradientWavesFP());
-                    break;
-                case 3:
-                    effectManager.add(new csRenderPlasma());
-                    break;
-                case 4:
-                    effectManager.add(new csRenderSnowfall());
-                    break;
-                default:
-                    ;
-            }
-        } else {
-            // Create secondary effect based on number
-            switch (effectId) {
-                case 1: {
-                    auto* glyph = new csRenderGlyph();
-                    glyph->color = csColorRGBA{255, 255, 255, 255};
-                    glyph->backgroundColor = csColorRGBA{196, 0, 0, 0};
-                    glyph->symbolIndex = 0;
-                    glyph->setFont(amp::getStaticFontTemplate<amp::csFont4x7Digits>());
-                    glyph->renderRectAutosize = false;
-                    glyph->rectDest = amp::csRect{
-                        2,
-                        2,
-                        amp::to_size(glyph->fontWidth + 2),
-                        amp::to_size(glyph->fontHeight + 2)
-                    };
-                    effectManager.add(glyph);
-                    break;
-                }
-                case 2: {
-                    auto* circle = new csRenderCircleGradient();
-                    circle->color = csColorRGBA{255, 255, 255, 255};
-                    circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
-                    circle->gradientOffset = 127;
-                    circle->renderRectAutosize = true; // использовать весь rect матрицы
-                    effectManager.add(circle);
-                    break;
-                }
-                case 3: {
-                    // Get font dimensions for clock size calculation
-                    const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
-                    const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
-                    const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
-                    constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
-                    constexpr uint8_t digitCount = 4; // clock displays 4 digits
-                    
-                    // Calculate clock rect size: 4 digits + 3 spacings between them
-                    const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
-                    const tMatrixPixelsSize clockHeight = fontHeight;
-                    
-                    // Create fill effect (background) - covers clock rect
-                    auto* fill = new csRenderFill();
-                    fill->color = csColorRGBA{192, 0, 0, 0};
-                    fill->renderRectAutosize = false;
-                    fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
-                    
-                    // Create clock effect
-                    auto* clock = new csRenderDigitalClock();
-                    
-                    // Create renderDigit effect for rendering digits
-                    auto* digitGlyph = clock->createRenderDigit();
-                    digitGlyph->setFont(font);
-                    digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-                    digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
-                    digitGlyph->renderRectAutosize = false;
-                    digitGlyph->disabled = true; // Disable direct rendering, only used by clock
-                    
-                    // Set renderDigit via propRenderDigit property
-                    clock->renderDigit = digitGlyph;
-                    
-                    // Notify clock that propRenderDigit property changed
-                    // This will validate the glyph type and update its matrix if needed
-                    if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
-                        digitalClock->propChanged(amp::csRenderDigitalClock::propRenderDigit);
-                    }
-                    
-                    clock->renderRectAutosize = false;
-                    clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
-                    
-                    // Add effects to array (fill first, then clock on top, then digitGlyph for proper cleanup)
-                    effectManager.add(fill);
-                    effectManager.add(clock);
-                    effectManager.add(digitGlyph);
-                    break;
-                }
-                case 4: {
-                    auto* averageArea = new csRenderAverageArea();
-                    averageArea->matrix = &matrix;
-                    averageArea->matrixSource = &matrix;
-                    averageArea->renderRectAutosize = false;
-                    averageArea->rectSource = amp::csRect{1, 1, 4, 4};
-                    averageArea->rectDest = amp::csRect{1, 1, 4, 4};
-                    effectManager.add(averageArea);
-                    break;
-                }
-                case 255:
-                    ; // slip - remove "effect2"
-                default:
-                    ;
-            }
-        }
-    }
-
-    void createEffectBundle(uint8_t a_eff1_base, uint8_t a_eff2) {
+    void createEffectBundleDouble(uint8_t a_eff1_base, uint8_t a_eff2) {
         if (a_eff1_base != 0) {
             eff1_base = a_eff1_base;
         }
@@ -265,12 +148,12 @@ public:
 
         // Add base effect if eff1_base is set
         if (eff1_base != 0) {
-            addEffectSet(eff1_base, true);
+            addEffectSet(effectManager, matrix, eff1_base, true);
         }
 
         // Add secondary effect if eff2 is set
         if (eff2 != 0) {
-            addEffectSet(eff2, false);
+            addEffectSet(effectManager, matrix, eff2, false);
         }
     }
 
@@ -344,7 +227,7 @@ public:
         }
         
         recreateMatrix(16, 16);
-        createEffectBundle(1, 0);
+        createEffectBundleDouble(1, 0);
         return true;
     }
 
