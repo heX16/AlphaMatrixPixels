@@ -28,8 +28,10 @@ enum class PropType : uint8_t {
     Int32 = 6,
     FP16 = 7,
     FP32 = 8,
+    // t_float = ??? - wip
     Bool = 9,
     Ptr = 10,
+    // PROGMEM const
     StrConst = 11,
     Str = 12,
     // `csMatrixPixels`
@@ -39,10 +41,40 @@ enum class PropType : uint8_t {
     // `csColorRGBA`
     Color = 15,
     // WIP ...
+    // указывает на структуру,
+    // которая содержит указатель на csEffect, и номер свойства куда нужно писать (prop ID)
+    // в названии описывается что контретно делает этот link (как он меняет prop).
+    // работает в связке с LinkToEffectPropType.
     LinkToEffectProp = 16,
-    // `PropType`
+    // WIP `PropType`
+    // Read Only. Value type: UInt8.
+    // это допустимый тип свойства для LinkToEffectProp.
+    // это свойство всегда должно следовать за LinkToEffectProp.
+    // например если это свойство имеет значение `PropType::UInt16`,
+    // то это значит что LinkToEffectProp может указывать только на свойства имеющие такой тип.
+    // на самом деле это не совсем так. точнее совсем не так.
+    // алгоритмы связывания делают умную работу,
+    // например все числа можно связывать между друг другом,
+    // просто в момент записи будет сделанно приведение типа.
+    // с EffectBase и подобными - там еще сложнее,
+    // учитывается реультат функции queryClassFamily.
     LinkToEffectPropType = 17,
+    // wip   "_event emmiter_" -> "event recieve point"
+    // Это указатель на "получатель события".
+    // указывает на структуру,
+    // которая содержит указатель на csEffect, и номер "EventRecvPoint",
+    // csEventBase.EventRecvPoint - это аргумент который передается в функцию
+    // которая получает события.
+    // EventRecvPoint передается в объекте csEventBase.
+    LinkToEffectEvent = 18,
+    // wip   "event emmiter" -> "_event recieve point_"
+    // Read Only. Value type: UInt8.
+    // Это особое свойство.
+    // Множество этих свойств создает список.
+    // Это просто список "EventRecvPoint".
+    EffectEventRecvPoint = 19,
 
+    // Special:
     EffectBase = 32,
     EffectMatrixDest = 33,
     EffectPipe = 34,
