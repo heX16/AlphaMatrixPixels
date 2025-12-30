@@ -41,10 +41,6 @@ public:
     // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
 
-    // Configure remap array dimensions (calculated from cRemapSrcArrayLen: 12x5)
-    static constexpr tMatrixPixelsSize remapWidth = 12;
-    static constexpr tMatrixPixelsSize remapHeight = 5;
-
         // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
 
@@ -106,16 +102,16 @@ public:
         remapEffect->matrix = &matrix1D;
         remapEffect->renderRectAutosize = false;
         remapEffect->remapArray = cRemapSrcArray;
-        remapEffect->remapWidth = remapWidth;
-        remapEffect->remapHeight = remapHeight;
+        remapEffect->remapWidth = cSrcWidth;
+        remapEffect->remapHeight = cSrcHeight;
         remapEffect->rewrite = true;
         //remapEffect->rectSource.x = 2;
         //remapEffect->rectSource.y = 2;
         // TODO: WIP!!!
         remapEffect->rectSource.x = 0;
         remapEffect->rectSource.y = 0;
-        remapEffect->rectSource.height = remapHeight;
-        remapEffect->rectSource.width = remapWidth;
+        remapEffect->rectSource.height = cSrcHeight;
+        remapEffect->rectSource.width = cSrcWidth;
     }
 };
 

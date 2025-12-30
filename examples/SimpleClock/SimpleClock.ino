@@ -10,6 +10,7 @@
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
 #include "driver_serial.hpp"
+#include "remap_config.hpp"
 
 #define DIGIT_TEST_MODE
 #define HORIZONTAL_LINE_DEBUG_MODE
@@ -61,34 +62,24 @@ csEffectManager effectManager(canvas);
 class csRemap1DHelper {
 public:
     // 1D destination matrix (height=1)
-    static constexpr amp::tMatrixPixelsSize RemapDestMatrixLen = 28;
-    amp::csMatrixPixels matrix1D{RemapDestMatrixLen, 1};
+    amp::csMatrixPixels matrix1D{cRemapDestMatrixLen, 1};
 
     // Remap effect
     amp::csRenderRemap1DByConstArray remapEffect;
-
-    // Remap array: src(x,y) -> dst x (row-major order, 1-based indexing)
-    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
-    static constexpr amp::tMatrixPixelsSize RemapIndexLen = 60; // 12x5
-    static const amp::tMatrixPixelsCoord remapArray[RemapIndexLen] PROGMEM;
-
-    // Remap array dimensions
-    static constexpr amp::tMatrixPixelsSize remapWidth = 12;
-    static constexpr amp::tMatrixPixelsSize remapHeight = 5;
 
     csRemap1DHelper() {
         // Configure remap effect
         remapEffect.matrix = &matrix1D;
         remapEffect.renderRectAutosize = false;
-        remapEffect.remapArray = remapArray;
-        remapEffect.remapWidth = remapWidth;
-        remapEffect.remapHeight = remapHeight;
+        remapEffect.remapArray = cRemapSrcArray;
+        remapEffect.remapWidth = cSrcWidth;
+        remapEffect.remapHeight = cSrcHeight;
         remapEffect.rewrite = true;
         remapEffect.rectSource.x = 0;
         remapEffect.rectSource.y = 0;
-        remapEffect.rectSource.width = remapWidth;
-        remapEffect.rectSource.height = remapHeight;
-        remapEffect.rectDest = amp::csRect{0, 0, RemapDestMatrixLen, 1};
+        remapEffect.rectSource.width = cSrcWidth;
+        remapEffect.rectSource.height = cSrcHeight;
+        remapEffect.rectDest = amp::csRect{0, 0, cRemapDestMatrixLen, 1};
     }
 
     // Update remap source and render to fill matrix1D
@@ -99,19 +90,9 @@ public:
     }
 };
 
-// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
-const amp::tMatrixPixelsCoord csRemap1DHelper::remapArray[csRemap1DHelper::RemapIndexLen] PROGMEM = {
-    0, 3, 0, 0, 9, 0, 0, 17, 0, 0, 24, 0,
-    4, 0, 2, 10, 0, 0/*x*/, 18, 0, 16, 25, 0, 23,
-    0, 1, 0, 0, 8, 0, 0, 15, 0, 0, 22, 0,
-    5, 0, 7, 11, 0, 13, 19, 0, 21, 26, 0, 28,
-    0, 6, 0, 0, 12, 0, 0, 20, 0, 0, 27, 0,
-
-};
-
 csRemap1DHelper remapHelper;
 
-CRGB leds[csRemap1DHelper::RemapDestMatrixLen];
+CRGB leds[cRemapDestMatrixLen];
 
 // Last time when debug output was printed (for 1 second interval)
 unsigned long lastDebugPrintTime = 0;
@@ -218,7 +199,7 @@ void loop() {
         remapHelper.matrix1D.fillArea(remapHelper.matrix1D.getRect(), amp::csColorRGBA(0, 0, 0));
         
         // Calculate current pixel index based on seconds
-        uint32_t pixelIndex = (millis() / 1000) % csRemap1DHelper::RemapDestMatrixLen;
+        uint32_t pixelIndex = (millis() / 1000) % cRemapDestMatrixLen;
         
         // Light up one pixel in white
         remapHelper.matrix1D.setPixelRewrite(static_cast<amp::tMatrixPixelsCoord>(pixelIndex), 0, amp::csColorRGBA(255, 255, 255));
