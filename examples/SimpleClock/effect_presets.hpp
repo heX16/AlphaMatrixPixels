@@ -58,6 +58,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 
                 clock->renderRectAutosize = false;
                 clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
+                clock->spacing = 0;
                 
                 // Add effects to manager (clock first, then digitGlyph for proper cleanup)
                 effectManager.add(clock);

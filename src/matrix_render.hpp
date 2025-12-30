@@ -79,6 +79,7 @@ enum class PropType : uint8_t {
     EffectMatrixDest = 33,
     EffectPipe = 34,
     EffectGlyph = 35,
+    EffectDigitalClock = 36,
     EffectUserArea = 64,
 };
 

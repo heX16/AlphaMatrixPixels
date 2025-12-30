@@ -12,21 +12,17 @@
 #include "driver_serial.hpp"
 #include "remap_config.hpp"
 
-#define DIGIT_TEST_MODE
-#define HORIZONTAL_LINE_DEBUG_MODE
+//#define DIGIT_TEST_MODE
+//#define HORIZONTAL_LINE_DEBUG_MODE
 
 // Debug mode: draw horizontal line in canvas matrix
 // #define HORIZONTAL_LINE_DEBUG_MODE
 
 // Enable clock rendering (set to 0 to disable clock digits)
-#ifndef AMP_ENABLE_CLOCK
-#define AMP_ENABLE_CLOCK 0
-#endif
+#define AMP_ENABLE_CLOCK 1
 
 // Enable Serial debug output (set to 0 to disable)
-#ifndef AMP_ENABLE_SERIAL_DEBUG
 #define AMP_ENABLE_SERIAL_DEBUG 0
-#endif
 
 // Button pins
 constexpr int cButton1Pin = 7;
@@ -34,19 +30,12 @@ constexpr int cButton2Pin = 8;
 
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.
-#ifndef AMP_ENABLE_GAMMA
 #define AMP_ENABLE_GAMMA 1
-#endif
 
 // FastLED color correction (channel scaling), e.g. TypicalLEDStrip.
 // This is NOT gamma correction; it can be enabled together with gamma.
-#ifndef AMP_ENABLE_COLOR_CORRECTION
 #define AMP_ENABLE_COLOR_CORRECTION 1
-#endif
-
-#ifndef AMP_COLOR_CORRECTION
 #define AMP_COLOR_CORRECTION TypicalLEDStrip
-#endif
 
 amp::csMatrixPixels canvas(12, 5);
 amp::csRandGen rng;
@@ -172,9 +161,10 @@ void loop() {
 
     #if AMP_ENABLE_CLOCK
     // Update time for clock effect
-    if (effectManager[0] != nullptr) {
-        auto* clock = static_cast<amp::csRenderDigitalClock*>(effectManager[0]);
-        
+    // Use safe type casting via queryClassFamily to check if effect is csRenderDigitalClock
+    if (auto* clock = static_cast<amp::csRenderDigitalClock*>(
+        effectManager[0]->queryClassFamily(amp::PropType::EffectDigitalClock)
+    )) {
         #ifdef DIGIT_TEST_MODE
         // Test mode: display last digit of seconds on all 4 positions
         //uint8_t lastSecondDigit = (millis() * 1000) % 10;
@@ -214,10 +204,10 @@ void loop() {
         remapHelper.update(canvas, rng, currTime);
         
         // Check if first button is pressed - fill matrix with white
-        if (digitalRead(cButton2Pin) == LOW) {
+        /*if (digitalRead(cButton2Pin) == LOW) {
             canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
             remapHelper.update(canvas, rng, currTime);
-        }
+        }*/
     }
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);

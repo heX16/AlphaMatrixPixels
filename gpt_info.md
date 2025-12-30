@@ -121,6 +121,25 @@ API:
 - **`getPropInfo(propNum, info)`** — заполняет `csPropInfo` для свойства с номером `propNum` (нумерация с 1).
 - **`propChanged(propNum)`** — вызывается при изменении свойства (для обновления кэша, пересчёта зависимостей). Нумерация с 1!
 
+### Идентификация семейств классов (Class Family System)
+
+Система безопасного приведения типов без RTTI (замена `dynamic_cast` для Arduino с `-fno-rtti`).
+
+API:
+- **`getClassFamily()`** — возвращает `PropType` идентификатор семейства класса.
+- **`queryClassFamily(PropType familyId)`** — возвращает указатель на объект, если он принадлежит запрошенному семейству, иначе `nullptr`.
+
+Доступные семейства: `EffectBase`, `EffectMatrixDest`, `EffectGlyph`, `EffectPipe`, `EffectDigitalClock`.
+
+Пример:
+```cpp
+if (auto* clock = static_cast<amp::csRenderDigitalClock*>(
+    eff->queryClassFamily(amp::PropType::EffectDigitalClock)
+)) {
+    clock->time = 1234;
+}
+```
+
 ### Область рендера (`rect`)
 
 Каждый рендер, наследующий `csRenderMatrixBase`, имеет поле `rect` типа `csRect`. Эффект рисует **только внутри этого прямоугольника**.

@@ -1167,6 +1167,23 @@ public:
         // renderDigit is managed externally, do not delete
     }
 
+    // Class family identifier
+    static constexpr PropType ClassFamilyId = PropType::EffectDigitalClock;
+
+    // Override to return digital clock renderer family
+    PropType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    // Override to check for digital clock renderer family
+    void* queryClassFamily(PropType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        // Check base class (csRenderMatrixBase) family
+        return csRenderMatrixBase::queryClassFamily(familyId);
+    }
+
     void propChanged(uint8_t propNum) override {
         csRenderMatrixBase::propChanged(propNum);
         if (propNum == propRenderDigit) {

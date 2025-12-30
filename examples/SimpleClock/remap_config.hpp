@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../src/matrix_types.hpp"
+#include "matrix_types.hpp"
 
 using amp::tMatrixPixelsSize;
 using amp::tMatrixPixelsCoord;
