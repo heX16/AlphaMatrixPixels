@@ -8,6 +8,7 @@
 #include "led_config.hpp"
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
+#include "driver_serial.hpp"
 
 #define DIGIT_TEST_MODE
 
@@ -97,6 +98,9 @@ csRemap1DHelper remapHelper;
 
 CRGB leds[csRemap1DHelper::RemapDestMatrixLen];
 
+// Last time when debug output was printed (for 1 second interval)
+unsigned long lastDebugPrintTime = 0;
+
 void setup() {
     constexpr uint16_t cLedCount = 12 * 5;
 
@@ -131,6 +135,24 @@ void setup() {
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
     loadEffectPreset(effectManager, canvas, 1);
+
+    // Initialize Serial for debug output
+    Serial.begin(115200);
+    // Wait for Serial to be ready (only on platforms with native USB)
+    // This will block on boards without USB, so use timeout
+    #if defined(ARDUINO_ARCH_AVR)
+        // For AVR (Arduino Nano/Uno), Serial is usually ready immediately
+        // But add small delay to ensure it's initialized
+        delay(100);
+    #elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+        // For ESP boards, wait for Serial with timeout
+        unsigned long startTime = millis();
+        while (!Serial && (millis() - startTime < 3000)) {
+            delay(10);
+        }
+    #endif
+    
+    Serial.println("Started");
 }
 
 void loop() {
@@ -158,20 +180,44 @@ void loop() {
     
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
-    // Update and render all effects
-    effectManager.updateAndRenderAll(rng, currTime);
-
-    // Remap 2D matrix to 1D matrix (after effects render)
-    remapHelper.update(canvas, rng, currTime);
-
-    // Check if first button is pressed - fill matrix with white
+    // Check if second button is pressed - pixel test mode
     if (digitalRead(cButton1Pin) == LOW) {
-        canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
+
+        remapHelper.matrix1D.clear();
+
+        // Fill entire 1D matrix with black
+        remapHelper.matrix1D.fillArea(remapHelper.matrix1D.getRect(), amp::csColorRGBA(0, 0, 0));
+        
+        // Calculate current pixel index based on seconds
+        uint32_t pixelIndex = (millis() / 1000) % csRemap1DHelper::RemapDestMatrixLen;
+        
+        // Light up one pixel in white
+        remapHelper.matrix1D.setPixelRewrite(static_cast<amp::tMatrixPixelsCoord>(pixelIndex), 0, amp::csColorRGBA(255, 255, 255));
+    } else {
+        // Normal mode: render effects
+        // Update and render all effects
+        effectManager.updateAndRenderAll(rng, currTime);
+
+        // Remap 2D matrix to 1D matrix (after effects render)
         remapHelper.update(canvas, rng, currTime);
+
+        // Check if first button is pressed - fill matrix with white
+        if (digitalRead(cButton2Pin) == LOW) {
+            canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
+            remapHelper.update(canvas, rng, currTime);
+        }
     }
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
+
+    // Print matrix to serial debug once per second
+    unsigned long currentTime = millis();
+    if (currentTime - lastDebugPrintTime >= 1000) {
+        amp::printMatrixToSerialDebug(canvas);
+        lastDebugPrintTime = currentTime;
+        Serial.println("----");
+    }
 
     delay(16); // ~60 FPS
 }
