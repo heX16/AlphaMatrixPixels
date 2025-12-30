@@ -9,6 +9,12 @@
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
 
+#define DIGIT_TEST_MODE
+
+// Button pins
+constexpr int cButton1Pin = 7;
+constexpr int cButton2Pin = 8;
+
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.
 #ifndef AMP_ENABLE_GAMMA
@@ -79,11 +85,12 @@ public:
 
 // Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
 const amp::tMatrixPixelsCoord csRemap1DHelper::remapArray[csRemap1DHelper::RemapIndexLen] PROGMEM = {
-    0, 3, 0, 0, 10, 0, 0, 17, 0, 0, 24, 0,
-    4, 0, 2, 11, 0, 9, 18, 0, 16, 25, 0, 23,
+    0, 3, 0, 0, 9, 0, 0, 17, 0, 0, 24, 0,
+    4, 0, 2, 10, 0, 0/*x*/, 18, 0, 16, 25, 0, 23,
     0, 1, 0, 0, 8, 0, 0, 15, 0, 0, 22, 0,
-    5, 0, 7, 12, 0, 14, 19, 0, 21, 26, 0, 28,
-    0, 6, 0, 0, 13, 0, 0, 20, 0, 0, 27, 0,
+    5, 0, 7, 11, 0, 13, 19, 0, 21, 26, 0, 28,
+    0, 6, 0, 0, 12, 0, 0, 20, 0, 0, 27, 0,
+
 };
 
 csRemap1DHelper remapHelper;
@@ -118,12 +125,17 @@ void setup() {
     // For manual time setting (uncomment if needed):
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
+    // Initialize button pins
+    pinMode(cButton1Pin, INPUT_PULLUP);
+    pinMode(cButton2Pin, INPUT_PULLUP);
+
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
     loadEffectPreset(effectManager, canvas, 1);
 }
 
 void loop() {
     // Read time from RTC
+    // TODO: время может отсутствовать - если модуль сбосился и не инициализирован
     DateTime now = rtc.now();
 
     canvas.clear();
@@ -131,7 +143,17 @@ void loop() {
     // Update time for clock effect
     if (effectManager[0] != nullptr) {
         auto* clock = static_cast<amp::csRenderDigitalClock*>(effectManager[0]);
+#ifdef DIGIT_TEST_MODE
+        // Test mode: display last digit of seconds on all 4 positions
+        //uint8_t lastSecondDigit = (millis() * 1000) % 10;
+        uint8_t lastSecondDigit = now.second() % 10;
+        //clock->time = lastSecondDigit * 1111u;
+        //clock->time = lastSecondDigit * 0100u;
+        clock->time = 1811;
+#else
+        // Normal mode: display hours and minutes
         clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
+#endif
     }
     
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
@@ -141,6 +163,12 @@ void loop() {
 
     // Remap 2D matrix to 1D matrix (after effects render)
     remapHelper.update(canvas, rng, currTime);
+
+    // Check if first button is pressed - fill matrix with white
+    if (digitalRead(cButton1Pin) == LOW) {
+        canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
+        remapHelper.update(canvas, rng, currTime);
+    }
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
