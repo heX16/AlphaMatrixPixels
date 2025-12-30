@@ -231,7 +231,7 @@ public:
         
         recreateMatrix(16, 16);
         createEffectBundleDouble(1, 0);
-        copyLineIndexHelper.configureRemapEffect();
+        copyLineIndexHelper.configureRemapEffect(&matrix);
         return true;
     }
 
@@ -253,7 +253,7 @@ public:
             for (auto* eff : effectManager) {
                 updateAndRenderEffect(eff, ticks, currTime);
             }
-            copyLineIndexHelper.updateCopyLineIndexSource(matrix, randGen, currTime);
+            copyLineIndexHelper.updateCopyLineIndexSource(randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
         }
@@ -308,6 +308,7 @@ public:
         }
         matrix = csMatrixPixels{w, h};
         effectManager.bindMatrix();
+        copyLineIndexHelper.configureRemapEffect(&matrix);
     }
 
     void done() {

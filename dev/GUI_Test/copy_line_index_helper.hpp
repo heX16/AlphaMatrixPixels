@@ -38,8 +38,11 @@ public:
     // 1D matrix storing remapped result. Created in constructor, updated every frame when active.
     csMatrixPixels matrix1D{0, 0};
 
-    // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
+    // Remap effect: reads from external 2D matrix (set via configureRemapEffect), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
+
+    // Source matrix pointer (set via configureRemapEffect)
+    csMatrixPixels* matrixSource_ = nullptr;
 
         // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
@@ -50,8 +53,7 @@ public:
         // Create remap effect
         remapEffect = new csRenderRemap1DByConstArray();
 
-        // Configure remap
-        configureRemapEffect();
+        // Configure remap - matrixSource must be set via configureRemapEffect() after construction
     }
 
     ~csCopyLineIndexHelper() {
@@ -64,12 +66,12 @@ public:
     // Update remap source and render to fill matrix1D.
     // Call AFTER effects render into source matrix, BEFORE render().
     // Only reads from rectSource area of source matrix (by default entire matrix bounds).
-    void updateCopyLineIndexSource(csMatrixPixels& matrix, csRandGen& randGen, amp::tTime currTime) {
-        if (!isActive || !remapEffect) {
+    void updateCopyLineIndexSource(csRandGen& randGen, amp::tTime currTime) {
+        if (!isActive || !remapEffect || !matrixSource_) {
             return;
         }
-        // Update matrixSource to point to matrix
-        remapEffect->matrixSource = &matrix;
+        // Update matrixSource to point to stored matrix
+        remapEffect->matrixSource = matrixSource_;
         // Render remap effect to fill matrix1D
         remapEffect->render(randGen, currTime);
     }
@@ -94,8 +96,8 @@ public:
     }
 
     // Configure remap effect settings
-    // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
-    void configureRemapEffect() {
+    // matrixSource will be stored internally and used in updateCopyLineIndexSource
+    void configureRemapEffect(csMatrixPixels* matrixSource) {
         if (!remapEffect) {
             return;
         }
@@ -112,6 +114,9 @@ public:
         remapEffect->rectSource.y = 0;
         remapEffect->rectSource.height = cSrcHeight;
         remapEffect->rectSource.width = cSrcWidth;
+        // Store matrixSource internally
+        matrixSource_ = matrixSource;
+        remapEffect->matrixSource = matrixSource;
     }
 };
 
