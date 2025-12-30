@@ -210,7 +210,10 @@ void loop() {
         }*/
     }
 
-    amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);
+    amp::copyMatrixToFastLED(remapHelper.matrix1D, 
+        leds, cRemapDestMatrixLen,
+        amp::csMappingPattern::SerpentineHorizontalInverted);
+    
     FastLED.show();
 
     #if AMP_ENABLE_SERIAL_DEBUG
