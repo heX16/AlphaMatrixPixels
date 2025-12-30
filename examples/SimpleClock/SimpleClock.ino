@@ -12,6 +12,11 @@
 
 #define DIGIT_TEST_MODE
 
+// Enable Serial debug output (set to 0 to disable)
+#ifndef AMP_ENABLE_SERIAL_DEBUG
+#define AMP_ENABLE_SERIAL_DEBUG 1
+#endif
+
 // Button pins
 constexpr int cButton1Pin = 7;
 constexpr int cButton2Pin = 8;
@@ -105,19 +110,20 @@ void setup() {
     constexpr uint16_t cLedCount = 12 * 5;
 
     CLEDController* controller = nullptr;
-#if (LED_INIT_MODE == 1)
+    
+    #if (LED_INIT_MODE == 1)
     controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cLedCount);
-#elif (LED_INIT_MODE == 2)
+    #elif (LED_INIT_MODE == 2)
     controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cLedRgbOrder>(leds, cLedCount);
-#elif (LED_INIT_MODE == 3)
+    #elif (LED_INIT_MODE == 3)
     controller = &FastLED.addLeds<LED_CHIPSET, cLedRgbOrder>(leds, cLedCount);
-#else
-    #error "Invalid LED_INIT_MODE"
-#endif
+    #else
+        #error "Invalid LED_INIT_MODE"
+    #endif
 
-#if AMP_ENABLE_COLOR_CORRECTION
+    #if AMP_ENABLE_COLOR_CORRECTION
     controller->setCorrection(AMP_COLOR_CORRECTION);
-#endif
+    #endif
 
     FastLED.setBrightness(180);
     FastLED.clear(true);
@@ -136,23 +142,26 @@ void setup() {
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
     loadEffectPreset(effectManager, canvas, 1);
 
+    #if AMP_ENABLE_SERIAL_DEBUG
     // Initialize Serial for debug output
     Serial.begin(115200);
+    
     // Wait for Serial to be ready (only on platforms with native USB)
     // This will block on boards without USB, so use timeout
-    #if defined(ARDUINO_ARCH_AVR)
+        #if defined(ARDUINO_ARCH_AVR)
         // For AVR (Arduino Nano/Uno), Serial is usually ready immediately
         // But add small delay to ensure it's initialized
         delay(100);
-    #elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+        #elif defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
         // For ESP boards, wait for Serial with timeout
         unsigned long startTime = millis();
         while (!Serial && (millis() - startTime < 3000)) {
             delay(10);
         }
-    #endif
+        #endif
     
     Serial.println("Started");
+    #endif
 }
 
 void loop() {
@@ -165,24 +174,24 @@ void loop() {
     // Update time for clock effect
     if (effectManager[0] != nullptr) {
         auto* clock = static_cast<amp::csRenderDigitalClock*>(effectManager[0]);
-#ifdef DIGIT_TEST_MODE
+        
+        #ifdef DIGIT_TEST_MODE
         // Test mode: display last digit of seconds on all 4 positions
         //uint8_t lastSecondDigit = (millis() * 1000) % 10;
         uint8_t lastSecondDigit = now.second() % 10;
         //clock->time = lastSecondDigit * 1111u;
         //clock->time = lastSecondDigit * 0100u;
         clock->time = 1811;
-#else
+        #else
         // Normal mode: display hours and minutes
         clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
-#endif
+        #endif
     }
     
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
     // Check if second button is pressed - pixel test mode
     if (digitalRead(cButton1Pin) == LOW) {
-
         remapHelper.matrix1D.clear();
 
         // Fill entire 1D matrix with black
@@ -197,10 +206,10 @@ void loop() {
         // Normal mode: render effects
         // Update and render all effects
         effectManager.updateAndRenderAll(rng, currTime);
-
+        
         // Remap 2D matrix to 1D matrix (after effects render)
         remapHelper.update(canvas, rng, currTime);
-
+        
         // Check if first button is pressed - fill matrix with white
         if (digitalRead(cButton2Pin) == LOW) {
             canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
@@ -211,13 +220,16 @@ void loop() {
     amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
 
+    #if AMP_ENABLE_SERIAL_DEBUG
     // Print matrix to serial debug once per second
     unsigned long currentTime = millis();
+    
     if (currentTime - lastDebugPrintTime >= 1000) {
+        Serial.println("----");
         amp::printMatrixToSerialDebug(canvas);
         lastDebugPrintTime = currentTime;
-        Serial.println("----");
     }
+    #endif
 
     delay(16); // ~60 FPS
 }
