@@ -2,6 +2,7 @@
 #include <RTClib.h>
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
+#include "color_rgba.hpp"
 #include "effect_manager.hpp"
 #include "effect_presets.hpp"
 #define LED_CFG 6
@@ -11,10 +12,19 @@
 #include "driver_serial.hpp"
 
 #define DIGIT_TEST_MODE
+#define HORIZONTAL_LINE_DEBUG_MODE
+
+// Debug mode: draw horizontal line in canvas matrix
+// #define HORIZONTAL_LINE_DEBUG_MODE
+
+// Enable clock rendering (set to 0 to disable clock digits)
+#ifndef AMP_ENABLE_CLOCK
+#define AMP_ENABLE_CLOCK 0
+#endif
 
 // Enable Serial debug output (set to 0 to disable)
 #ifndef AMP_ENABLE_SERIAL_DEBUG
-#define AMP_ENABLE_SERIAL_DEBUG 1
+#define AMP_ENABLE_SERIAL_DEBUG 0
 #endif
 
 // Button pins
@@ -171,6 +181,15 @@ void loop() {
 
     canvas.clear();
 
+    #ifdef HORIZONTAL_LINE_DEBUG_MODE
+    // Draw horizontal line in canvas for debugging
+    // Calculate line position based on seconds (moves down every second)
+    uint8_t lineY = (now.second() % canvas.height());
+    amp::csColorRGBA c(0xff0000);
+    canvas.fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), canvas.width(), 1}, c);
+    #endif
+
+    #if AMP_ENABLE_CLOCK
     // Update time for clock effect
     if (effectManager[0] != nullptr) {
         auto* clock = static_cast<amp::csRenderDigitalClock*>(effectManager[0]);
@@ -187,6 +206,7 @@ void loop() {
         clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
         #endif
     }
+    #endif
     
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
@@ -204,8 +224,10 @@ void loop() {
         remapHelper.matrix1D.setPixelRewrite(static_cast<amp::tMatrixPixelsCoord>(pixelIndex), 0, amp::csColorRGBA(255, 255, 255));
     } else {
         // Normal mode: render effects
+        #if AMP_ENABLE_CLOCK
         // Update and render all effects
         effectManager.updateAndRenderAll(rng, currTime);
+        #endif
         
         // Remap 2D matrix to 1D matrix (after effects render)
         remapHelper.update(canvas, rng, currTime);
