@@ -61,16 +61,14 @@ csRemap1DHelper remapHelper;
 CRGB leds[cRemapDestMatrixLen];
 
 void setup() {
-    constexpr uint16_t cLedCount = 12 * 5;
-
     CLEDController* controller = nullptr;
     
     #if (LED_INIT_MODE == 1)
-    controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cLedCount);
+    controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cClockPin, cLedRgbOrder>(leds, cRemapDestMatrixLen);
     #elif (LED_INIT_MODE == 2)
-    controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cLedRgbOrder>(leds, cLedCount);
+    controller = &FastLED.addLeds<LED_CHIPSET, cDataPin, cLedRgbOrder>(leds, cRemapDestMatrixLen);
     #elif (LED_INIT_MODE == 3)
-    controller = &FastLED.addLeds<LED_CHIPSET, cLedRgbOrder>(leds, cLedCount);
+    controller = &FastLED.addLeds<LED_CHIPSET, cLedRgbOrder>(leds, cRemapDestMatrixLen);
     #else
         #error "Invalid LED_INIT_MODE"
     #endif
@@ -90,7 +88,8 @@ void setup() {
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, canvas, 1);
+    loadEffectPreset(effectManager, canvas, 3);
+    //loadEffectPreset(effectManager, canvas, 1);
 }
 
 void loop() {

@@ -15,6 +15,7 @@ using amp::csMatrixPixels;
 using amp::tMatrixPixelsSize;
 using amp::csRenderDigitalClock;
 using amp::csRenderDigitalClockDigit;
+using amp::csRenderFill;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects
@@ -74,6 +75,37 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
                 digitGlyph->renderRectAutosize = false;
                 effectManager.add(digitGlyph);
+                break;
+            }
+        case 3: // 5 horizontal lines with different colors
+            {
+                const tMatrixPixelsSize matrixWidth = matrix.width();
+                constexpr uint8_t lineCount = 5;
+                constexpr tMatrixPixelsSize lineHeight = 1;
+                
+                // Define 5 different colors
+                // csColorRGBA format: (a, r, g, b)
+                const csColorRGBA colors[5] = {
+                    csColorRGBA{255, 255, 0, 0},     // Red
+                    csColorRGBA{255, 0, 255, 0},      // Green
+                    csColorRGBA{255, 0, 0, 255},      // Blue
+                    csColorRGBA{255, 255, 255, 0},   // Yellow
+                    csColorRGBA{255, 255, 0, 255}    // Magenta
+                };
+                
+                // Create 5 fill effects, one for each horizontal line
+                for (uint8_t i = 0; i < lineCount; ++i) {
+                    auto* fill = new csRenderFill();
+                    fill->color = colors[i];
+                    fill->renderRectAutosize = false;
+                    fill->rectDest = amp::csRect{
+                        0,
+                        amp::to_coord(i * lineHeight),
+                        amp::to_size(matrixWidth),
+                        amp::to_size(lineHeight)
+                    };
+                    effectManager.add(fill);
+                }
                 break;
             }
         default:
