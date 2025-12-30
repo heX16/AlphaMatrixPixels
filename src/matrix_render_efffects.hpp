@@ -342,7 +342,7 @@ public:
 class csRenderDigitalClockDigit : public csRenderGlyph {
 public:
     csRenderDigitalClockDigit() {
-        setFont(getStaticFontTemplate<csFont4x7DigitClock>());
+        setFont(getStaticFontTemplate<csFont4x7DigitalClock>());
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {

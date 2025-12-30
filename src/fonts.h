@@ -123,6 +123,8 @@ const csFont3x5Digits::Row csFont3x5Digits::kRows[csFont3x5Digits::kCount][csFon
 /*
 Monospace 3x5 digit font (glyphs 0..9).
 
+In 7-segment displays, segments are labeled A–G. Standard layout:
+```
     A
    ---
 F |   | B
@@ -130,12 +132,26 @@ F |   | B
 E |   | C
    ---
     D
+```
+
+A — top horizontal
+B — top right vertical
+C — bottom right vertical
+D — bottom horizontal
+E — bottom left vertical
+F — top left vertical
+G — middle horizontal
+
+The font rows below map segments to bit positions in each row:
+```
 
 .A.   0b0A000000,
 F.B   0bF0B00000,
 .G.   0b0G000000,
 E.C   0bE0C00000,
 .D.   0b0D000000,
+
+```
 */
 class csFont3x5DigitalClock : public csFontBase {
 public:
@@ -472,13 +488,48 @@ const csFont4x7DigitsRound::Row csFont4x7DigitsRound::kRows[csFont4x7DigitsRound
 
 
 /*
- ## 
-#  #
-#  #
- ## 
-#  #
-#  #
- ## 
+Monospace 4x7 digit font (glyphs 0..9).
+
+```
+    ## 
+   #  #
+   #  #
+    ## 
+   #  #
+   #  #
+    ## 
+```
+
+In 7-segment displays, segments are labeled A–G. Standard layout:
+```
+    A
+   ---
+F |   | B
+   -G-
+E |   | C
+   ---
+    D
+```
+
+A — top horizontal
+B — top right vertical
+C — bottom right vertical
+D — bottom horizontal
+E — bottom left vertical
+F — top left vertical
+G — middle horizontal
+
+The font rows below map segments to bit positions in each row:
+
+```
+.A.   0b0A000000,
+F.B   0bF0B00000,
+F.B   0bF0B00000,
+.G.   0b0G000000,
+E.C   0bE0C00000,
+E.C   0bE0C00000,
+.D.   0b0D000000,
+```
 */
 class csFont4x7DigitalClock : public csFontBase {
 public:
