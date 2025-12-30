@@ -99,6 +99,9 @@ public:
             case SDLK_b:
                 createEffectBundleDouble(0, 8);
                 break;
+            case SDLK_v:
+                createEffectBundleDouble(0, 9);
+                break;
             case SDLK_n:
                 createEffectBundleDouble(0, 255);
                 break;
@@ -228,6 +231,7 @@ public:
         
         recreateMatrix(16, 16);
         createEffectBundleDouble(1, 0);
+        copyLineIndexHelper.configureRemapEffect();
         return true;
     }
 

@@ -136,6 +136,54 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             effectManager.add(averageArea);
             break;
         }
+        case 9: // Clock (3x5 font)
+            {
+                // Get font dimensions for clock size calculation
+                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
+                const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
+                const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
+                constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
+                constexpr uint8_t digitCount = 4; // clock displays 4 digits
+                
+                // Calculate clock rect size: 4 digits + 3 spacings between them
+                const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
+                const tMatrixPixelsSize clockHeight = fontHeight;
+                
+                // Create fill effect (background) - covers clock rect
+                auto* fill = new csRenderFill();
+                fill->color = csColorRGBA{192, 0, 0, 0};
+                fill->renderRectAutosize = false;
+                fill->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
+                
+                // Create clock effect
+                auto* clock = new csRenderDigitalClock();
+                
+                // Create renderDigit effect for rendering digits
+                auto* digitGlyph = clock->createRenderDigit();
+                digitGlyph->setFont(font);
+                digitGlyph->color = csColorRGBA{255, 255, 255, 255};
+                digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
+                digitGlyph->renderRectAutosize = false;
+                digitGlyph->disabled = true; // Disable direct rendering, only used by clock
+                
+                // Set renderDigit via propRenderDigit property
+                clock->renderDigit = digitGlyph;
+                
+                // Notify clock that propRenderDigit property changed
+                // This will validate the glyph type and update its matrix if needed
+                if (auto* digitalClock = dynamic_cast<amp::csRenderDigitalClock*>(clock)) {
+                    digitalClock->propChanged(amp::csRenderDigitalClock::propRenderDigit);
+                }
+                
+                clock->renderRectAutosize = false;
+                clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
+                
+                // Add effects to array (fill first, then clock on top, then digitGlyph for proper cleanup)
+                effectManager.add(fill);
+                effectManager.add(clock);
+                effectManager.add(digitGlyph);
+                break;
+            }
         case 255:
             ; // slip - remove "effect2"
         default:

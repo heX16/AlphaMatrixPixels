@@ -5,6 +5,7 @@
 #include "../../src/matrix_render_pipes.hpp"
 #include "../../src/matrix_render.hpp"
 #include "../../src/driver_sdl2.hpp"
+#include "remap_config.hpp"
 
 using amp::csRenderRemap1DByConstArray;
 using amp::csMatrixPixels;
@@ -39,45 +40,22 @@ public:
 
     // Remap effect: reads from external 2D matrix (set via updateCopyLineIndexSource), writes to matrix1D.
     csRenderRemap1DByConstArray* remapEffect = nullptr;
-    // Remap array: src(x,y) -> dst x (row-major order)
-    static constexpr tMatrixPixelsSize RemapIndexLen = 133; // 19x7
-    static constexpr tMatrixPixelsCoord remapArray[133] = {
-        0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
-        7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
-        8, 0, 0, 3, 0, 22, 0, 0, 17, 0, 36, 0, 0, 31, 0, 50, 0, 0, 45,
-        0, 1, 2, 0, 0, 0, 15, 16, 0, 0, 0, 29, 30, 0, 0, 0, 43, 44, 0,
-        9, 0, 0, 14, 0, 23, 0, 0, 28, 0, 37, 0, 0, 42, 0, 51, 0, 0, 56,
-        10, 0, 0, 13, 0, 24, 0, 0, 27, 0, 38, 0, 0, 41, 0, 52, 0, 0, 55,
-        0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
-    };
 
-    static constexpr tMatrixPixelsSize RemapDestMatrixLen = 56;
-
-    // Configure remap array dimensions
-    static constexpr tMatrixPixelsSize remapWidth = 19;
-    static constexpr tMatrixPixelsSize remapHeight = 7;
+    // Configure remap array dimensions (calculated from cRemapSrcArrayLen: 12x5)
+    static constexpr tMatrixPixelsSize remapWidth = 12;
+    static constexpr tMatrixPixelsSize remapHeight = 5;
 
         // Creates 1D matrix and configures remap effect. Effect ready but inactive until isActive=true.
     csCopyLineIndexHelper() {
 
         // Create 1D destination matrix
-        matrix1D = csMatrixPixels{RemapDestMatrixLen, 1};
+        matrix1D = csMatrixPixels{cRemapDestMatrixLen, 1};
 
         // Create remap effect
         remapEffect = new csRenderRemap1DByConstArray();
 
         // Configure remap
-        // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
-        remapEffect->matrix = &matrix1D;
-        remapEffect->renderRectAutosize = false;
-        remapEffect->remapArray = remapArray;
-        remapEffect->remapWidth = remapWidth;
-        remapEffect->remapHeight = remapHeight;
-        remapEffect->rewrite = true;
-        remapEffect->rectSource.x = 2;
-        remapEffect->rectSource.y = 2;
-        remapEffect->rectSource.height = remapHeight;
-        remapEffect->rectSource.width = remapWidth;
+        configureRemapEffect();
     }
 
     ~csCopyLineIndexHelper() {
@@ -117,6 +95,27 @@ public:
 
         // Render using renderMatrixToSDL with custom layout
         amp::renderMatrixToSDL(matrix1D, renderer, screenWidth, screenHeight, false, false, &layout);
+    }
+
+    // Configure remap effect settings
+    // matrixSource will be set to external 2D matrix in updateCopyLineIndexSource
+    void configureRemapEffect() {
+        if (!remapEffect) {
+            return;
+        }
+        remapEffect->matrix = &matrix1D;
+        remapEffect->renderRectAutosize = false;
+        remapEffect->remapArray = cRemapSrcArray;
+        remapEffect->remapWidth = remapWidth;
+        remapEffect->remapHeight = remapHeight;
+        remapEffect->rewrite = true;
+        //remapEffect->rectSource.x = 2;
+        //remapEffect->rectSource.y = 2;
+        // TODO: WIP!!!
+        remapEffect->rectSource.x = 0;
+        remapEffect->rectSource.y = 0;
+        remapEffect->rectSource.height = remapHeight;
+        remapEffect->rectSource.width = remapWidth;
     }
 };
 
