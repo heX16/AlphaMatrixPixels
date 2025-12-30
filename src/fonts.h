@@ -7,7 +7,14 @@
 
 namespace amp {
 
-// Template function for font accessors: avoids global objects and ODR issues in header-only mode.
+/*
+Template function for font accessors: avoids global objects and ODR issues in header-only mode.
+Example usage:
+```
+  const auto& font = getStaticFontTemplate<csFont4x7DigitClock>();
+  glyph->setFont(font);
+```
+*/
 template<typename FontType>
 inline const FontType& getStaticFontTemplate() noexcept {
     static FontType f;
@@ -15,10 +22,6 @@ inline const FontType& getStaticFontTemplate() noexcept {
 }
 
 // Monospace 3x5 digit font (glyphs 0..9).
-//
-// Storage format:
-// - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont3x5Digits : public csFontBase {
 public:
     using Row = uint8_t;
@@ -35,17 +38,13 @@ public:
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
-        // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        // Read from PROGMEM using pgm_read_byte
         return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
     static const Row kRows[kCount][kHeight] PROGMEM;
 };
 
-// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
 const csFont3x5Digits::Row csFont3x5Digits::kRows[csFont3x5Digits::kCount][csFont3x5Digits::kHeight] PROGMEM = {
     { // 0
         0b11100000,
@@ -119,11 +118,124 @@ const csFont3x5Digits::Row csFont3x5Digits::kRows[csFont3x5Digits::kCount][csFon
     },
 };
 
+
+
+/*
+Monospace 3x5 digit font (glyphs 0..9).
+
+    A
+   ---
+F |   | B
+   -G-
+E |   | C
+   ---
+    D
+
+.A.   0b0A000000,
+F.B   0bF0B00000,
+.G.   0b0G000000,
+E.C   0bE0C00000,
+.D.   0b0D000000,
+*/
+class csFont3x5DigitalClock : public csFontBase {
+public:
+    using Row = uint8_t;
+
+    static constexpr uint16_t kWidth = 3;
+    static constexpr uint16_t kHeight = 5;
+    static constexpr uint16_t kCount = 10;
+
+    uint16_t width() const noexcept override { return kWidth; }
+    uint16_t height() const noexcept override { return kHeight; }
+    uint16_t count() const noexcept override { return kCount; }
+
+    uint32_t getRowBits(uint16_t glyphIndex, uint16_t y) const noexcept override {
+        if (glyphIndex >= count() || y >= height()) {
+            return 0;
+        }
+        return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
+    }
+
+private:
+    static const Row kRows[kCount][kHeight] PROGMEM;
+};
+
+const csFont3x5DigitalClock::Row csFont3x5DigitalClock::kRows[csFont3x5DigitalClock::kCount][csFont3x5DigitalClock::kHeight] PROGMEM = {
+    { // 0
+        0b01000000,
+        0b10100000,
+        0b00000000,
+        0b10100000,
+        0b01000000,
+    },
+    { // 1
+        0b00000000,
+        0b00100000,
+        0b00000000,
+        0b00100000,
+        0b00000000,
+    },
+    { // 2
+        0b01000000,
+        0b00100000,
+        0b01000000,
+        0b10000000,
+        0b01000000,
+    },
+    { // 3
+        0b01000000,
+        0b00100000,
+        0b01000000,
+        0b00100000,
+        0b01000000,
+    },
+    { // 4
+        0b00000000,
+        0b10100000,
+        0b01000000,
+        0b00100000,
+        0b00000000,
+    },
+    { // 5
+        0b01000000,
+        0b10000000,
+        0b01000000,
+        0b00100000,
+        0b01000000,
+    },
+    { // 6
+        0b01000000,
+        0b10000000,
+        0b01000000,
+        0b10100000,
+        0b01000000,
+    },
+    { // 7
+        0b01000000,
+        0b00100000,
+        0b00000000,
+        0b00100000,
+        0b00000000,
+    },
+    { // 8
+        0b01000000,
+        0b10100000,
+        0b01000000,
+        0b10100000,
+        0b01000000,
+    },
+    { // 9
+        0b01000000,
+        0b10100000,
+        0b01000000,
+        0b00100000,
+        0b01000000,
+    },
+};
+
+
+
 // Monospace 4x7 digit font (glyphs 0..9).
-//
-// Storage format:
-// - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont4x7Digits : public csFontBase {
 public:
     using Row = uint8_t;
@@ -140,17 +252,13 @@ public:
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
-        // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        // Read from PROGMEM using pgm_read_byte
         return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
     static const Row kRows[kCount][kHeight] PROGMEM;
 };
 
-// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
 const csFont4x7Digits::Row csFont4x7Digits::kRows[csFont4x7Digits::kCount][csFont4x7Digits::kHeight] PROGMEM = {
     { // 0
         0b11110000,
@@ -245,10 +353,6 @@ const csFont4x7Digits::Row csFont4x7Digits::kRows[csFont4x7Digits::kCount][csFon
 };
 
 // Monospace 4x7 digit font (glyphs 0..9).
-//
-// Storage format:
-// - Each row is stored in the top bits of a byte: bit7 is x=0, bit6 is x=1, etc.
-// - getRowBits() returns the same row aligned to MSB of uint32_t: bit31 is x=0.
 class csFont4x7DigitsRound : public csFontBase {
 public:
     using Row = uint8_t;
@@ -265,17 +369,13 @@ public:
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
-        // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        // Read from PROGMEM using pgm_read_byte
         return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
     static const Row kRows[kCount][kHeight] PROGMEM;
 };
 
-// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
 const csFont4x7DigitsRound::Row csFont4x7DigitsRound::kRows[csFont4x7DigitsRound::kCount][csFont4x7DigitsRound::kHeight] PROGMEM = {
         { // 0
             0b01100000,
@@ -380,7 +480,7 @@ const csFont4x7DigitsRound::Row csFont4x7DigitsRound::kRows[csFont4x7DigitsRound
 #  #
  ## 
 */
-class csFont4x7DigitClock : public csFontBase {
+class csFont4x7DigitalClock : public csFontBase {
 public:
     using Row = uint8_t;
 
@@ -396,18 +496,14 @@ public:
         if (glyphIndex >= count() || y >= height()) {
             return 0;
         }
-        // Shift 8-bit row (MSB is bit7) into uint32 MSB (bit31).
-        // Read from PROGMEM using pgm_read_byte
         return static_cast<uint32_t>(pgm_read_byte(&kRows[glyphIndex][y])) << 24;
     }
 
 private:
-    // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
     static const Row kRows[kCount][kHeight] PROGMEM;
 };
 
-// Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
-const csFont4x7DigitClock::Row csFont4x7DigitClock::kRows[csFont4x7DigitClock::kCount][csFont4x7DigitClock::kHeight] PROGMEM = {
+const csFont4x7DigitalClock::Row csFont4x7DigitalClock::kRows[csFont4x7DigitalClock::kCount][csFont4x7DigitalClock::kHeight] PROGMEM = {
     { // 0
         0b01100000,
         0b10010000,
