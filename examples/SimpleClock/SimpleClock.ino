@@ -1,7 +1,11 @@
+#include <Wire.h>
+#include "RTClib.h"
 #include <FastLED.h>
+#include <cstdint>
 #include "AlphaMatrixPixels.h"
 #include "effect_manager.hpp"
 #include "effect_presets.hpp"
+#define LED_CFG 6
 #include "led_config.hpp"
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
@@ -28,6 +32,9 @@ constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
 
 amp::csMatrixPixels canvas(WIDTH, HEIGHT);
 amp::csRandGen rng;
+
+// Real-time clock
+RTC_DS3231 rtc;
 
 // Effect manager
 csEffectManager effectManager(canvas);
@@ -111,26 +118,29 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
+    // Initialize RTC
+    Wire.begin();
+    rtc.begin();
+
+    // For manual time setting (uncomment if needed):
+    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
     loadEffectPreset(effectManager, canvas, 1);
 }
 
 void loop() {
-    const uint32_t totalSeconds = millis() / 1000u;
-    const uint8_t minutes = static_cast<uint8_t>((totalSeconds / 60u) % 60u);
-    const uint8_t seconds = static_cast<uint8_t>(totalSeconds % 60u);
-    
-    // Format time as MMSS (4 digits)
-    const uint32_t timeValue = static_cast<uint32_t>(minutes * 100u + seconds);
+    // Read time from RTC
+    DateTime now = rtc.now();
 
     canvas.clear();
 
-    const amp::tTime currTime = static_cast<amp::tTime>(millis());
-    
     // Update time for clock effect
     if (auto* clock = dynamic_cast<amp::csRenderDigitalClock*>(effectManager[0])) {
-        clock->time = timeValue;
+        clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
     }
+    
+    const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
     // Update and render all effects
     effectManager.updateAndRenderAll(rng, currTime);
@@ -140,6 +150,7 @@ void loop() {
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
+
     delay(16); // ~60 FPS
 }
 

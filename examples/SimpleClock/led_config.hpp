@@ -23,7 +23,7 @@
 // If you prefer to keep this file untouched, override LED_CFG in your sketch
 // BEFORE including this header.
 #ifndef LED_CFG
-#define LED_CFG 2
+#define LED_CFG 6
 #endif
 
 #if (LED_CFG == 1)
@@ -55,6 +55,14 @@ constexpr EOrder cLedRgbOrder = GRB;
 constexpr uint8_t cDataPin = 11;
 constexpr uint8_t cClockPin = 13;
 constexpr EOrder cLedRgbOrder = BRG;
+#define LED_INIT_MODE 1
+
+#elif (LED_CFG == 6)
+// Preset name: "rgb_clock_2025" (RTC clock with APA102)
+#define LED_CHIPSET APA102
+constexpr uint8_t cDataPin = 3;
+constexpr uint8_t cClockPin = 4;
+constexpr EOrder cLedRgbOrder = BGR;
 #define LED_INIT_MODE 1
 
 #else
