@@ -29,7 +29,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
         case 1: // Clock
             {
                 // Get font dimensions for clock size calculation
-                const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
+                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
                 const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
                 constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
@@ -66,7 +66,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             }
         case 2: // DigitGlyph (standalone, if needed)
             {
-                const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitClock>();
+                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
                 auto* digitGlyph = new csRenderDigitalClockDigit();
                 digitGlyph->setFont(font);
                 digitGlyph->color = csColorRGBA{255, 255, 255, 255};

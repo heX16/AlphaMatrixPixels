@@ -338,7 +338,7 @@ public:
     }
 };
 
-// Effect: draw a single digit glyph using the 3x5 font (copy).
+// Effect: draw a single digit glyph
 class csRenderDigitalClockDigit : public csRenderGlyph {
 public:
     csRenderDigitalClockDigit() {

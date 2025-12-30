@@ -11,7 +11,7 @@ namespace amp {
 Template function for font accessors: avoids global objects and ODR issues in header-only mode.
 Example usage:
 ```
-  const auto& font = getStaticFontTemplate<csFont4x7DigitClock>();
+  const auto& font = getStaticFontTemplate<csFont3x5DigitalClock>();
   glyph->setFont(font);
 ```
 */
