@@ -4,6 +4,11 @@
 
 #include <FastLED.h>
 
+// Button pins
+constexpr int cButton1Pin = 7;
+constexpr int cButton2Pin = 8;
+
+
 // Select a preset by number:
 //   #define LED_CFG 2
 //
@@ -19,6 +24,15 @@
 // - LED_INIT_MODE = 3: LED_TYPE + LED_RGB_TYPE
 //
 // This is a minimal configuration for Arduino Nano (no ESP/WiFi support).
+
+// Output gamma correction (applied to FastLED output buffer right before show()).
+// Set AMP_ENABLE_GAMMA to 0 to disable.
+#define AMP_ENABLE_GAMMA 1
+
+// FastLED color correction (channel scaling), e.g. TypicalLEDStrip.
+// This is NOT gamma correction; it can be enabled together with gamma.
+#define AMP_ENABLE_COLOR_CORRECTION 1
+#define AMP_COLOR_CORRECTION TypicalLEDStrip
 
 // If you prefer to keep this file untouched, override LED_CFG in your sketch
 // BEFORE including this header.
