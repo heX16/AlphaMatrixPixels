@@ -89,7 +89,7 @@ void setup() {
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, canvas, 4);
+    loadEffectPreset(effectManager, canvas, 5);
     loadEffectPreset(effectManager, canvas, 2);
 }
 
