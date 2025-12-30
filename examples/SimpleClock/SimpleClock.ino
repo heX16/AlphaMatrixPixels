@@ -8,6 +8,7 @@
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
 #include "driver_serial.hpp"
+#include "rect.hpp"
 #include "remap_config.hpp"
 
 #define LED_CFG 6
@@ -89,7 +90,7 @@ void setup() {
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
     loadEffectPreset(effectManager, canvas, 3);
-    //loadEffectPreset(effectManager, canvas, 1);
+    loadEffectPreset(effectManager, canvas, 2);
 }
 
 void loop() {
@@ -99,12 +100,19 @@ void loop() {
     canvas.clear();
 
     // Update time for clock effect
-    // Use safe type casting via queryClassFamily to check if effect is csRenderDigitalClock
-    if (auto* clock = static_cast<amp::csRenderDigitalClock*>(
-        effectManager[0]->queryClassFamily(amp::PropType::EffectDigitalClock)
-    )) {
-        // Normal mode: display hours and minutes
-        clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
+    // Search through all effects to find csRenderDigitalClock
+    for (auto* effect : effectManager) {
+        if (effect == nullptr) {
+            continue;
+        }
+        if (auto* clock = static_cast<amp::csRenderDigitalClock*>(
+            effect->queryClassFamily(amp::PropType::EffectDigitalClock)
+        )) {
+            // Normal mode: display hours and minutes
+            clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
+            //clock->time = 1234;
+            break; // Found clock, no need to continue
+        }
     }
     
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
@@ -113,13 +121,25 @@ void loop() {
     // Update and render all effects
     effectManager.updateAndRenderAll(rng, currTime);
     
+
+    //#define HORIZONTAL_LINE_DEBUG_MODE
+    #ifdef HORIZONTAL_LINE_DEBUG_MODE
+    // Draw horizontal line in canvas for debugging
+    // Calculate line position based on seconds (moves down every second)
+    uint8_t lineY = (now.second() % canvas.height());
+    canvas.fillArea(
+        amp::csRect{0, 
+        static_cast<amp::tMatrixPixelsCoord>(lineY), canvas.width(), 1}, 
+        amp::csColorRGBA(0x888800));
+    #endif
+
     // Remap 2D matrix to 1D matrix (after effects render)
     remapHelper.update(canvas, rng, currTime);
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, 
         leds, cRemapDestMatrixLen,
         amp::csMappingPattern::SerpentineHorizontalInverted);
-    
+
     FastLED.show();
 
     delay(16); // ~60 FPS

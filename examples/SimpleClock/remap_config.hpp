@@ -1,6 +1,7 @@
 #pragma once
 
 #include "matrix_types.hpp"
+#include "amp_progmem.hpp"
 
 using amp::tMatrixPixelsSize;
 using amp::tMatrixPixelsCoord;
@@ -8,7 +9,7 @@ using amp::tMatrixPixelsCoord;
 //////////////////////////////////////////////
 
 static constexpr tMatrixPixelsSize cRemapSrcArrayLen = 60; // 12x5
-static constexpr tMatrixPixelsCoord cRemapSrcArray[cRemapSrcArrayLen] = {
+static const tMatrixPixelsCoord cRemapSrcArray[cRemapSrcArrayLen] PROGMEM = {
     0, 3, 0, 0, 9, 0, 0, 17, 0, 0, 24, 0,
     4, 0, 2, 10, 0, 0/*x*/, 18, 0, 16, 25, 0, 23,
     0, 1, 0, 0, 8, 0, 0, 15, 0, 0, 22, 0,
