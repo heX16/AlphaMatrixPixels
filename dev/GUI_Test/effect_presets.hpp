@@ -149,12 +149,6 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
                 const tMatrixPixelsSize clockHeight = fontHeight;
                 
-                // Create fill effect (background) - covers clock rect
-                auto* fill = new csRenderFill();
-                fill->color = csColorRGBA{192, 0, 0, 0};
-                fill->renderRectAutosize = false;
-                fill->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
-                
                 // Create clock effect
                 auto* clock = new csRenderDigitalClock();
                 
@@ -179,9 +173,45 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
                 
                 // Add effects to array (fill first, then clock on top, then digitGlyph for proper cleanup)
-                effectManager.add(fill);
                 effectManager.add(clock);
                 effectManager.add(digitGlyph);
+                break;
+            }
+        case 10: // 7 horizontal lines with different colors
+            {
+                const tMatrixPixelsSize matrixWidth = matrix.width();
+                const tMatrixPixelsSize matrixHeight = matrix.height();
+                constexpr uint8_t lineCount = 7;
+                
+                // Calculate line height (at least 1 pixel)
+                // const tMatrixPixelsSize lineHeight = (matrixHeight >= lineCount) ? (matrixHeight / lineCount) : 1;
+                const tMatrixPixelsSize lineHeight = 1;
+                
+                // Define 7 different colors (rainbow colors)
+                // csColorRGBA format: (a, r, g, b)
+                const csColorRGBA colors[7] = {
+                    csColorRGBA{255, 255, 0, 0},     // Red
+                    csColorRGBA{255, 255, 165, 0},   // Orange
+                    csColorRGBA{255, 255, 255, 0},   // Yellow
+                    csColorRGBA{255, 0, 255, 0},     // Green
+                    csColorRGBA{255, 0, 255, 255},   // Cyan
+                    csColorRGBA{255, 0, 0, 255},     // Blue
+                    csColorRGBA{255, 128, 0, 128}    // Purple
+                };
+                
+                // Create 7 fill effects, one for each horizontal line
+                for (uint8_t i = 0; i < lineCount; ++i) {
+                    auto* fill = new csRenderFill();
+                    fill->color = colors[i];
+                    fill->renderRectAutosize = false;
+                    fill->rectDest = amp::csRect{
+                        0,
+                        amp::to_coord(i * lineHeight),
+                        amp::to_size(matrixWidth),
+                        amp::to_size(lineHeight)
+                    };
+                    effectManager.add(fill);
+                }
                 break;
             }
         case 255:

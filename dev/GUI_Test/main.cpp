@@ -102,6 +102,9 @@ public:
             case SDLK_v:
                 createEffectBundleDouble(0, 9);
                 break;
+            case SDLK_m:
+                createEffectBundleDouble(10, 0);
+                break;
             case SDLK_n:
                 createEffectBundleDouble(0, 255);
                 break;
