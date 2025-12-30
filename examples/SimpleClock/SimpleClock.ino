@@ -25,11 +25,7 @@
 #define AMP_COLOR_CORRECTION TypicalLEDStrip
 #endif
 
-constexpr uint8_t WIDTH = 19;
-constexpr uint8_t HEIGHT = 7;
-constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
-
-amp::csMatrixPixels canvas(WIDTH, HEIGHT);
+amp::csMatrixPixels canvas(12, 5);
 amp::csRandGen rng;
 
 // Real-time clock
@@ -43,7 +39,7 @@ csEffectManager effectManager(canvas);
 class csRemap1DHelper {
 public:
     // 1D destination matrix (height=1)
-    static constexpr amp::tMatrixPixelsSize RemapDestMatrixLen = 56;
+    static constexpr amp::tMatrixPixelsSize RemapDestMatrixLen = 28;
     amp::csMatrixPixels matrix1D{RemapDestMatrixLen, 1};
 
     // Remap effect
@@ -51,12 +47,12 @@ public:
 
     // Remap array: src(x,y) -> dst x (row-major order, 1-based indexing)
     // Stored in PROGMEM (Flash) to save RAM on Arduino platforms.
-    static constexpr amp::tMatrixPixelsSize RemapIndexLen = 133; // 19x7
+    static constexpr amp::tMatrixPixelsSize RemapIndexLen = 60; // 12x5
     static const amp::tMatrixPixelsCoord remapArray[RemapIndexLen] PROGMEM;
 
     // Remap array dimensions
-    static constexpr amp::tMatrixPixelsSize remapWidth = 19;
-    static constexpr amp::tMatrixPixelsSize remapHeight = 7;
+    static constexpr amp::tMatrixPixelsSize remapWidth = 12;
+    static constexpr amp::tMatrixPixelsSize remapHeight = 5;
 
     csRemap1DHelper() {
         // Configure remap effect
@@ -66,8 +62,8 @@ public:
         remapEffect.remapWidth = remapWidth;
         remapEffect.remapHeight = remapHeight;
         remapEffect.rewrite = true;
-        remapEffect.rectSource.x = 2;
-        remapEffect.rectSource.y = 2;
+        remapEffect.rectSource.x = 0;
+        remapEffect.rectSource.y = 0;
         remapEffect.rectSource.width = remapWidth;
         remapEffect.rectSource.height = remapHeight;
         remapEffect.rectDest = amp::csRect{0, 0, RemapDestMatrixLen, 1};
@@ -83,13 +79,11 @@ public:
 
 // Out-of-class definition for PROGMEM array (required for C++11/Arduino IDE 1.8.18)
 const amp::tMatrixPixelsCoord csRemap1DHelper::remapArray[csRemap1DHelper::RemapIndexLen] PROGMEM = {
-    0, 6, 5, 0, 0, 0, 20, 19, 0, 0, 0, 34, 33, 0, 0, 0, 48, 47, 0,
-    7, 0, 0, 4, 0, 21, 0, 0, 18, 0, 35, 0, 0, 32, 0, 49, 0, 0, 46,
-    8, 0, 0, 3, 0, 22, 0, 0, 17, 0, 36, 0, 0, 31, 0, 50, 0, 0, 45,
-    0, 1, 2, 0, 0, 0, 15, 16, 0, 0, 0, 29, 30, 0, 0, 0, 43, 44, 0,
-    9, 0, 0, 14, 0, 23, 0, 0, 28, 0, 37, 0, 0, 42, 0, 51, 0, 0, 56,
-    10, 0, 0, 13, 0, 24, 0, 0, 27, 0, 38, 0, 0, 41, 0, 52, 0, 0, 55,
-    0, 11, 12, 0, 0, 0, 25, 26, 0, 0, 0, 39, 40, 0, 0, 0, 53, 54, 0,
+    0, 3, 0, 0, 10, 0, 0, 17, 0, 0, 24, 0,
+    4, 0, 2, 11, 0, 9, 18, 0, 16, 25, 0, 23,
+    0, 1, 0, 0, 8, 0, 0, 15, 0, 0, 22, 0,
+    5, 0, 7, 12, 0, 14, 19, 0, 21, 26, 0, 28,
+    0, 6, 0, 0, 13, 0, 0, 20, 0, 0, 27, 0,
 };
 
 csRemap1DHelper remapHelper;
@@ -97,7 +91,7 @@ csRemap1DHelper remapHelper;
 CRGB leds[csRemap1DHelper::RemapDestMatrixLen];
 
 void setup() {
-    constexpr uint16_t cLedCount = NUM_LEDS;
+    constexpr uint16_t cLedCount = 12 * 5;
 
     CLEDController* controller = nullptr;
 #if (LED_INIT_MODE == 1)
@@ -148,7 +142,7 @@ void loop() {
     // Remap 2D matrix to 1D matrix (after effects render)
     remapHelper.update(canvas, rng, currTime);
 
-    amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
+    amp::copyMatrixToFastLED(remapHelper.matrix1D, leds, 12 * 5, amp::csMappingPattern::SerpentineHorizontalInverted);
     FastLED.show();
 
     delay(16); // ~60 FPS

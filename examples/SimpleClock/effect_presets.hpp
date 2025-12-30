@@ -29,13 +29,13 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
         case 1: // Clock
             {
                 // Get font dimensions for clock size calculation
-                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
+                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
                 const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
-                constexpr tMatrixPixelsSize spacing = 1; // spacing between digits
+                constexpr tMatrixPixelsSize spacing = 0; // spacing between digits (no spacing for 12x5 matrix)
                 constexpr uint8_t digitCount = 4; // clock displays 4 digits
                 
-                // Calculate clock rect size: 4 digits + 3 spacings between them
+                // Calculate clock rect size: 4 digits without spacing (12 = 3+3+3+3)
                 const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
                 const tMatrixPixelsSize clockHeight = fontHeight;
                 
@@ -57,7 +57,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 clock->propChanged(amp::csRenderDigitalClock::propRenderDigit);
                 
                 clock->renderRectAutosize = false;
-                clock->rectDest = amp::csRect{2, 2, amp::to_size(clockWidth+1), amp::to_size(clockHeight+1)};
+                clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
                 
                 // Add effects to manager (clock first, then digitGlyph for proper cleanup)
                 effectManager.add(clock);
@@ -66,7 +66,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             }
         case 2: // DigitGlyph (standalone, if needed)
             {
-                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
+                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 auto* digitGlyph = new csRenderDigitalClockDigit();
                 digitGlyph->setFont(font);
                 digitGlyph->color = csColorRGBA{255, 255, 255, 255};
