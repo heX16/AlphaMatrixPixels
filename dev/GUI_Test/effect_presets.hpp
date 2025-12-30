@@ -151,6 +151,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 
                 // Create clock effect
                 auto* clock = new csRenderDigitalClock();
+                clock->spacing = 0;
                 
                 // Create renderDigit effect for rendering digits
                 auto* digitGlyph = clock->createRenderDigit();

@@ -1124,7 +1124,8 @@ public:
     static constexpr uint8_t base = csRenderMatrixBase::propLast;
     static constexpr uint8_t propTime = base + 1;
     static constexpr uint8_t propRenderDigit = base + 2;
-    static constexpr uint8_t propLast = propRenderDigit;
+    static constexpr uint8_t propSpacing = base + 3;
+    static constexpr uint8_t propLast = propSpacing;
 
     // Time property (uint32_t): stores time value for clock display.
     //
@@ -1136,6 +1137,9 @@ public:
     //   This effect does NOT read system time. The time value must be set
     //   externally by the application.
     uint32_t time = 0;
+
+    // Spacing between digits (in pixels)
+    tMatrixPixelsSize spacing = 1;
 
     static constexpr uint8_t digitCount = 4;
 
@@ -1220,6 +1224,13 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
+            case propSpacing:
+                info.type = PropType::UInt16;
+                info.name = "Spacing";
+                info.ptr = &spacing;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
         }
     }
 
@@ -1261,7 +1272,6 @@ public:
         // Position them within rectDest bounds
         const tMatrixPixelsCoord startX = rectDest.x;
         const tMatrixPixelsCoord startY = rectDest.y;
-        const tMatrixPixelsSize spacing = 1; // 1 pixel spacing between digits
 
         // Render each digit by updating and rendering the single renderDigit
         for (uint8_t i = 0; i < digitCount; ++i) {
