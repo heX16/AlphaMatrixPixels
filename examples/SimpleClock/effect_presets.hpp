@@ -16,6 +16,7 @@ using amp::tMatrixPixelsSize;
 using amp::csRenderDigitalClock;
 using amp::csRenderDigitalClockDigit;
 using amp::csRenderFill;
+using amp::csRenderGradientWavesFP;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects
@@ -106,6 +107,9 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 }
                 break;
             }
+        case 4: // GradientWavesFP
+            effectManager.add(new csRenderGradientWavesFP());
+            break;
         default:
             ;
     }
