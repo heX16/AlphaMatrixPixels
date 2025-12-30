@@ -1,7 +1,6 @@
 #include <Wire.h>
-#include "RTClib.h"
+#include <RTClib.h>
 #include <FastLED.h>
-#include <cstdint>
 #include "AlphaMatrixPixels.h"
 #include "effect_manager.hpp"
 #include "effect_presets.hpp"
@@ -136,7 +135,8 @@ void loop() {
     canvas.clear();
 
     // Update time for clock effect
-    if (auto* clock = dynamic_cast<amp::csRenderDigitalClock*>(effectManager[0])) {
+    if (effectManager[0] != nullptr) {
+        auto* clock = static_cast<amp::csRenderDigitalClock*>(effectManager[0]);
         clock->time = static_cast<uint32_t>(now.hour() * 100u + now.minute());
     }
     
