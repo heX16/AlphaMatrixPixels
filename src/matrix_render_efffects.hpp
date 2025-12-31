@@ -678,10 +678,10 @@ private:
 public:
     static constexpr uint8_t base = csRenderMatrixBase::propLast;
     static constexpr uint8_t propCount = base + 1;
-    static constexpr uint8_t propSnowflake_WIP = base + 2;
-    static constexpr uint8_t propLast = propSnowflake_WIP;
+    static constexpr uint8_t propRestartFillPercent = base + 2;
+    static constexpr uint8_t propLast = propRestartFillPercent;
+    
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
-    static constexpr uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
     // Snowflake array configuration
     static constexpr int8_t cSpawnDelayMin = -5; // Minimum spawn delay value (negative)
@@ -695,6 +695,7 @@ public:
 
     csColorRGBA color{255, 255, 255, 255};
     uint16_t count = 4; // Number of snowflakes (dynamic)
+    uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
     // State fields (not mutable, changed in recalc())
     Snowflake* snowflakes = nullptr;
@@ -739,9 +740,12 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
-            case propSnowflake_WIP:
-                // WIP
-                info.disabled = true;
+            case propRestartFillPercent:
+                info.type = PropType::UInt8;
+                info.name = "Restart fill percent";
+                info.ptr = &restartFillPercent;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
     }
     }
