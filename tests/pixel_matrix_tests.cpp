@@ -215,16 +215,17 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
 void test_fp16_basic(TestStats& stats) {
     using namespace amp::math;
     const char* testName = "fp16_basic";
+    // Note: csFP16 now uses 4 fractional bits (scale=16), so precision is lower
     const csFP16 a{1.5f};
     const csFP16 b{-0.25f};
-    expect_near_float(stats, testName, __LINE__, a.to_float(), 1.5f, 0.01f, "fp16 to_float close to 1.5");
-    expect_near_float(stats, testName, __LINE__, b.to_float(), -0.25f, 0.01f, "fp16 to_float close to -0.25");
+    expect_near_float(stats, testName, __LINE__, a.to_float(), 1.5f, 0.1f, "fp16 to_float close to 1.5");
+    expect_near_float(stats, testName, __LINE__, b.to_float(), -0.25f, 0.1f, "fp16 to_float close to -0.25");
     const csFP16 c = a + b; // 1.25
-    expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.02f, "fp16 add works");
+    expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.15f, "fp16 add works");
     const csFP16 d = a * b; // -0.375
-    expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.02f, "fp16 mul works");
+    expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.15f, "fp16 mul works");
     const csFP16 e = csFP16::from_int(2) / csFP16::from_int(4); // 0.5
-    expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.02f, "fp16 div works");
+    expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.15f, "fp16 div works");
 }
 
 void test_fp32_basic(TestStats& stats) {

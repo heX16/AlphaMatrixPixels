@@ -9,7 +9,7 @@ namespace amp {
 namespace math {
 
 // Fixed-point helpers:
-// csFP16: signed 8.8 (int16_t)  -> scale = 256
+// csFP16: signed 12.4 (int16_t)  -> scale = 16
 // csFP32: signed 16.16 (fp_type=int32_t) -> scale = 65536
 
 // Traits class that contains all type-specific information
@@ -243,15 +243,15 @@ using csFP32 = csFP<int32_t, 16>;
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
-    // Convert FP16 (8.8) to FP32 (16.16) by shifting raw value left by 8 bits.
+    // Convert FP16 (12.4) to FP32 (16.16) by shifting raw value left by 12 bits.
     return csFP32::from_raw(static_cast<csFP32::fp_type>(fp16.raw_value()) << (csFP32::frac_bits - csFP16::frac_bits));
 }
 
 inline csFP16 fp32_to_fp16(csFP32 fp32) noexcept {
-    // Convert FP32 (16.16) to FP16 (8.8) by shifting raw value right by 8 bits with rounding.
-    // Round to nearest: add 128 (half of 256) before shifting.
+    // Convert FP32 (16.16) to FP16 (12.4) by shifting raw value right by 12 bits with rounding.
+    // Round to nearest: add half of FP16 scale before shifting.
     const csFP32::fp_type raw32 = fp32.raw_value();
-    const csFP32::fp_type half_scale = csFP16::scale / 2; // 128
+    const csFP32::fp_type half_scale = csFP16::scale / 2; // half of FP16 scale
     const csFP32::fp_type rounded = (raw32 >= 0) 
         ? (raw32 + half_scale) >> (csFP32::frac_bits - csFP16::frac_bits)
         : (raw32 - half_scale) >> (csFP32::frac_bits - csFP16::frac_bits);
