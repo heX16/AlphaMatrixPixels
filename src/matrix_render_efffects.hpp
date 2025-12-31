@@ -672,15 +672,18 @@ public:
 
 // Snowfall effect: single snowflake falls down, accumulates at bottom, restarts at specified fill percentage.
 class csRenderSnowfall : public csRenderDynamic {
+private:
+    static constexpr tMatrixPixelsCoord cSpawnFlagForceInit = -1; // special flag for instant init in `recalc`
+
 public:
     static constexpr uint8_t base = csRenderMatrixBase::propLast;
-    static constexpr uint8_t propSnowflake_WIP = base + 1;
+    static constexpr uint8_t propCount = base + 1;
+    static constexpr uint8_t propSnowflake_WIP = base + 2;
     static constexpr uint8_t propLast = propSnowflake_WIP;
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
     static constexpr uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
     // Snowflake array configuration
-    static constexpr uint8_t cCount = 1; // Size of the snowflakes array
     static constexpr int8_t cSpawnDelayMin = -5; // Minimum spawn delay value (negative)
     static constexpr int8_t cSpawnDelayMax = -1; // Maximum spawn delay value (negative, must be less than 0)
 
@@ -691,9 +694,11 @@ public:
     };
 
     csColorRGBA color{255, 255, 255, 255};
+    uint16_t count = 4; // Number of snowflakes (dynamic)
 
     // State fields (not mutable, changed in recalc())
-    Snowflake snowflakes[cCount];
+    Snowflake* snowflakes = nullptr;
+    uint16_t snowflakesAllocatedCount = 0; // Track allocated array size
     uint16_t filledPixelsCount = 0;
     uint16_t lastUpdateTime = 0;
     uint8_t snowfallCount = 0; // Counter for compactSnow calls
@@ -701,9 +706,12 @@ public:
     csMatrixBoolean* bitmap = nullptr;
     uint16_t clearingIterations = 0; // Clearing mode counter: >0 means active, decreases to 0
 
-    csRenderSnowfall() = default;
+    csRenderSnowfall() {
+        resizeOrInitSnowflakesArray();
+    }
 
     ~csRenderSnowfall() {
+        delete[] snowflakes;
         delete bitmap;
     }
 
@@ -716,6 +724,13 @@ public:
         switch (propNum) {
             case propRenderRectAutosize:
                 info.disabled = true;
+                break;
+            case propCount:
+                info.type = PropType::UInt16;
+                info.name = "Snowflake count";
+                info.ptr = &count;
+                info.readOnly = false;
+                info.disabled = false;
                 break;
             case propColor:
                 info.type = PropType::Color;
@@ -735,13 +750,29 @@ public:
         csRenderMatrixBase::propChanged(propNum);
         if (propNum == propRectDest) {
             updateBitmap();
+        } else if (propNum == propCount) {
+            resizeOrInitSnowflakesArray();
         }
     }
 
+    // Initialize one snowflake with random values
+    void randOneSnowflake(Snowflake& snowflake, csRandGen& rand) {
+        if (rectDest.width == 0) {
+            return;
+        }
+        
+        // Random X position in top row (local coordinates: 0..width-1)
+        snowflake.x = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
+        // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
+        snowflake.y = to_coord(cSpawnDelayMin + 
+            rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin));
+    }
+    
     void recalc(csRandGen& rand, tTime currTime) override {
         if (disabled) {
             return;
         }
+
         // Algorithm works independently of matrix, only needs rectDest and bitmap
         if (!bitmap || rectDest.width == 0 || rectDest.height == 0) {
             return;
@@ -770,10 +801,18 @@ public:
         lastUpdateTime = currTime;
 
         // Process all snowflakes in the array
-        for (auto& snowflake : snowflakes) {
+        if (!snowflakes || count == 0) {
+            return; // Early exit if no array
+        }
+        for (uint16_t i = 0; i < count; ++i) {
+            auto& snowflake = snowflakes[i];
             // Handle spawn delay phase: snowflake is moving toward visible area
             if (snowflake.y < 0) {
                 ++snowflake.y;
+                continue;
+            }
+            if (snowflake.x == cSpawnFlagForceInit) {
+                randOneSnowflake(snowflake, rand);
                 continue;
             }
 
@@ -795,12 +834,7 @@ public:
                     ++filledPixelsCount;
                 }
 
-                // Immediately create a new snowflake in the same slot
-                // Random X position in top row (local coordinates: 0..width-1)
-                flake.x = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
-                // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
-                const uint8_t range = static_cast<uint8_t>(cSpawnDelayMax - cSpawnDelayMin);
-                flake.y = to_coord(cSpawnDelayMin + rand.randRange(0, range));
+                randOneSnowflake(flake, rand);
 
                 // Compact snow pile: make snowflakes settle down and to the left
                 // Call compactSnow only once every N snowfalls
@@ -855,7 +889,11 @@ public:
 
         // Draw all falling snowflakes from array (only visible ones, y >= 0)
         // Convert local coordinates to global coordinates
-        for (const auto& snowflake : snowflakes) {
+        if (!snowflakes || count == 0) {
+            return; // Early exit if no array
+        }
+        for (uint16_t i = 0; i < count; ++i) {
+            const auto& snowflake = snowflakes[i];
             // Skip snowflakes in spawn delay phase (negative y)
             if (snowflake.y < 0) {
                 continue;
@@ -887,12 +925,41 @@ private:
         clearingIterations = 0;
         lastDirectionWasLeft = false;
         lastUpdateTime = 0;
+    }
 
-        // Reset all snowflakes in array - initialize with default values
-        // Randomization will happen in recalc() when first called
-        for (auto& snowflake : snowflakes) {
-            snowflake.x = 0;
-            snowflake.y = cSpawnDelayMin; // Start with minimum spawn delay
+    // Initialize snowflakes array with random values
+    void initSnowflakesRandom(csRandGen& rand) {
+        if (!snowflakes || count == 0 || rectDest.width == 0) {
+            return;
+        }
+
+        for (uint16_t i = 0; i < count; ++i) {
+            randOneSnowflake(snowflakes[i], rand);
+        }
+    }
+
+    // Resize snowflakes array and initialize with random values
+    void resizeOrInitSnowflakesArray() {
+        // Free old array
+        if (snowflakes != nullptr)
+            delete[] snowflakes;
+
+        snowflakes = nullptr;
+
+        if (count == 0) {
+            return;
+        }
+
+        // Allocate new array
+        snowflakes = new Snowflake[count];
+
+        if (snowflakes == nullptr)
+        {
+            count = 0;
+            return;
+        }
+        for (uint16_t i = 0; i < count; ++i) {
+            snowflakes[i].x = cSpawnFlagForceInit;
         }
     }
 
