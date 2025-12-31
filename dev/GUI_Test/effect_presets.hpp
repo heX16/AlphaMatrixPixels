@@ -27,29 +27,29 @@ using amp::csRenderAverageArea;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
-// effectId: ID of the effect to create (1-4: base effects, 5-8: secondary effects, 255: skip)
-void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
+// effectId: ID of the effect to create (101-104: base effects, 105-110: secondary effects, 200: skip)
+void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     if (effectId == 0) {
         return;
     }
 
     switch (effectId) {
-        // Base effects (1-4)
-        case 1: // GradientWaves
+        // Base effects (101-104)
+        case 101: // GradientWaves
             effectManager.add(new csRenderGradientWaves());
             break;
-        case 2: // GradientWavesFP
+        case 102: // GradientWavesFP
             effectManager.add(new csRenderGradientWavesFP());
             break;
-        case 3: // Plasma
+        case 103: // Plasma
             effectManager.add(new csRenderPlasma());
             break;
-        case 4: // Snowfall
+        case 104: // Snowfall
             effectManager.add(new csRenderSnowfall());
             break;
         
-        // Secondary effects (5-8)
-        case 5: // Glyph
+        // Secondary effects (105-108)
+        case 105: // Glyph
             {
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
@@ -66,7 +66,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
                 effectManager.add(glyph);
                 break;
             }
-        case 6: // Circle
+        case 106: // Circle
             {
             auto* circle = new csRenderCircleGradient();
             circle->color = csColorRGBA{255, 255, 255, 255};
@@ -76,7 +76,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
             effectManager.add(circle);
             break;
         }
-        case 7: // Clock
+        case 107: // Clock
             {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitalClock>();
@@ -124,7 +124,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 8: // AverageArea
+        case 108: // AverageArea
             {
             if (!effectManager.getMatrix()) {
                 break;
@@ -138,7 +138,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
             effectManager.add(averageArea);
             break;
         }
-        case 9: // Clock (3x5 font)
+        case 109: // Clock (3x5 font)
             {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
@@ -180,7 +180,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 10: // 7 horizontal lines with different colors
+        case 110: // 7 horizontal lines with different colors
             {
                 if (!effectManager.getMatrix()) {
                     break;
@@ -220,7 +220,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrix
                 }
                 break;
             }
-        case 255:
+        case 200:
             ; // slip - remove "effect2"
         default:
             ;

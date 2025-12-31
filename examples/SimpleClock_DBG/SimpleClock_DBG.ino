@@ -122,7 +122,7 @@ void setup() {
     pinMode(cButton2Pin, INPUT_PULLUP);
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, 1);
+    loadEffectPreset(effectManager, 301); // Clock
 
     #if AMP_ENABLE_SERIAL_DEBUG
     // Initialize Serial for debug output

@@ -76,37 +76,37 @@ public:
                 createEffectBundleDouble(0, 0);
                 break;
             case SDLK_w:
-                createEffectBundleDouble(1, 0);
+                createEffectBundleDouble(101, 0); // GradientWaves
                 break;
             case SDLK_e:
-                createEffectBundleDouble(2, 0);
+                createEffectBundleDouble(102, 0); // GradientWavesFP
                 break;
             case SDLK_q:
-                createEffectBundleDouble(3, 0);
+                createEffectBundleDouble(103, 0); // Plasma
                 break;
             case SDLK_s:
-                createEffectBundleDouble(4, 0);
+                createEffectBundleDouble(104, 0); // Snowfall
                 break;
             case SDLK_r:
-                createEffectBundleDouble(0, 5);
+                createEffectBundleDouble(0, 105); // Glyph
                 break;
             case SDLK_t:
-                createEffectBundleDouble(0, 6);
+                createEffectBundleDouble(0, 106); // Circle
                 break;
             case SDLK_c:
-                createEffectBundleDouble(0, 7);
+                createEffectBundleDouble(0, 107); // Clock
                 break;
             case SDLK_b:
-                createEffectBundleDouble(0, 8);
+                createEffectBundleDouble(0, 108); // AverageArea
                 break;
             case SDLK_v:
-                createEffectBundleDouble(0, 9);
+                createEffectBundleDouble(0, 109); // Clock (3x5 font)
                 break;
             case SDLK_m:
-                createEffectBundleDouble(10, 0);
+                createEffectBundleDouble(110, 0); // 7 horizontal lines
                 break;
             case SDLK_n:
-                createEffectBundleDouble(0, 255);
+                createEffectBundleDouble(0, 200); // skip
                 break;
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
@@ -138,10 +138,10 @@ public:
         }
     }
 
-    uint8_t eff1_base = 1;
-    uint8_t eff2 = 5;
+    uint16_t eff1_base = 101; // GradientWaves (was 1)
+    uint16_t eff2 = 105; // Glyph (was 5)
 
-    void createEffectBundleDouble(uint8_t a_eff1_base, uint8_t a_eff2) {
+    void createEffectBundleDouble(uint16_t a_eff1_base, uint16_t a_eff2) {
         if (a_eff1_base != 0) {
             eff1_base = a_eff1_base;
         }
@@ -233,7 +233,7 @@ public:
         }
         
         recreateMatrix(16, 16);
-        createEffectBundleDouble(1, 0);
+        createEffectBundleDouble(101, 0); // GradientWaves
         copyLineIndexHelper.configureRemapEffect(&matrix);
         return true;
     }

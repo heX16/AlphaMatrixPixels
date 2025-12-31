@@ -91,8 +91,8 @@ void setup() {
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, 5);
-    loadEffectPreset(effectManager, 2);
+    loadEffectPreset(effectManager, 205); // Plasma
+    loadEffectPreset(effectManager, 202); // Clock negative
 }
 
 void loop() {

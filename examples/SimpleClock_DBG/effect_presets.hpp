@@ -19,13 +19,13 @@ using amp::csRenderDigitalClockDigit;
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
-void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
+void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId) {
     if (effectId == 0) {
         return;
     }
 
     switch (effectId) {
-        case 1: // Clock
+        case 301: // Clock
             {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
@@ -64,7 +64,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 2: // DigitGlyph (standalone, if needed)
+        case 302: // DigitGlyph (standalone, if needed)
             {
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 auto* digitGlyph = new csRenderDigitalClockDigit();

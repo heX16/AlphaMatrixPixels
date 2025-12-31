@@ -22,14 +22,14 @@ using amp::csRenderPlasma;
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
-void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
+void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId) {
     if (effectId == 0) {
         return;
     }
 
     switch (effectId) {
-        case 1: // Clock
-        case 2: // Clock negative
+        case 201: // Clock
+        case 202: // Clock negative
             {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
@@ -63,7 +63,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
                 clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
                 clock->spacing = 0;
 
-                if (effectId == 0) {
+                if (effectId == 201) {
                     clock->renderDigit->color = csColorRGBA(255, 255, 255, 255);
                     clock->renderDigit->backgroundColor = csColorRGBA(0, 0, 0, 0);
                 } else {
@@ -76,7 +76,7 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 3: // 5 horizontal lines with different colors
+        case 203: // 5 horizontal lines with different colors
             {
                 if (!effectManager.getMatrix()) {
                     break;
@@ -110,10 +110,10 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
                 }
                 break;
             }
-        case 4: // GradientWavesFP
+        case 204: // GradientWavesFP
             effectManager.add(new csRenderGradientWavesFP());
             break;
-        case 5: // Plasma
+        case 205: // Plasma
             effectManager.add(new csRenderPlasma());
             break;
         default:
