@@ -22,6 +22,7 @@ public:
 
     static constexpr int frac_bits = 8;
     static constexpr fp_type scale = static_cast<fp_type>(1 << frac_bits); // 256
+    // TODO: These will become template parameters in the future refactoring.
     static constexpr fp_type min_raw = static_cast<fp_type>(-32768);
     static constexpr fp_type max_raw = static_cast<fp_type>(32767);
 
@@ -42,10 +43,10 @@ private:
                         : static_cast<fp_type>((static_cast<fp_type2>(num) << frac_bits) / den);
     }
 
-    static AMP_CONSTEXPR int16_t saturate_raw(fp_type2 v) noexcept {
-        return v > static_cast<fp_type2>(max_raw) ? static_cast<int16_t>(max_raw)
-             : v < static_cast<fp_type2>(min_raw) ? static_cast<int16_t>(min_raw)
-             : static_cast<int16_t>(v);
+    static AMP_CONSTEXPR fp_type saturate_raw(fp_type2 v) noexcept {
+        return v > static_cast<fp_type2>(max_raw) ? max_raw
+             : v < static_cast<fp_type2>(min_raw) ? min_raw
+             : static_cast<fp_type>(v);
     }
 
     static AMP_CONSTEXPR fp_type float_to_raw_constexpr(float v) noexcept {
@@ -88,7 +89,7 @@ public:
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
     [[nodiscard]] AMP_CONSTEXPR fp_type2 int_trunc() const noexcept { return static_cast<fp_type2>(raw) >> frac_bits; }
-    [[nodiscard]] AMP_CONSTEXPR uint8_t frac_raw() const noexcept { return static_cast<uint8_t>(raw & (scale - 1)); }
+    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
 
     [[nodiscard]] inline fp_type2 round_int() const noexcept { return round_raw_to_int(raw); }
 
@@ -160,6 +161,7 @@ public:
 
     static constexpr int frac_bits = 16;
     static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits); // 65536
+    // TODO: These will become template parameters in the future refactoring.
     static constexpr fp_type min_raw = static_cast<fp_type>(-2147483647 - 1);
     static constexpr fp_type max_raw = static_cast<fp_type>(2147483647);
 
@@ -225,7 +227,7 @@ public:
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
     [[nodiscard]] AMP_CONSTEXPR fp_type int_trunc() const noexcept { return static_cast<fp_type>(raw >> frac_bits); }
-    [[nodiscard]] AMP_CONSTEXPR uint16_t frac_raw() const noexcept { return static_cast<uint16_t>(raw & (scale - 1)); }
+    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
 
     [[nodiscard]] inline fp_type round_int() const noexcept { return round_raw_to_int(raw); }
 
@@ -290,14 +292,15 @@ inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
 inline csFP16 fp32_to_fp16(csFP32 fp32) noexcept {
     // Convert FP32 (16.16) to FP16 (8.8) by shifting raw value right by 8 bits with rounding.
     // Round to nearest: add 128 (half of 256) before shifting.
-    const int32_t raw32 = fp32.raw_value();
-    const int32_t rounded = (raw32 >= 0) 
-        ? (raw32 + 128) >> 8
-        : (raw32 - 128) >> 8;
+    const csFP32::fp_type raw32 = fp32.raw_value();
+    const csFP32::fp_type half_scale = csFP16::scale / 2; // 128
+    const csFP32::fp_type rounded = (raw32 >= 0) 
+        ? (raw32 + half_scale) >> (csFP32::frac_bits - csFP16::frac_bits)
+        : (raw32 - half_scale) >> (csFP32::frac_bits - csFP16::frac_bits);
     // Clamp to FP16 range and convert.
-    const int16_t clamped = (rounded > 32767) ? 32767
-                          : (rounded < -32768) ? -32768
-                          : static_cast<int16_t>(rounded);
+    const csFP16::fp_type clamped = (rounded > csFP16::max_raw) ? csFP16::max_raw
+                          : (rounded < csFP16::min_raw) ? csFP16::min_raw
+                          : static_cast<csFP16::fp_type>(rounded);
     return csFP16::from_raw(clamped);
 }
 
