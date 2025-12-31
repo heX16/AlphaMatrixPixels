@@ -12,19 +12,52 @@ namespace math {
 // csFP16: signed 8.8 (int16_t)  -> scale = 256
 // csFP32: signed 16.16 (fp_type=int32_t) -> scale = 65536
 
-struct csFP16 {
-public:
+// Traits class that contains all type-specific information
+template<typename IntType>
+struct fp_traits;
+
+// Specialization for int8_t
+template<>
+struct fp_traits<int8_t> {
+    using fp_type = int8_t;
+    using fp_type2 = int16_t;
+    static constexpr fp_type min_raw = static_cast<fp_type>(-128);
+    static constexpr fp_type max_raw = static_cast<fp_type>(127);
+};
+
+// Specialization for int16_t
+template<>
+struct fp_traits<int16_t> {
     using fp_type = int16_t;
-    // Helper type for intermediate calculations (wider than fp_type).
     using fp_type2 = int32_t;
+    static constexpr fp_type min_raw = static_cast<fp_type>(-32768);
+    static constexpr fp_type max_raw = static_cast<fp_type>(32767);
+};
+
+// Specialization for int32_t
+template<>
+struct fp_traits<int32_t> {
+    using fp_type = int32_t;
+    using fp_type2 = int64_t;
+    static constexpr fp_type min_raw = static_cast<fp_type>(-2147483647 - 1);
+    static constexpr fp_type max_raw = static_cast<fp_type>(2147483647);
+};
+
+// Template fixed-point class
+template<typename IntType, int FracBits>
+struct csFP {
+public:
+    using traits = fp_traits<IntType>;
+    using fp_type = typename traits::fp_type;
+    // Helper type for intermediate calculations (wider than fp_type).
+    using fp_type2 = typename traits::fp_type2;
 
     fp_type raw{0};
 
-    static constexpr int frac_bits = 8;
-    static constexpr fp_type scale = static_cast<fp_type>(1 << frac_bits); // 256
-    // TODO: These will become template parameters in the future refactoring.
-    static constexpr fp_type min_raw = static_cast<fp_type>(-32768);
-    static constexpr fp_type max_raw = static_cast<fp_type>(32767);
+    static constexpr int frac_bits = FracBits;
+    static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits);
+    static constexpr fp_type min_raw = traits::min_raw;
+    static constexpr fp_type max_raw = traits::max_raw;
 
 private:
     // Clamp helpers for intermediate math.
@@ -50,37 +83,61 @@ private:
     }
 
     static AMP_CONSTEXPR fp_type float_to_raw_constexpr(float v) noexcept {
-        return saturate_raw(static_cast<fp_type2>(
-            (v * static_cast<float>(scale)) +
-            ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
+        // For smaller types (int8_t, int16_t), use simpler calculation
+        if constexpr (sizeof(fp_type) <= 2) {
+            return saturate_raw(static_cast<fp_type2>(
+                (v * static_cast<float>(scale)) +
+                ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
+        } else {
+            // For int32_t, use the more precise calculation
+            const float scaled = v * static_cast<float>(scale);
+            const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
+            const fp_type2 raw = static_cast<fp_type2>(scaled + adj);
+            return saturate_raw(raw);
+        }
     }
-
 
     static float raw_to_float(fp_type v) noexcept {
         return static_cast<float>(v) / static_cast<float>(scale);
     }
 
-    static inline fp_type2 round_raw_to_int(fp_type v) noexcept {
-        const fp_type2 half = static_cast<fp_type2>(scale) / 2;
-        const fp_type2 bias = (v >= 0) ? half : -half;
-        return static_cast<fp_type2>(v + bias) >> frac_bits;
+    // round_raw_to_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    static inline auto round_raw_to_int(fp_type v) noexcept -> decltype(static_cast<fp_type2>(v) >> frac_bits) {
+        if constexpr (sizeof(fp_type) == 2) {
+            const fp_type2 half = static_cast<fp_type2>(scale) / 2;
+            const fp_type2 bias = (v >= 0) ? half : -half;
+            return static_cast<fp_type2>(v + bias) >> frac_bits;
+        } else {
+            const fp_type half = scale / 2;
+            const fp_type bias = (v >= 0) ? half : -half;
+            return (v + bias) >> frac_bits;
+        }
     }
 
 public:
-    csFP16() = default;
-    explicit csFP16(float v) : raw(float_to_raw_constexpr(v)) {}
+    csFP() = default;
+    explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
 
-    static inline csFP16 from_raw(fp_type r) noexcept {
-        csFP16 out{};
+    static inline csFP from_raw(fp_type r) noexcept {
+        csFP out{};
         out.raw = r;
         return out;
     }
-    static inline csFP16 from_int(fp_type2 v) noexcept { return from_raw(clamp_raw(v << frac_bits)); }
-    static csFP16 from_float(float v) noexcept { return csFP16(v); }
-    static inline csFP16 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
-    static inline csFP16 from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
+    
+    // from_int: for int16_t uses fp_type2, for int32_t uses fp_type
+    // Use overloads instead of std::conditional for Arduino compatibility
+    static inline csFP from_int(fp_type2 v) noexcept {
+        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
+    }
+    static inline csFP from_int(fp_type v) noexcept {
+        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
+    }
+    
+    static csFP from_float(float v) noexcept { return csFP(v); }
+    static inline csFP float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
+    static inline csFP from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
         // round-to-nearest, ties up
-        // Note: intermediate math uses fp_type2 (int32_t). Large numer/denom may overflow.
+        // Note: intermediate math uses fp_type2. Large numer/denom may overflow.
         const fp_type2 scaled = static_cast<fp_type2>(scale) * static_cast<fp_type2>(numer);
         const fp_type2 bias = (scaled >= 0) ? (static_cast<fp_type2>(denom) / 2) : -(static_cast<fp_type2>(denom) / 2);
         return from_raw(clamp_raw((scaled + bias) / denom));
@@ -88,205 +145,106 @@ public:
 
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
-    [[nodiscard]] AMP_CONSTEXPR fp_type2 int_trunc() const noexcept { return static_cast<fp_type2>(raw) >> frac_bits; }
+    
+    // int_trunc: for int16_t returns fp_type2, for int32_t returns fp_type
+    [[nodiscard]] AMP_CONSTEXPR auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+        if constexpr (sizeof(fp_type) == 2) {
+            return static_cast<fp_type2>(raw) >> frac_bits;
+        } else {
+            return static_cast<fp_type>(raw >> frac_bits);
+        }
+    }
+    
     [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
 
-    [[nodiscard]] inline fp_type2 round_int() const noexcept { return round_raw_to_int(raw); }
-
-    [[nodiscard]] inline fp_type2 floor_int() const noexcept {
-        if (raw >= 0) {
-            return static_cast<fp_type2>(raw) >> frac_bits;
-        }
-        const fp_type2 mask = static_cast<fp_type2>(scale - 1);
-        const fp_type2 r = static_cast<fp_type2>(raw);
-        return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
+    // round_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    [[nodiscard]] inline auto round_int() const noexcept -> decltype(round_raw_to_int(raw)) {
+        return round_raw_to_int(raw);
     }
 
-    [[nodiscard]] inline fp_type2 ceil_int() const noexcept {
-        if (raw >= 0) {
+    // floor_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+        if constexpr (sizeof(fp_type) == 2) {
+            if (raw >= 0) {
+                return static_cast<fp_type2>(raw) >> frac_bits;
+            }
             const fp_type2 mask = static_cast<fp_type2>(scale - 1);
             const fp_type2 r = static_cast<fp_type2>(raw);
-            return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
+            return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
+        } else {
+            if (raw >= 0) {
+                return static_cast<fp_type>(raw >> frac_bits);
+            }
+            const fp_type mask = static_cast<fp_type>(scale - 1);
+            const fp_type r = raw;
+            return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
         }
-        return static_cast<fp_type2>(raw) >> frac_bits;
     }
 
-    [[nodiscard]] inline csFP16 absVal() const noexcept {
+    // ceil_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    [[nodiscard]] inline auto ceil_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+        if constexpr (sizeof(fp_type) == 2) {
+            if (raw >= 0) {
+                const fp_type2 mask = static_cast<fp_type2>(scale - 1);
+                const fp_type2 r = static_cast<fp_type2>(raw);
+                return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
+            }
+            return static_cast<fp_type2>(raw) >> frac_bits;
+        } else {
+            if (raw >= 0) {
+                const fp_type mask = static_cast<fp_type>(scale - 1);
+                const fp_type r = raw;
+                return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
+            }
+            return static_cast<fp_type>(raw >> frac_bits);
+        }
+    }
+
+    [[nodiscard]] inline csFP absVal() const noexcept {
         return (raw >= 0) ? *this : from_raw(static_cast<fp_type>(raw == min_raw ? max_raw : -raw));
     }
 
     // Arithmetic
-    [[nodiscard]] inline csFP16 operator+(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP operator+(csFP rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<fp_type2>(raw) + static_cast<fp_type2>(rhs.raw)));
     }
-    [[nodiscard]] inline csFP16 operator-(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP operator-(csFP rhs) const noexcept {
         return from_raw(clamp_raw(static_cast<fp_type2>(raw) - static_cast<fp_type2>(rhs.raw)));
     }
-    [[nodiscard]] inline csFP16 operator*(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP operator*(csFP rhs) const noexcept {
         return from_raw(clamp_raw(mul_raw(raw, rhs.raw)));
     }
-    [[nodiscard]] inline csFP16 operator/(csFP16 rhs) const noexcept {
+    [[nodiscard]] inline csFP operator/(csFP rhs) const noexcept {
         if (rhs.raw == 0) {
             return from_raw(static_cast<fp_type>(0));
         }
         return from_raw(clamp_raw(div_raw(raw, rhs.raw)));
     }
 
-    csFP16& operator+=(csFP16 rhs) noexcept { return *this = *this + rhs; }
-    csFP16& operator-=(csFP16 rhs) noexcept { return *this = *this - rhs; }
-    csFP16& operator*=(csFP16 rhs) noexcept { return *this = *this * rhs; }
-    csFP16& operator/=(csFP16 rhs) noexcept { return *this = *this / rhs; }
+    csFP& operator+=(csFP rhs) noexcept { return *this = *this + rhs; }
+    csFP& operator-=(csFP rhs) noexcept { return *this = *this - rhs; }
+    csFP& operator*=(csFP rhs) noexcept { return *this = *this * rhs; }
+    csFP& operator/=(csFP rhs) noexcept { return *this = *this / rhs; }
 
     // Comparisons
-    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP16 rhs) const noexcept { return raw == rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP16 rhs) const noexcept { return raw != rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP16 rhs) const noexcept { return raw < rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP16 rhs) const noexcept { return raw <= rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP16 rhs) const noexcept { return raw > rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP16 rhs) const noexcept { return raw >= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP rhs) const noexcept { return raw == rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP rhs) const noexcept { return raw != rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP rhs) const noexcept { return raw < rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP rhs) const noexcept { return raw <= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP rhs) const noexcept { return raw > rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP rhs) const noexcept { return raw >= rhs.raw; }
 
     explicit operator float() const noexcept { return to_float(); }
 };
 
-
-
-
-struct csFP32 {
-public:
-    using fp_type = int32_t;
-    // Helper type for intermediate calculations (wider than fp_type).
-    using fp_type2 = int64_t;
-
-    fp_type raw{0};
-
-    static constexpr int frac_bits = 16;
-    static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits); // 65536
-    // TODO: These will become template parameters in the future refactoring.
-    static constexpr fp_type min_raw = static_cast<fp_type>(-2147483647 - 1);
-    static constexpr fp_type max_raw = static_cast<fp_type>(2147483647);
-
-private:
-    // Clamp helpers for intermediate math.
-    static AMP_CONSTEXPR fp_type clamp_raw(fp_type2 v) noexcept {
-        return v > static_cast<fp_type2>(max_raw) ? max_raw
-             : v < static_cast<fp_type2>(min_raw) ? min_raw
-             : static_cast<fp_type>(v);
-    }
-
-    static AMP_CONSTEXPR fp_type mul_raw(fp_type a, fp_type b) noexcept {
-        return static_cast<fp_type>((static_cast<fp_type2>(a) * static_cast<fp_type2>(b)) >> frac_bits);
-    }
-
-    static AMP_CONSTEXPR fp_type div_raw(fp_type num, fp_type den) noexcept {
-        return den == 0 ? static_cast<fp_type>(0)
-                        : static_cast<fp_type>((static_cast<fp_type2>(num) << frac_bits) / den);
-    }
-
-    static AMP_CONSTEXPR fp_type saturate_raw(fp_type2 v) noexcept {
-        return v > static_cast<fp_type2>(max_raw) ? max_raw
-             : v < static_cast<fp_type2>(min_raw) ? min_raw
-             : static_cast<fp_type>(v);
-    }
-
-    static inline fp_type float_to_raw_constexpr(float v) noexcept {
-        const float scaled = v * static_cast<float>(scale);
-        const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
-        const fp_type2 raw = static_cast<fp_type2>(scaled + adj);
-        return saturate_raw(raw);
-    }
-
-    static float raw_to_float(fp_type v) noexcept {
-        return static_cast<float>(v) / static_cast<float>(scale);
-    }
-
-    static inline fp_type round_raw_to_int(fp_type v) noexcept {
-        const fp_type half = scale / 2;
-        const fp_type bias = (v >= 0) ? half : -half;
-        return (v + bias) >> frac_bits;
-    }
-
-public:
-    csFP32() = default;
-    explicit csFP32(float v) : raw(float_to_raw_constexpr(v)) {}
-
-    static inline csFP32 from_raw(fp_type r) noexcept {
-        csFP32 out{};
-        out.raw = r;
-        return out;
-    }
-    static inline csFP32 from_int(fp_type v) noexcept { return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits)); }
-    static csFP32 from_float(float v) noexcept { return csFP32(v); }
-    static inline csFP32 float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
-    static inline csFP32 from_ratio(fp_type numer, fp_type denom) noexcept {
-        // round-to-nearest, ties up
-        const fp_type2 scaled = static_cast<fp_type2>(scale) * static_cast<fp_type2>(numer);
-        const fp_type2 bias = (scaled >= 0) ? (static_cast<fp_type2>(denom) / 2) : -(static_cast<fp_type2>(denom) / 2);
-        return from_raw(clamp_raw((scaled + bias) / denom));
-    }
-
-    [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
-    [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
-    [[nodiscard]] AMP_CONSTEXPR fp_type int_trunc() const noexcept { return static_cast<fp_type>(raw >> frac_bits); }
-    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
-
-    [[nodiscard]] inline fp_type round_int() const noexcept { return round_raw_to_int(raw); }
-
-    [[nodiscard]] inline fp_type floor_int() const noexcept {
-        if (raw >= 0) {
-            return static_cast<fp_type>(raw >> frac_bits);
-        }
-        const fp_type mask = static_cast<fp_type>(scale - 1);
-        const fp_type r = raw;
-        return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
-    }
-
-    [[nodiscard]] inline fp_type ceil_int() const noexcept {
-        if (raw >= 0) {
-            const fp_type mask = static_cast<fp_type>(scale - 1);
-            const fp_type r = raw;
-            return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
-        }
-        return static_cast<fp_type>(raw >> frac_bits);
-    }
-
-    [[nodiscard]] inline csFP32 absVal() const noexcept {
-        return (raw >= 0) ? *this : from_raw(raw == min_raw ? max_raw : -raw);
-    }
-
-    // Arithmetic
-    [[nodiscard]] inline csFP32 operator+(csFP32 rhs) const noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(raw) + static_cast<fp_type2>(rhs.raw)));
-    }
-    [[nodiscard]] inline csFP32 operator-(csFP32 rhs) const noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(raw) - static_cast<fp_type2>(rhs.raw)));
-    }
-    [[nodiscard]] inline csFP32 operator*(csFP32 rhs) const noexcept {
-        return from_raw(clamp_raw(mul_raw(raw, rhs.raw)));
-    }
-    [[nodiscard]] inline csFP32 operator/(csFP32 rhs) const noexcept {
-        return rhs.raw == 0 ? from_raw(0) : from_raw(clamp_raw(div_raw(raw, rhs.raw)));
-    }
-
-    csFP32& operator+=(csFP32 rhs) noexcept { return *this = *this + rhs; }
-    csFP32& operator-=(csFP32 rhs) noexcept { return *this = *this - rhs; }
-    csFP32& operator*=(csFP32 rhs) noexcept { return *this = *this * rhs; }
-    csFP32& operator/=(csFP32 rhs) noexcept { return *this = *this / rhs; }
-
-    // Comparisons
-    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP32 rhs) const noexcept { return raw == rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP32 rhs) const noexcept { return raw != rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP32 rhs) const noexcept { return raw < rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP32 rhs) const noexcept { return raw <= rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP32 rhs) const noexcept { return raw > rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP32 rhs) const noexcept { return raw >= rhs.raw; }
-
-    explicit operator float() const noexcept { return to_float(); }
-};
+// Type aliases for backward compatibility
+using csFP16 = csFP<int16_t, 4>;
+using csFP32 = csFP<int32_t, 16>;
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
     // Convert FP16 (8.8) to FP32 (16.16) by shifting raw value left by 8 bits.
-    return csFP32::from_raw(static_cast<csFP32::fp_type>(fp16.raw_value()) << 8);
+    return csFP32::from_raw(static_cast<csFP32::fp_type>(fp16.raw_value()) << (csFP32::frac_bits - csFP16::frac_bits));
 }
 
 inline csFP16 fp32_to_fp16(csFP32 fp32) noexcept {
