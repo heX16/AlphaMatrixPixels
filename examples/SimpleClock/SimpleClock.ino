@@ -22,7 +22,7 @@ amp::csRandGen rng;
 RTC_DS3231 rtc;
 
 // Effect manager
-csEffectManager effectManager(canvas);
+csEffectManager effectManager;
 
 // Remap helper: remaps 2D matrix to 1D matrix using custom mapping array
 // Based on copy_line_index_helper.hpp from GUI_Test
@@ -85,12 +85,14 @@ void setup() {
     Wire.begin();
     rtc.begin();
 
+    effectManager.setMatrix(canvas);
+
     // For manual time setting (uncomment if needed):
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, canvas, 5);
-    loadEffectPreset(effectManager, canvas, 2);
+    loadEffectPreset(effectManager, 5);
+    loadEffectPreset(effectManager, 2);
 }
 
 void loop() {

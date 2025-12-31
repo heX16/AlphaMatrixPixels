@@ -44,7 +44,7 @@ amp::csRandGen rng;
 RTC_DS3231 rtc;
 
 // Effect manager
-csEffectManager effectManager(canvas);
+csEffectManager effectManager;
 
 // Remap helper: remaps 2D matrix to 1D matrix using custom mapping array
 // Based on copy_line_index_helper.hpp from GUI_Test
@@ -108,6 +108,8 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
+    effectManager.setMatrix(canvas);
+
     // Initialize RTC
     Wire.begin();
     rtc.begin();
@@ -120,7 +122,7 @@ void setup() {
     pinMode(cButton2Pin, INPUT_PULLUP);
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, canvas, 1);
+    loadEffectPreset(effectManager, 1);
 
     #if AMP_ENABLE_SERIAL_DEBUG
     // Initialize Serial for debug output

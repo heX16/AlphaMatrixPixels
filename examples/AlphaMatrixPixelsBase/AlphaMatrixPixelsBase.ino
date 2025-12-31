@@ -34,7 +34,7 @@ amp::csMatrixPixels canvas(cWidth, cHeight);
 amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
 
 amp::csRandGen rng;
-csEffectManager effectManager(canvas);
+csEffectManager effectManager;
 
 csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
@@ -69,9 +69,11 @@ CLEDController* controller = nullptr;
 
     amp::wifi_ota::setup();
     
+    effectManager.setMatrix(canvas);
+    
     tEffectSwitch.start();  // Start timer with default time (20 seconds)
     tRender.start();        // Start render timer with default time (~60 FPS)
-    loadEffectPreset(effectManager, canvas, 5, &canvasX2); // Snowfall
+    loadEffectPreset(effectManager, 5, &canvasX2); // Snowfall
 }
 
 void loop() {
@@ -90,12 +92,12 @@ void loop() {
         // Clear all effects and add needed ones based on effectIndex
         effectManager.clearAll();
         if (effectIndex == 0) {
-            //loadEffectPreset(effectManager, canvas, 2); // GradientWaves
-            loadEffectPreset(effectManager, canvas, 3); // Snowfall
+            //loadEffectPreset(effectManager, 2); // GradientWaves
+            loadEffectPreset(effectManager, 3); // Snowfall
         } else if (effectIndex == 1) {
-            loadEffectPreset(effectManager, canvas, 2); // GradientWaves
+            loadEffectPreset(effectManager, 2); // GradientWaves
         } else {
-            loadEffectPreset(effectManager, canvas, 1); // Plasma
+            loadEffectPreset(effectManager, 1); // Plasma
         }
     }
     

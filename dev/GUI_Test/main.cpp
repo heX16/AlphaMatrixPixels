@@ -49,7 +49,7 @@ public:
 
     csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    csEffectManager effectManager{matrix};
+    csEffectManager effectManager;
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
@@ -154,12 +154,12 @@ public:
 
         // Add base effect if eff1_base is set
         if (eff1_base != 0) {
-            loadEffectPreset(effectManager, matrix, eff1_base);
+            loadEffectPreset(effectManager, eff1_base);
         }
 
         // Add secondary effect if eff2 is set
         if (eff2 != 0) {
-            loadEffectPreset(effectManager, matrix, eff2);
+            loadEffectPreset(effectManager, eff2);
         }
     }
 
@@ -310,7 +310,7 @@ public:
             return;
         }
         matrix = csMatrixPixels{w, h};
-        effectManager.bindMatrix();
+        effectManager.setMatrix(matrix);
         copyLineIndexHelper.configureRemapEffect(&matrix);
     }
 

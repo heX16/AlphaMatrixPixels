@@ -26,10 +26,9 @@ using amp::csRenderFill;
 using amp::csRenderAverageArea;
 
 // Abstract function: adds effects to the array based on effect ID
-// effectManager: reference to effect manager for adding effects
-// matrix: reference to matrix (used for some effects like AverageArea)
+// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.matrix)
 // effectId: ID of the effect to create (1-4: base effects, 5-8: secondary effects, 255: skip)
-void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId) {
+void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     if (effectId == 0) {
         return;
     }
@@ -127,9 +126,12 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             }
         case 8: // AverageArea
             {
+            if (!effectManager.matrix) {
+                break;
+            }
             auto* averageArea = new csRenderAverageArea();
-            averageArea->matrix = &matrix;
-            averageArea->matrixSource = &matrix;
+            averageArea->matrix = effectManager.matrix;
+            averageArea->matrixSource = effectManager.matrix;
             averageArea->renderRectAutosize = false;
             averageArea->rectSource = amp::csRect{1, 1, 4, 4};
             averageArea->rectDest = amp::csRect{1, 1, 4, 4};
@@ -180,8 +182,11 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             }
         case 10: // 7 horizontal lines with different colors
             {
-                const tMatrixPixelsSize matrixWidth = matrix.width();
-                const tMatrixPixelsSize matrixHeight = matrix.height();
+                if (!effectManager.matrix) {
+                    break;
+                }
+                const tMatrixPixelsSize matrixWidth = effectManager.matrix->width();
+                const tMatrixPixelsSize matrixHeight = effectManager.matrix->height();
                 constexpr uint8_t lineCount = 7;
                 
                 // Calculate line height (at least 1 pixel)

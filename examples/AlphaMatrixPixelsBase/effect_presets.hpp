@@ -21,11 +21,9 @@ using amp::csRenderGlyph;
 using amp::csRenderMatrixCopy;
 
 // Abstract function: adds effects to the array based on effect ID
-// effectManager: reference to effect manager for adding effects
-// matrix: reference to matrix (used for some effects)
+// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.matrix)
 // effectId: ID of the effect to create
-// matrixX2: optional reference to 2x matrix (used for case 5)
-void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, uint8_t effectId, csMatrixPixels* matrixX2 = nullptr) {
+void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     if (effectId == 0) {
         return;
     }
@@ -76,7 +74,7 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             }
         case 5: // Snowfall (copy) - renders to canvasX2, then copies to canvas via pipe
             {
-                if (!matrixX2) {
+                if (!matrixSecondBuffer) {
                     break; // canvasX2 not provided
                 }
                 
@@ -88,13 +86,15 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
                 snowfall->propChanged(csRenderSnowfall::propCount);
                 // Add to manager first (it will set canvas), then override with canvasX2
                 effectManager.add(snowfall);
-                snowfall->setMatrix(matrixX2);
+                snowfall->setMatrix(matrixSecondBuffer);
                 
                 // Create pipe effect to copy from canvasX2 to canvas
                 auto* pipe = new csRenderMatrixCopy();
-                pipe->matrixSource = matrixX2;
-                pipe->rectSource = matrixX2->getRect();
-                pipe->rectDest = matrix.getRect();
+                pipe->matrixSource = matrixSecondBuffer;
+                pipe->rectSource = matrixSecondBuffer->getRect();
+                if (effectManager.matrix) {
+                    pipe->rectDest = effectManager.matrix->getRect();
+                }
                 effectManager.add(pipe);
                 break;
             }
