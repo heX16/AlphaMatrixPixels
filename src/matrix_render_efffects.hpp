@@ -463,8 +463,8 @@ public:
                 const float dx = px - cx;
                 const float distSq = dx * dx + dySq;
                 if (!smoothEdges) {
-                    const csColorRGBA color = (distSq <= radiusSq) ? color : backgroundColor;
-                    matrix->setPixel(x, y, color);
+                    const csColorRGBA c = (distSq <= radiusSq) ? color : backgroundColor;
+                    matrix->setPixel(x, y, c);
                     continue;
                 }
 
@@ -679,12 +679,21 @@ public:
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
     static constexpr uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
 
+    // Snowflake array configuration
+    static constexpr uint8_t cCount = 1; // Size of the snowflakes array
+    static constexpr int8_t cSpawnDelayMin = -5; // Minimum spawn delay value (negative)
+    static constexpr int8_t cSpawnDelayMax = -1; // Maximum spawn delay value (negative, must be less than 0)
+
+    // Snowflake structure
+    struct Snowflake {
+        tMatrixPixelsCoord x = 0;
+        tMatrixPixelsCoord y = 0;
+    };
+
     csColorRGBA color{255, 255, 255, 255};
 
     // State fields (not mutable, changed in recalc())
-    tMatrixPixelsCoord currentX = 0;
-    tMatrixPixelsCoord currentY = 0;
-    bool hasActiveSnowflake = false;
+    Snowflake snowflakes[cCount];
     uint16_t filledPixelsCount = 0;
     uint16_t lastUpdateTime = 0;
     uint8_t snowfallCount = 0; // Counter for compactSnow calls
@@ -754,65 +763,70 @@ public:
 
         // Check if it's time to update position
         const uint16_t timeDelta = currTime - lastUpdateTime;
-        if (timeDelta < timeStep && hasActiveSnowflake) {
+        if (timeDelta < timeStep) {
             return;
         }
 
         lastUpdateTime = currTime;
 
-        // Create new snowflake if none active
-        if (!hasActiveSnowflake) {
-            // Random X position in top row (local coordinates: 0..width-1)
-            currentX = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
-            currentY = 0;
-            hasActiveSnowflake = true;
-            return;
+        // Process all snowflakes in the array
+        for (auto& snowflake : snowflakes) {
+            // Handle spawn delay phase: snowflake is moving toward visible area
+            if (snowflake.y < 0) {
+                ++snowflake.y;
+                continue;
+            }
+
+            // Normal falling logic for visible snowflakes (y >= 0)
+            const tMatrixPixelsCoord nextY = snowflake.y + 1;
+
+            // Common fix logic (takes snowflake reference)
+            auto fixSnowflakeAtCurrent = [&](Snowflake& flake) {
+                // Logic with outOfBoundsValue = true:
+                // - If snowflake is inside bounds and position is empty: getPixel returns false,
+                //   we set the pixel and increment counter.
+                // - If snowflake is inside bounds and position already has snowflake: getPixel returns true,
+                //   we do nothing.
+                // - If snowflake is out of bounds: getPixel returns true (due to outOfBoundsValue = true),
+                //   we do nothing, counter is not incremented.
+                // No boundary check needed: getPixel with outOfBoundsValue = true already handles out-of-bounds.
+                if (!bitmap->getPixel(to_size(flake.x), to_size(flake.y))) {
+                    bitmap->setPixel(to_size(flake.x), to_size(flake.y), true);
+                    ++filledPixelsCount;
+                }
+
+                // Immediately create a new snowflake in the same slot
+                // Random X position in top row (local coordinates: 0..width-1)
+                flake.x = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
+                // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
+                const uint8_t range = static_cast<uint8_t>(cSpawnDelayMax - cSpawnDelayMin);
+                flake.y = to_coord(cSpawnDelayMin + rand.randRange(0, range));
+
+                // Compact snow pile: make snowflakes settle down and to the left
+                // Call compactSnow only once every N snowfalls
+                ++snowfallCount;
+                if (snowfallCount >= compactSnowInterval) {
+                    compactSnow();
+                    snowfallCount = 0;
+                }
+
+                // Handle clearing mode
+                if (clearingIterations > 0) {
+                    shiftBitmapDown();
+                    --clearingIterations;
+                }
+            };
+
+            // Check collision with existing snowflake or boundary
+            // outOfBoundsValue = true means getPixel returns true for out-of-bounds
+            if (bitmap->getPixel(to_size(snowflake.x), to_size(nextY))) {
+                fixSnowflakeAtCurrent(snowflake);
+                continue;
+            }
+
+            // Move down
+            snowflake.y = nextY;
         }
-
-        // Try to move snowflake down
-        const tMatrixPixelsCoord nextY = currentY + 1;
-
-        // Common fix logic
-        auto fixSnowflakeAtCurrent = [&]() {
-            // Logic with outOfBoundsValue = true:
-            // - If snowflake is inside bounds and position is empty: getPixel returns false,
-            //   we set the pixel and increment counter.
-            // - If snowflake is inside bounds and position already has snowflake: getPixel returns true,
-            //   we do nothing.
-            // - If snowflake is out of bounds: getPixel returns true (due to outOfBoundsValue = true),
-            //   we do nothing, counter is not incremented.
-            // No boundary check needed: getPixel with outOfBoundsValue = true already handles out-of-bounds.
-            if (!bitmap->getPixel(to_size(currentX), to_size(currentY))) {
-                bitmap->setPixel(to_size(currentX), to_size(currentY), true);
-                ++filledPixelsCount;
-            }
-
-            hasActiveSnowflake = false;
-            
-            // Compact snow pile: make snowflakes settle down and to the left
-            // Call compactSnow only once every N snowfalls
-            ++snowfallCount;
-            if (snowfallCount >= compactSnowInterval) {
-                compactSnow();
-                snowfallCount = 0;
-            }
-
-            // Handle clearing mode
-            if (clearingIterations > 0) {
-                shiftBitmapDown();
-                --clearingIterations;
-            }
-        };
-
-        // Check collision with existing snowflake or boundary
-        // outOfBoundsValue = true means getPixel returns true for out-of-bounds
-        if (bitmap->getPixel(to_size(currentX), to_size(nextY))) {
-            fixSnowflakeAtCurrent();
-            return;
-        }
-
-        // Move down
-        currentY = nextY;
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
@@ -839,13 +853,18 @@ public:
             }
         }
 
-        // Draw current falling snowflake
+        // Draw all falling snowflakes from array (only visible ones, y >= 0)
         // Convert local coordinates to global coordinates
-        if (hasActiveSnowflake) {
-            const tMatrixPixelsCoord globalX = rectDest.x + currentX;
-            const tMatrixPixelsCoord globalY = rectDest.y + currentY;
+        for (const auto& snowflake : snowflakes) {
+            // Skip snowflakes in spawn delay phase (negative y)
+            if (snowflake.y < 0) {
+                continue;
+            }
+
+            const tMatrixPixelsCoord globalX = rectDest.x + snowflake.x;
+            const tMatrixPixelsCoord globalY = rectDest.y + snowflake.y;
             // Check if snowflake is within target area (intersection of rect and matrix)
-            if (globalX >= target.x && globalX < endX && 
+            if (globalX >= target.x && globalX < endX &&
                 globalY >= target.y && globalY < endY) {
                 matrix->setPixel(globalX, globalY, color);
             }
@@ -863,12 +882,18 @@ private:
 
         bitmap = new csMatrixBoolean(rectDest.width, rectDest.height, true);
         // Reset state when bitmap is recreated
-        hasActiveSnowflake = false;
         filledPixelsCount = 0;
         snowfallCount = 0;
         clearingIterations = 0;
         lastDirectionWasLeft = false;
         lastUpdateTime = 0;
+
+        // Reset all snowflakes in array - initialize with default values
+        // Randomization will happen in recalc() when first called
+        for (auto& snowflake : snowflakes) {
+            snowflake.x = 0;
+            snowflake.y = cSpawnDelayMin; // Start with minimum spawn delay
+        }
     }
 
     // Try to move snowflake down. Returns true if moved.
