@@ -752,7 +752,8 @@ public:
 
     void propChanged(uint8_t propNum) override {
         csRenderMatrixBase::propChanged(propNum);
-        if (propNum == propRectDest) {
+        // After base class updates rectDest for propMatrixDest, we need to update bitmap
+        if (propNum == propMatrixDest || propNum == propRectDest) {
             updateBitmap();
         } else if (propNum == propCount) {
             resizeOrInitSnowflakesArray();
