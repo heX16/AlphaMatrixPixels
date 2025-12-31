@@ -48,6 +48,9 @@ void loadEffectPreset(csEffectManager& effectManager, csMatrixPixels& matrix, ui
             {
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
+                snowfall->count = 5;
+                snowfall->speed = amp::math::csFP16(1.0f / 3.0f);
+                snowfall->propChanged(csRenderSnowfall::propCount);
                 effectManager.add(snowfall);
                 break;
             }

@@ -4,6 +4,7 @@
 #include "effect_presets.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
+#include <small_timer.h>
 
 // Output gamma correction (applied to FastLED output buffer right before show()).
 // Set AMP_ENABLE_GAMMA to 0 to disable.
@@ -21,18 +22,26 @@
 #define AMP_COLOR_CORRECTION TypicalLEDStrip
 #endif
 
-constexpr uint8_t WIDTH = 8;
-constexpr uint8_t HEIGHT = 8;
-constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT;
+constexpr uint8_t cWidth = 8;
+constexpr uint8_t cHeight = 8;
+constexpr uint16_t cNumLeds = cWidth * cHeight;
 
-CRGB leds[NUM_LEDS];
+CRGB leds[cNumLeds];
 
-amp::csMatrixPixels canvas(WIDTH, HEIGHT);
+amp::csMatrixPixels canvas(cWidth, cHeight);
+
+// TODO: WIP...
+amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
+
 amp::csRandGen rng;
 csEffectManager effectManager(canvas);
 
+csTimerDef<120 * 1000> tEffectSwitch;  // 20 seconds - default time in template
+csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
+uint8_t effectIndex = 0;
+
 void setup() {
-    constexpr uint16_t cLedCount = NUM_LEDS;
+    constexpr uint16_t cLedCount = cNumLeds;
 
 #if defined(ARDUINO_ARCH_ESP8266)
     // ESP8266 LoLin/NodeMCU built-in LED is typically on D4 (GPIO2) and is active-low.
@@ -59,6 +68,10 @@ CLEDController* controller = nullptr;
     FastLED.clear(true);
 
     amp::wifi_ota::setup();
+    
+    tEffectSwitch.start();  // Start timer with default time (20 seconds)
+    tRender.start();        // Start render timer with default time (~60 FPS)
+    loadEffectPreset(effectManager, canvas, 3); // Snowfall
 }
 
 void loop() {
@@ -69,34 +82,36 @@ void loop() {
     digitalWrite(LED_BUILTIN, ((millis() / 500u) % 2u) == 0u ? LOW : HIGH);
 #endif
 
-    const uint8_t effectIndex = static_cast<uint8_t>((millis() / 20000u) % 3u);
-    const amp::tTime currTime = static_cast<amp::tTime>(millis());
+    // Check if timer has fired and switch to next effect
+    if (tEffectSwitch.run()) {
+        effectIndex = (effectIndex + 1) % 3;
+        tEffectSwitch.start();  // Restart timer with default time
 
-    canvas.clear();
-    
-    // Clear all effects and add needed ones based on effectIndex
-    effectManager.clearAll();
-    if (effectIndex == 0) {
-        loadEffectPreset(effectManager, canvas, 1); // Plasma
-    } else if (effectIndex == 1) {
-        loadEffectPreset(effectManager, canvas, 2); // GradientWaves
-    } else {
-        loadEffectPreset(effectManager, canvas, 2); // GradientWaves
-        loadEffectPreset(effectManager, canvas, 3); // Snowfall
+        // Clear all effects and add needed ones based on effectIndex
+        effectManager.clearAll();
+        if (effectIndex == 0) {
+            //loadEffectPreset(effectManager, canvas, 2); // GradientWaves
+            loadEffectPreset(effectManager, canvas, 3); // Snowfall
+        } else if (effectIndex == 1) {
+            loadEffectPreset(effectManager, canvas, 2); // GradientWaves
+        } else {
+            loadEffectPreset(effectManager, canvas, 1); // Plasma
+        }
     }
     
-    // Update and render all effects
-    effectManager.updateAndRenderAll(rng, currTime);
-    
+    // Check if render timer has fired
+    if (tRender.run()) {
+        const amp::tTime currTime = static_cast<amp::tTime>(millis());
 
-    /*
-    // Show one digit (0..9), switching once per second (same rule as GUI_Test).
-    glyph.symbolIndex = static_cast<uint8_t>((millis() / 1000u) % 10u);
-    glyph.render(rng, t); // Overlay over plasma
-    */
+        canvas.clear();
+        
+        // Update and render all effects
+        effectManager.updateAndRenderAll(rng, currTime);
 
-    amp::copyMatrixToFastLED(canvas, leds, NUM_LEDS, amp::csMappingPattern::SerpentineHorizontalInverted);
-    FastLED.show();
-    delay(16); // ~60 FPS
+        amp::copyMatrixToFastLED(canvas, leds, cNumLeds, amp::csMappingPattern::SerpentineHorizontalInverted);
+        FastLED.show();
+        
+        tRender.start();  // Restart timer with default time
+    }
 }
 
