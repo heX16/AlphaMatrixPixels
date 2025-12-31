@@ -36,7 +36,7 @@ amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
 amp::csRandGen rng;
 csEffectManager effectManager(canvas);
 
-csTimerDef<120 * 1000> tEffectSwitch;  // 20 seconds - default time in template
+csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
 uint8_t effectIndex = 0;
 
@@ -71,7 +71,7 @@ CLEDController* controller = nullptr;
     
     tEffectSwitch.start();  // Start timer with default time (20 seconds)
     tRender.start();        // Start render timer with default time (~60 FPS)
-    loadEffectPreset(effectManager, canvas, 3); // Snowfall
+    loadEffectPreset(effectManager, canvas, 5, &canvasX2); // Snowfall
 }
 
 void loop() {
@@ -103,6 +103,7 @@ void loop() {
     if (tRender.run()) {
         const amp::tTime currTime = static_cast<amp::tTime>(millis());
 
+        canvasX2.clear();
         canvas.clear();
         
         // Update and render all effects
