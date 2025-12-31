@@ -14,7 +14,7 @@ public:
     static constexpr uint8_t maxEffects = 10;
     static constexpr uint8_t notFound = UINT8_MAX;
 
-    explicit csEffectManager(amp::csMatrixPixels& matrix) : matrix(matrix) {}
+    csEffectManager() = default;
 
     ~csEffectManager() {
         clearAll();
@@ -117,8 +117,26 @@ public:
         deleteEffect(eff);
     }
 
+    // Set matrix and bind to all effects
+    void setMatrix(amp::csMatrixPixels& m) {
+        matrix = &m;
+        bindMatrix();
+    }
+
+    // Get matrix pointer
+    amp::csMatrixPixels* getMatrix() {
+        return matrix;
+    }
+
+    const amp::csMatrixPixels* getMatrix() const {
+        return matrix;
+    }
+
     // Bind matrix to all effects
     void bindMatrix() {
+        if (!matrix) {
+            return;
+        }
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 bindEffectMatrix(effects[i]);
@@ -182,18 +200,20 @@ public:
         return effects + maxEffects;
     }
 
+    // Public matrix pointer for direct access
+    amp::csMatrixPixels* matrix = nullptr;
+
 private:
-    amp::csMatrixPixels& matrix;
     amp::csEffectBase* effects[maxEffects] = {};
 
     void bindEffectMatrix(amp::csEffectBase* eff) {
-        if (!eff) {
+        if (!eff || !matrix) {
             return;
         }
         if (auto* m = static_cast<amp::csRenderMatrixBase*>(
             eff->queryClassFamily(amp::PropType::EffectMatrixDest)
         )) {
-            m->setMatrix(&matrix);
+            m->setMatrix(matrix);
         }
     }
 
