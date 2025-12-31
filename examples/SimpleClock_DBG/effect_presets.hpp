@@ -17,7 +17,7 @@ using amp::csRenderDigitalClock;
 using amp::csRenderDigitalClockDigit;
 
 // Abstract function: adds effects to the array based on effect ID
-// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.matrix)
+// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
 void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
     if (effectId == 0) {

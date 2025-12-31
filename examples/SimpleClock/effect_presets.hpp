@@ -20,7 +20,7 @@ using amp::csRenderGradientWavesFP;
 using amp::csRenderPlasma;
 
 // Abstract function: adds effects to the array based on effect ID
-// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.matrix)
+// effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
 void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
     if (effectId == 0) {
@@ -78,10 +78,10 @@ void loadEffectPreset(csEffectManager& effectManager, uint8_t effectId) {
             }
         case 3: // 5 horizontal lines with different colors
             {
-                if (!effectManager.matrix) {
+                if (!effectManager.getMatrix()) {
                     break;
                 }
-                const tMatrixPixelsSize matrixWidth = effectManager.matrix->width();
+                const tMatrixPixelsSize matrixWidth = effectManager.getMatrix()->width();
                 constexpr uint8_t lineCount = 5;
                 constexpr tMatrixPixelsSize lineHeight = 1;
                 

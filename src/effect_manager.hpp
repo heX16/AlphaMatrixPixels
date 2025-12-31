@@ -200,10 +200,8 @@ public:
         return effects + maxEffects;
     }
 
-    // Public matrix pointer for direct access
-    amp::csMatrixPixels* matrix = nullptr;
-
 private:
+    amp::csMatrixPixels* matrix = nullptr;
     amp::csEffectBase* effects[maxEffects] = {};
 
     void bindEffectMatrix(amp::csEffectBase* eff) {
