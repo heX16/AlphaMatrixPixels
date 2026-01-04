@@ -68,12 +68,22 @@ gui_test_exe = executable('HXLED_GUI_Test',
   gui_test_sources,
   include_directories : [amp_inc] + sdl2_inc,
   dependencies : [
-    sdl2main_lib,
-    sdl2_lib,
-    sdl2_ttf_lib
-  ] + windows_libs + sdl2_ttf_deps,
-  link_args : ['-static', '-static-libstdc++', '-static-libgcc'],
-  cpp_args : ['-m64', '-Wall'],
+    sdl2main_lib,  # SDL2 main entry point
+    sdl2_lib,  # SDL2 core library
+    sdl2_ttf_lib,  # SDL2 TrueType font library
+  ] + windows_libs  # Windows system libraries (mingw32, gdi32, winmm, etc.)
+    + sdl2_ttf_deps,  # SDL2_ttf dependencies (freetype, harfbuzz, png, etc.)
+  link_args : [
+    '-static',  # Static linking for all libraries
+    '-static-libstdc++',  # Static linking for C++ standard library
+    '-static-libgcc',  # Static linking for GCC runtime
+  ],
+  cpp_args : [
+    '-m64',  # 64-bit architecture
+    '-Wall',  # Enable all warnings
+    '-Wno-unused-variable',  # Suppress unused variable warnings
+    '-Wno-unused-parameter',  # Suppress unused parameter warnings
+  ],
   install : false
 )
 
