@@ -6,7 +6,6 @@
 #include "effect_manager.hpp"
 #include "matrix_pixels.hpp"
 #include "color_rgba.hpp"
-#include "matrix_render.hpp"
 #include "matrix_render_efffects.hpp"
 #include "matrix_render_pipes.hpp"
 #include "fixed_point.hpp"
@@ -26,6 +25,7 @@ using amp::csRenderDigitalClockDigit;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
 using amp::csRenderMatrixCopy;
+using amp::csRenderSlowFadingBackground;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
@@ -250,7 +250,27 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 110: // 7 horizontal lines with different colors
+        case 110: // SlowFadingBackground (pipe): in-place (dest == source)
+            {
+                auto* fade = new csRenderSlowFadingBackground();
+
+                // Source and destination are the same matrix.
+                fade->matrixSource = effectManager.getMatrix();
+                if (fade->matrixSource) {
+                    fade->rectSource = fade->matrixSource->getRect();
+                }
+
+                // Slightly slower fade by default (higher = slower).
+                fade->fadeAlpha = 240;
+
+                // Ensure internal buffer is allocated based on source rect.
+                fade->propChanged(amp::csRenderMatrixPipeBase::propMatrixSource);
+                fade->propChanged(amp::csRenderMatrixPipeBase::propRectSource);
+
+                effectManager.add(fade);
+                break;
+            }
+        case 111: // 7 horizontal lines with different colors
             {
                 if (!effectManager.getMatrix()) {
                     break;

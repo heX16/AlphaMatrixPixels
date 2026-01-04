@@ -57,9 +57,9 @@ public:
     // Preset ID ranges for cycling via keyboard.
     // NOTE: These ranges are intentionally continuous to allow +/- 1 wrap-around cycling.
     static constexpr uint16_t cEff1BaseMin = 101;
-    static constexpr uint16_t cEff1BaseMax = 110;
+    static constexpr uint16_t cEff1BaseMax = 111;
     static constexpr uint16_t cEff2Min = 105;
-    static constexpr uint16_t cEff2Max = 109;
+    static constexpr uint16_t cEff2Max = 110;
 
     // Active preset IDs:
     // - eff1_base: base effect (usually 101-110 in GUI_Test presets)
@@ -145,7 +145,10 @@ public:
                 createEffectBundleDouble(0, 109); // Clock (3x5 font)
                 break;
             case SDLK_m:
-                createEffectBundleDouble(110, 0); // 7 horizontal lines
+                createEffectBundleDouble(111, 0); // 7 horizontal lines
+                break;
+            case SDLK_a:
+                createEffectBundleDouble(0, 110); // SlowFadingBackground (eff2)
                 break;
             case SDLK_n:
                 createEffectBundleDouble(0, 200); // skip
@@ -208,12 +211,10 @@ public:
         // Clear all effects
         effectManager.clearAll();
 
-        // Add base effect if eff1_base is set
+        // Default order: base first, then overlay.
         if (eff1_base != 0) {
             loadEffectPreset(effectManager, eff1_base);
         }
-
-        // Add secondary effect if eff2 is set
         if (eff2 != 0) {
             loadEffectPreset(effectManager, eff2);
         }
