@@ -54,6 +54,48 @@ public:
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
 
+    // Preset ID ranges for cycling via keyboard.
+    // NOTE: These ranges are intentionally continuous to allow +/- 1 wrap-around cycling.
+    static constexpr uint16_t cEff1BaseMin = 101;
+    static constexpr uint16_t cEff1BaseMax = 110;
+    static constexpr uint16_t cEff2Min = 105;
+    static constexpr uint16_t cEff2Max = 109;
+
+    // Active preset IDs:
+    // - eff1_base: base effect (usually 101-110 in GUI_Test presets)
+    // - eff2: secondary overlay effect (usually 105-109; 200 is used as "skip" by an existing hotkey)
+    uint16_t eff1_base = cEff1BaseMin; // GradientWaves (was 1)
+    uint16_t eff2 = cEff2Min; // Glyph (was 5)
+
+    static uint16_t cyclePresetId(uint16_t current, uint16_t minId, uint16_t maxId, int delta) {
+        if (minId == 0 || maxId == 0 || minId > maxId) {
+            return current;
+        }
+
+        // If current is outside of the supported range, normalize it first.
+        if (current < minId || current > maxId) {
+            current = minId;
+        }
+
+        if (delta > 0) {
+            return (current >= maxId) ? minId : static_cast<uint16_t>(current + 1u);
+        }
+        if (delta < 0) {
+            return (current <= minId) ? maxId : static_cast<uint16_t>(current - 1u);
+        }
+        return current;
+    }
+
+    void cycleEff1Base(int delta) {
+        const uint16_t next = cyclePresetId(eff1_base, cEff1BaseMin, cEff1BaseMax, delta);
+        createEffectBundleDouble(next, 0);
+    }
+
+    void cycleEff2(int delta) {
+        const uint16_t next = cyclePresetId(eff2, cEff2Min, cEff2Max, delta);
+        createEffectBundleDouble(0, next);
+    }
+
     void handleKeyPress(SDL_Keysym keysym) {
         switch (keysym.sym) {
             case SDLK_ESCAPE:
@@ -108,6 +150,23 @@ public:
             case SDLK_n:
                 createEffectBundleDouble(0, 200); // skip
                 break;
+            case SDLK_LEFTBRACKET:
+                cycleEff1Base(-1);
+                break;
+            case SDLK_RIGHTBRACKET:
+                cycleEff1Base(+1);
+                break;
+            // '<' and '>' are typically Shift+Comma/Period, but keysyms can be either:
+            // - SDLK_COMMA / SDLK_PERIOD (physical key)
+            // - SDLK_LESS / SDLK_GREATER (character)
+            case SDLK_COMMA:
+            case SDLK_LESS:
+                cycleEff2(-1);
+                break;
+            case SDLK_PERIOD:
+            case SDLK_GREATER:
+                cycleEff2(+1);
+                break;
             case SDLK_8:
                 // Toggle debug mode for 2D->1D remapping visualization
                 copyLineIndexHelper.isActive = !copyLineIndexHelper.isActive;
@@ -137,9 +196,6 @@ public:
             dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{delta};
         }
     }
-
-    uint16_t eff1_base = 101; // GradientWaves (was 1)
-    uint16_t eff2 = 105; // Glyph (was 5)
 
     void createEffectBundleDouble(uint16_t a_eff1_base, uint16_t a_eff2) {
         if (a_eff1_base != 0) {
