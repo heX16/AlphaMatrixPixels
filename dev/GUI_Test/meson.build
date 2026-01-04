@@ -10,7 +10,7 @@ project('GUI_Test', 'cpp',
 
 # Path to library source (relative to this meson.build location)
 # This meson.build is in dev/GUI_Test/, so library is at ../../src/
-amp_inc = include_directories('../../src')
+alpha_matrix_pixels_inc = include_directories('../../src')
 
 # System libraries for Windows/MinGW
 cc = meson.get_compiler('cpp')
@@ -22,22 +22,32 @@ sdl2_inc = []
 # Manual library linking - same approach as tasks.json
 # This allows -static to work properly
 sdl2_lib = cc.find_library('SDL2', required : true)
-sdl2main_lib = cc.find_library('SDL2main', required : true)
+# SDL2main is Windows-specific (provides WinMain entry point)
+sdl2main_lib = cc.find_library('SDL2main', required : host_machine.system() == 'windows')
 sdl2_ttf_lib = cc.find_library('SDL2_ttf', required : true)
 
-# MinGW runtime and Windows system libraries
-windows_libs = [
-  cc.find_library('mingw32', required : true),
-  cc.find_library('gdi32', required : false),
-  cc.find_library('setupapi', required : false),
-  cc.find_library('winmm', required : false),
-  cc.find_library('imm32', required : false),
-  cc.find_library('ole32', required : false),
-  cc.find_library('oleaut32', required : false),
-  cc.find_library('rpcrt4', required : false),
-  cc.find_library('dwrite', required : false),
-  cc.find_library('version', required : false),
-]
+# SDL2 libraries list (include SDL2main only on Windows)
+sdl2_libs = [sdl2_lib, sdl2_ttf_lib]
+if host_machine.system() == 'windows'
+  sdl2_libs += [sdl2main_lib]
+endif
+
+# MinGW runtime and Windows system libraries (Windows only)
+windows_libs = []
+if host_machine.system() == 'windows'
+  windows_libs = [
+    cc.find_library('mingw32', required : true),
+    cc.find_library('gdi32', required : false),
+    cc.find_library('setupapi', required : false),
+    cc.find_library('winmm', required : false),
+    cc.find_library('imm32', required : false),
+    cc.find_library('ole32', required : false),
+    cc.find_library('oleaut32', required : false),
+    cc.find_library('rpcrt4', required : false),
+    cc.find_library('dwrite', required : false),
+    cc.find_library('version', required : false),
+  ]
+endif
 
 # SDL2_ttf dependencies (usually auto-linked, but explicit for clarity)
 sdl2_ttf_deps = [
@@ -54,8 +64,11 @@ sdl2_ttf_deps = [
 # Static linking flags - same as in tasks.json
 static_link_args = []
 if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
-  # Full static linking - exactly like tasks.json
-  static_link_args += ['-static', '-static-libstdc++', '-static-libgcc']
+  static_link_args += [
+    '-static',  # Static linking for all libraries
+    '-static-libstdc++',  # Static linking for C++ standard library
+    '-static-libgcc',  # Static linking for GCC runtime
+  ]
 endif
 
 # Source files
@@ -66,24 +79,22 @@ gui_test_sources = files('main.cpp')
 # All libraries in dependencies, -static in link_args forces static linking
 gui_test_exe = executable('HXLED_GUI_Test',
   gui_test_sources,
-  include_directories : [amp_inc] + sdl2_inc,
-  dependencies : [
-    sdl2main_lib,  # SDL2 main entry point
-    sdl2_lib,  # SDL2 core library
-    sdl2_ttf_lib,  # SDL2 TrueType font library
-  ] + windows_libs  # Windows system libraries (mingw32, gdi32, winmm, etc.)
+  # Header search paths for #include
+  include_directories : [alpha_matrix_pixels_inc] + sdl2_inc,
+  # Libraries to link against (SDL2, Windows system libs, etc.)
+  dependencies : sdl2_libs  # SDL2 libraries (SDL2main included on Windows only)
+    + windows_libs  # Windows system libraries (mingw32, gdi32, winmm, etc.)
     + sdl2_ttf_deps,  # SDL2_ttf dependencies (freetype, harfbuzz, png, etc.)
-  link_args : [
-    '-static',  # Static linking for all libraries
-    '-static-libstdc++',  # Static linking for C++ standard library
-    '-static-libgcc',  # Static linking for GCC runtime
-  ],
+  # Linker flags (static linking)
+  link_args : static_link_args,
+  # Compiler flags for C++ compilation
   cpp_args : [
     '-m64',  # 64-bit architecture
     '-Wall',  # Enable all warnings
     '-Wno-unused-variable',  # Suppress unused variable warnings
     '-Wno-unused-parameter',  # Suppress unused parameter warnings
   ],
+  # Don't install executable (build only)
   install : false
 )
 
