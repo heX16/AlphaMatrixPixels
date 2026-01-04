@@ -13,7 +13,7 @@
 #include "../../src/fixed_point.hpp"
 #include "../../src/effect_manager.hpp"
 #include "copy_line_index_helper.hpp"
-#include "effect_presets.hpp"
+#include "../../src/effect_presets.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
