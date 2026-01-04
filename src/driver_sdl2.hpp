@@ -55,34 +55,47 @@ struct RenderLayout {
 //   step - size of the cell (including border)
 //   fill - size of the filled square inside the cell
 //   c - color to fill the cell with
+//   drawBorder - if true, draw gray border around the cell (default: true)
 inline void drawPixel(
     SDL_Renderer* renderer,
     int x,
     int y,
     int step,
     int fill,
-    csColorRGBA c
+    csColorRGBA c,
+    bool drawBorder = true
 ) noexcept {
     if (!renderer) {
         return;
     }
 
-    // Draw gray border
-    SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
-    SDL_Rect rectBorder = {x, y, step - 1, step - 1};
-    SDL_RenderDrawRect(renderer, &rectBorder);
+    // Draw gray border (optional)
+    if (drawBorder) {
+        SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
+        SDL_Rect rectBorder = {x, y, step - 1, step - 1};
+        SDL_RenderDrawRect(renderer, &rectBorder);
+    }
 
     // Draw colored fill with alpha channel
     // Skip completely transparent pixels
     if (c.a == 0) {
         return;
     }
+    
+    // Save current blend mode and enable alpha blending
+    SDL_BlendMode oldBlendMode;
+    SDL_GetRenderDrawBlendMode(renderer, &oldBlendMode);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    
     SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
     SDL_Rect rectFill = {x + (step - fill) / 2,
                          y + (step - fill) / 2,
                          fill,
                          fill};
     SDL_RenderFillRect(renderer, &rectFill);
+    
+    // Restore previous blend mode
+    SDL_SetRenderDrawBlendMode(renderer, oldBlendMode);
 }
 
 // Render matrix pixels to SDL renderer with automatic layout calculation and centering.
@@ -95,6 +108,7 @@ inline void drawPixel(
 //   clearBeforeRender - if true, clear the screen with black before rendering (default: true)
 //   presentAfterRender - if true, call SDL_RenderPresent after rendering (default: false)
 //   layout - optional pre-calculated layout (if nullptr, layout will be calculated automatically)
+//   drawBorder - if true, draw gray border around each pixel cell (default: true)
 //
 // Note: renderer must be valid and initialized. This function does not initialize SDL.
 inline void renderMatrixToSDL(
@@ -104,7 +118,8 @@ inline void renderMatrixToSDL(
     int screenHeight,
     bool clearBeforeRender = true,
     bool presentAfterRender = false,
-    const RenderLayout* layout = nullptr
+    const RenderLayout* layout = nullptr,
+    bool drawBorder = true
 ) noexcept {
     if (!renderer) {
         return;
@@ -135,7 +150,8 @@ inline void renderMatrixToSDL(
                       layoutToUse->offsY + y * layoutToUse->step,
                       layoutToUse->step,
                       layoutToUse->fill,
-                      c);
+                      c,
+                      drawBorder);
         }
     }
 
