@@ -58,7 +58,7 @@ public:
     // Preset ID ranges for cycling via keyboard.
     // NOTE: These ranges are intentionally continuous to allow +/- 1 wrap-around cycling.
     static constexpr uint16_t cEff1BaseMin = 101;
-    static constexpr uint16_t cEff1BaseMax = 111;
+    static constexpr uint16_t cEff1BaseMax = 112;
     static constexpr uint16_t cEff2Min = 105;
     static constexpr uint16_t cEff2Max = 112;
 
@@ -148,11 +148,11 @@ public:
             case SDLK_m:
                 createEffectBundleDouble(111, 0); // 7 horizontal lines
                 break;
+            case SDLK_p:
+                createEffectBundleDouble(112, 0); // BouncingPixel (eff1_base)
+                break;
             case SDLK_a:
                 createEffectBundleDouble(0, 110); // SlowFadingBackground (eff2)
-                break;
-            case SDLK_p:
-                createEffectBundleDouble(0, 112); // BouncingPixel (eff2)
                 break;
             case SDLK_n:
                 createEffectBundleDouble(0, 200); // skip

@@ -537,6 +537,7 @@ private:
             for (tMatrixPixelsSize x = 0; x < width; ++x) {
                 uint8_t newAlpha;
                 csColorRGBA pixel = buffer->getPixel(x, y);
+                /*
                 if (pixel.a < 4) {
                     if (pixel.a == 0) {
                         continue;
@@ -545,6 +546,14 @@ private:
                     }
                 } else {
                     newAlpha = mul8(pixel.a, fadeAlpha);
+                }
+                newAlpha = mul8(pixel.a, fadeAlpha);
+                */
+                
+                if (pixel.a < 16) {
+                    newAlpha = 0;
+                } else {
+                    newAlpha = pixel.a - 16;
                 }
                 if (newAlpha != pixel.a) {
                     pixel.a = newAlpha;

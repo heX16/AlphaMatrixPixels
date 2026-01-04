@@ -256,18 +256,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* fade = new csRenderSlowFadingBackground();
 
                 // Slightly slower fade by default (higher = slower).
-                fade->fadeAlpha = 240;
+                fade->fadeAlpha = 128;
 
                 effectManager.add(fade);
-                break;
-            }
-        case 112: // BouncingPixel
-            {
-                auto* bouncingPixel = new csRenderBouncingPixel();
-                bouncingPixel->color = csColorRGBA{255, 255, 255, 255};
-                bouncingPixel->speed = amp::math::csFP16(1.0f);
-                bouncingPixel->renderRectAutosize = true;
-                effectManager.add(bouncingPixel);
                 break;
             }
         case 111: // 7 horizontal lines with different colors
@@ -308,6 +299,15 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                     };
                     effectManager.add(fill);
                 }
+                break;
+            }
+        case 112: // BouncingPixel
+            {
+                auto* bouncingPixel = new csRenderBouncingPixel();
+                bouncingPixel->color = csColorRGBA{128, 255, 255, 255};
+                bouncingPixel->speed = amp::math::csFP16(0.2f);
+                bouncingPixel->renderRectAutosize = true;
+                effectManager.add(bouncingPixel);
                 break;
             }
         case 200:
