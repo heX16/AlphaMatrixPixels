@@ -396,4 +396,154 @@ public:
     }
 };
 
+// Effect: slow fade trail from source matrix to destination.
+// The effect keeps an internal buffer that accumulates the source
+// and gradually reduces its alpha each recalc tick (max 16Hz).
+class csRenderSlowFadingBackground : public csRenderMatrixPipeBase {
+public:
+    static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
+    static constexpr uint8_t propFadeAlpha = base + 1;
+    static constexpr uint8_t propLast = propFadeAlpha;
+
+    // Internal buffer that stores the accumulated image.
+    csMatrixPixels* buffer = nullptr;
+
+    // Fade multiplier applied to each pixel alpha on recalc (0-255).
+    uint8_t fadeAlpha = 224;
+
+    // Simple timer to cap recalcs to ~16Hz.
+    uint16_t lastRecalcTime = 0;
+
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixPipeBase::getPropInfo(propNum, info);
+        if (propNum == propFadeAlpha) {
+            info.type = PropType::UInt8;
+            info.name = "Fade alpha";
+            info.ptr = &fadeAlpha;
+            info.readOnly = false;
+            info.disabled = false;
+        }
+    }
+
+    ~csRenderSlowFadingBackground() override {
+        delete buffer;
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixPipeBase::propChanged(propNum);
+
+        if (propNum == propMatrixSource && matrixSource && rectSource.empty()) {
+            rectSource = matrixSource->getRect();
+        }
+
+        if (propNum == propMatrixSource || propNum == propRectSource) {
+            updateBuffer();
+        }
+    }
+
+    void recalc(csRandGen& /*rand*/, tTime currTime) override {
+        if (disabled || !matrixSource || !buffer) {
+            return;
+        }
+
+        constexpr uint16_t kRecalcIntervalMs = 63; // ≈16Hz
+        const uint16_t delta = static_cast<uint16_t>(currTime - lastRecalcTime);
+        if (lastRecalcTime != 0 && delta < kRecalcIntervalMs) {
+            return;
+        }
+        lastRecalcTime = currTime;
+
+        buffer->drawMatrixArea(rectSource, 0, 0, *matrixSource);
+
+        fadeBuffer();
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrix || !buffer) {
+            return;
+        }
+
+        if (rectDest.empty()) {
+            return;
+        }
+
+        if (rectDest.width == buffer->width() && rectDest.height == buffer->height()) {
+            matrix->drawMatrix(rectDest.x, rectDest.y, *buffer);
+        } else {
+            matrix->drawMatrixScale(csRect{0, 0, buffer->width(), buffer->height()}, rectDest, *buffer);
+        }
+    }
+
+    // Class family identifier
+    static constexpr PropType ClassFamilyId = PropType::EffectPipe;
+
+    PropType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    void* queryClassFamily(PropType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        return csRenderMatrixPipeBase::queryClassFamily(familyId);
+    }
+
+private:
+    void updateBuffer() {
+        if (!matrixSource || rectSource.empty()) {
+            delete buffer;
+            buffer = nullptr;
+            return;
+        }
+
+        const tMatrixPixelsSize width = rectSource.width;
+        const tMatrixPixelsSize height = rectSource.height;
+        if (width == 0 || height == 0) {
+            delete buffer;
+            buffer = nullptr;
+            return;
+        }
+
+        if (buffer && buffer->width() == width && buffer->height() == height) {
+            return;
+        }
+
+        delete buffer;
+        buffer = new csMatrixPixels(width, height);
+        buffer->clear();
+    }
+
+    void fadeBuffer() {
+        if (!buffer) {
+            return;
+        }
+
+        const tMatrixPixelsSize height = buffer->height();
+        const tMatrixPixelsSize width = buffer->width();
+        for (tMatrixPixelsSize y = 0; y < height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < width; ++x) {
+                uint8_t newAlpha;
+                csColorRGBA pixel = buffer->getPixel(x, y);
+                if (pixel.a < 4) {
+                    if (pixel.a == 0) {
+                        continue;
+                    } else {
+                        newAlpha = 0;
+                    }
+                } else {
+                    newAlpha = mul8(pixel.a, fadeAlpha);
+                }
+                if (newAlpha != pixel.a) {
+                    pixel.a = newAlpha;
+                    buffer->setPixelRewrite(x, y, pixel);
+                }
+            }
+        }
+    }
+};
+
 } // namespace amp
