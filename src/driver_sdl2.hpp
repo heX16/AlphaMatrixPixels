@@ -72,8 +72,12 @@ inline void drawPixel(
     SDL_Rect rectBorder = {x, y, step - 1, step - 1};
     SDL_RenderDrawRect(renderer, &rectBorder);
 
-    // Draw colored fill
-    SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, SDL_ALPHA_OPAQUE);
+    // Draw colored fill with alpha channel
+    // Skip completely transparent pixels
+    if (c.a == 0) {
+        return;
+    }
+    SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
     SDL_Rect rectFill = {x + (step - fill) / 2,
                          y + (step - fill) / 2,
                          fill,
