@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=debug && meson compile -C builddir"
+                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=debug && meson compile -C builddir && ./builddir/HXLED_GUI_Test.exe"
             ],
             "group": {
                 "kind": "build",
@@ -25,7 +25,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=release && meson compile -C builddir"
+                "cd dev/GUI_Test && meson setup --reconfigure builddir --buildtype=release && meson compile -C builddir && ./builddir/HXLED_GUI_Test.exe"
             ],
             "group": "build",
             "problemMatcher": ["$gcc"],
