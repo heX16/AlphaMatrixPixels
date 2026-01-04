@@ -250,22 +250,12 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 110: // SlowFadingBackground (pipe): in-place (dest == source)
+        case 110: // SlowFadingBackground (post-frame trail)
             {
                 auto* fade = new csRenderSlowFadingBackground();
 
-                // Source and destination are the same matrix.
-                fade->matrixSource = effectManager.getMatrix();
-                if (fade->matrixSource) {
-                    fade->rectSource = fade->matrixSource->getRect();
-                }
-
                 // Slightly slower fade by default (higher = slower).
                 fade->fadeAlpha = 240;
-
-                // Ensure internal buffer is allocated based on source rect.
-                fade->propChanged(amp::csRenderMatrixPipeBase::propMatrixSource);
-                fade->propChanged(amp::csRenderMatrixPipeBase::propRectSource);
 
                 effectManager.add(fade);
                 break;

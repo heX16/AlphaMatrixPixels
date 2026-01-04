@@ -435,18 +435,13 @@ public:
 
     void propChanged(uint8_t propNum) override {
         csRenderMatrixPipeBase::propChanged(propNum);
-
-        if (propNum == propMatrixSource && matrixSource && rectSource.empty()) {
-            rectSource = matrixSource->getRect();
-        }
-
-        if (propNum == propMatrixSource || propNum == propRectSource) {
+        if (propNum == propRectSource) {
             updateBuffer();
         }
     }
 
     void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (disabled || !matrixSource || !buffer) {
+        if (disabled) {
             return;
         }
 
@@ -457,29 +452,43 @@ public:
         }
         lastRecalcTime = currTime;
 
-        buffer->drawMatrixArea(rectSource, 0, 0, *matrixSource);
-
         fadeBuffer();
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !buffer) {
+        // Intentionally empty: rendering is handled in onFrameDone.
+    }
+
+    void onFrameDone(csMatrixPixels& frame, csRandGen& /*rand*/, tTime /*currTime*/) override {
+        if (disabled) {
             return;
         }
 
-        if (rectDest.empty()) {
+        rectSource = frame.getRect();
+        rectDest = rectSource;
+        updateBuffer();
+        if (!buffer) {
             return;
         }
 
-        if (rectDest.width == buffer->width() && rectDest.height == buffer->height()) {
-            matrix->drawMatrix(rectDest.x, rectDest.y, *buffer);
-        } else {
-            matrix->drawMatrixScale(csRect{0, 0, buffer->width(), buffer->height()}, rectDest, *buffer);
+        const tMatrixPixelsSize height = rectSource.height;
+        const tMatrixPixelsSize width = rectSource.width;
+
+        for (tMatrixPixelsSize y = 0; y < height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < width; ++x) {
+                const tMatrixPixelsCoord fx = rectSource.x + to_coord(x);
+                const tMatrixPixelsCoord fy = rectSource.y + to_coord(y);
+                const csColorRGBA cur = frame.getPixel(fx, fy);
+                const csColorRGBA trail = buffer->getPixel(x, y);
+                const csColorRGBA composite = csColorRGBA::sourceOverStraight(trail, cur);
+                buffer->setPixelRewrite(x, y, composite);
+                frame.setPixelRewrite(fx, fy, composite);
+            }
         }
     }
 
     // Class family identifier
-    static constexpr PropType ClassFamilyId = PropType::EffectPipe;
+    static constexpr PropType ClassFamilyId = PropType::EffectPostFrame;
 
     PropType getClassFamily() const override {
         return ClassFamilyId;
@@ -494,7 +503,7 @@ public:
 
 private:
     void updateBuffer() {
-        if (!matrixSource || rectSource.empty()) {
+        if (rectSource.empty()) {
             delete buffer;
             buffer = nullptr;
             return;

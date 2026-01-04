@@ -78,8 +78,9 @@ enum class PropType : uint8_t {
     EffectBase = 32,
     EffectMatrixDest = 33,
     EffectPipe = 34,
-    EffectGlyph = 35,
-    EffectDigitalClock = 36,
+    EffectPostFrame = 35,
+    EffectGlyph = 36,
+    EffectDigitalClock = 37,
     EffectUserArea = 64,
 };
 
@@ -209,6 +210,14 @@ public:
 
     // Render one frame
     virtual void render(csRandGen& rand, tTime currTime) const {
+        (void)rand;
+        (void)currTime;
+    }
+
+    // Called after the entire frame is rendered; gives the effect access to the final matrix.
+    // TODO: MOVE!!!
+    virtual void onFrameDone(csMatrixPixels& frame, csRandGen& rand, tTime currTime) {
+        (void)frame;
         (void)rand;
         (void)currTime;
     }

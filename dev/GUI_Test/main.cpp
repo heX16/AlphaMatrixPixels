@@ -220,27 +220,6 @@ public:
         }
     }
 
-    void updateAndRenderEffect(csEffectBase* eff, uint32_t ticks, amp::tTime currTime) {
-        if (!eff) {
-            return;
-        }
-
-        // Update effect-specific properties
-        if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
-            glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
-        } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
-            // Update time from SDL ticks (convert to seconds)
-            clock->time = ticks / 1000u;
-        }
-
-        // Always call recalc for all effects
-        eff->recalc(randGen, currTime);
-
-        // Render the effect
-        eff->render(randGen, currTime);
-    }
-
-
     bool initSDL() {
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
             return false;
@@ -311,8 +290,16 @@ public:
             const amp::tTime currTime = static_cast<amp::tTime>(ticks);
 
             for (auto* eff : effectManager) {
-                updateAndRenderEffect(eff, ticks, currTime);
+                if (!eff) {
+                    continue;
+                }
+                if (auto* glyph = dynamic_cast<csRenderGlyph*>(eff)) {
+                    glyph->symbolIndex = static_cast<uint8_t>((ticks / 1000u) % 10u);
+                } else if (auto* clock = dynamic_cast<csRenderDigitalClock*>(eff)) {
+                    clock->time = ticks / 1000u;
+                }
             }
+            effectManager.updateAndRenderAll(randGen, currTime);
             copyLineIndexHelper.updateCopyLineIndexSource(randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS

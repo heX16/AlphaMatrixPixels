@@ -149,7 +149,26 @@ public:
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);
+            }
+        }
+
+        auto isPostFrame = [](amp::csEffectBase* eff) -> bool {
+            return eff->queryClassFamily(amp::PropType::EffectPostFrame) != nullptr;
+        };
+
+        for (uint8_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] != nullptr) {
                 effects[i]->render(randGen, currTime);
+            }
+        }
+
+        if (!matrix) {
+            return;
+        }
+
+        for (uint8_t i = 0; i < maxEffects; ++i) {
+            if (effects[i] != nullptr && isPostFrame(effects[i])) {
+                effects[i]->onFrameDone(*matrix, randGen, currTime);
             }
         }
     }
