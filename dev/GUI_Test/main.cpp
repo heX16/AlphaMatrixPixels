@@ -356,6 +356,10 @@ public:
             }
         }
 
+        // Draw effect preset IDs
+        drawNumber(10, 30, static_cast<float>(eff1_base), "eff1_base: %.0f");
+        drawNumber(10, 50, static_cast<float>(eff2), "eff2: %.0f");
+
         // Render 1D matrix overlay if debug mode is active
         copyLineIndexHelper.render(renderer, screenWidth, screenHeight);
 
