@@ -405,14 +405,18 @@ public:
     static constexpr uint8_t propFadeAlpha = base + 1;
     static constexpr uint8_t propLast = propFadeAlpha;
 
+    static constexpr uint16_t cFadeIntervalMs = 32; // Hz
+
     // Internal buffer that stores the accumulated image.
     csMatrixPixels* buffer = nullptr;
 
     // Fade multiplier applied to each pixel alpha on recalc (0-255).
     uint8_t fadeAlpha = 224;
 
-    // Simple timer to cap recalcs to ~16Hz.
-    uint16_t lastRecalcTime = 0;
+    // Timestamp of last fade step (wrap-safe, tTime is uint16_t).
+    // Note: 0 is a valid timestamp (wrap-around), so we track initialization separately.
+    uint16_t lastFadeTime = 0;
+    bool lastFadeTimeValid = false;
 
     uint8_t getPropsCount() const override {
         return propLast;
@@ -440,26 +444,17 @@ public:
         }
     }
 
-    void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (disabled) {
-            return;
-        }
-
-        constexpr uint16_t kRecalcIntervalMs = 63; // ≈16Hz
-        const uint16_t delta = static_cast<uint16_t>(currTime - lastRecalcTime);
-        if (lastRecalcTime != 0 && delta < kRecalcIntervalMs) {
-            return;
-        }
-        lastRecalcTime = currTime;
-
-        fadeBuffer();
+    void recalc(csRandGen& /*rand*/, tTime /*currTime*/) override {
+        // Intentionally empty:
+        // fadeBuffer timing is driven from onFrameDone() to avoid flickering artifacts
+        // when recalc() is called in a timing/order that doesn't correspond to completed frames.
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         // Intentionally empty: rendering is handled in onFrameDone.
     }
 
-    void onFrameDone(csMatrixPixels& frame, csRandGen& /*rand*/, tTime /*currTime*/) override {
+    void onFrameDone(csMatrixPixels& frame, csRandGen& /*rand*/, tTime currTime) override {
         if (disabled) {
             return;
         }
@@ -469,6 +464,25 @@ public:
         updateBuffer();
         if (!buffer) {
             return;
+        }
+
+        // Fade accumulated trail with a stable rate, based on elapsed time intervals.
+        // If multiple intervals passed (e.g., low FPS), apply fade multiple times.
+        // If no interval passed, skip fading for this frame (avoids jitter/flicker).
+        if (!lastFadeTimeValid) {
+            lastFadeTime = currTime;
+            lastFadeTimeValid = true;
+        } else {
+            const uint16_t delta = static_cast<uint16_t>(currTime - lastFadeTime);
+            const uint16_t steps = static_cast<uint16_t>(delta / cFadeIntervalMs);
+            if (steps != 0) {
+                // Prevent pathological long loops after long pauses.
+                const uint16_t cappedSteps = (steps > 32) ? 32 : steps;
+                for (uint16_t i = 0; i < cappedSteps; ++i) {
+                    fadeBuffer();
+                }
+                lastFadeTime = static_cast<uint16_t>(lastFadeTime + cappedSteps * cFadeIntervalMs);
+            }
         }
 
         const tMatrixPixelsSize height = rectSource.height;
@@ -537,7 +551,7 @@ private:
             for (tMatrixPixelsSize x = 0; x < width; ++x) {
                 uint8_t newAlpha;
                 csColorRGBA pixel = buffer->getPixel(x, y);
-                /*
+                
                 if (pixel.a < 4) {
                     if (pixel.a == 0) {
                         continue;
@@ -547,14 +561,15 @@ private:
                 } else {
                     newAlpha = mul8(pixel.a, fadeAlpha);
                 }
-                newAlpha = mul8(pixel.a, fadeAlpha);
-                */
+                //newAlpha = mul8(pixel.a, fadeAlpha);
                 
-                if (pixel.a < 16) {
+                
+                /*if (pixel.a < 16) {
                     newAlpha = 0;
                 } else {
                     newAlpha = pixel.a - 16;
-                }
+                }*/
+
                 if (newAlpha != pixel.a) {
                     pixel.a = newAlpha;
                     buffer->setPixelRewrite(x, y, pixel);

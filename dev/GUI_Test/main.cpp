@@ -307,6 +307,7 @@ public:
             copyLineIndexHelper.updateCopyLineIndexSource(randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
+            //SDL_Delay(20); // 50 FPS
         }
     }
 
