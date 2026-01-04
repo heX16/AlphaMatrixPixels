@@ -32,6 +32,7 @@ using amp::csRenderDigitalClock;
 using amp::csRenderFill;
 using amp::csRenderAverageArea;
 using amp::csRenderRemap1DByConstArray;
+using amp::csRenderBouncingPixel;
 
 // Screen dimension constants
 constexpr int screenWidth  = 640;
@@ -59,7 +60,7 @@ public:
     static constexpr uint16_t cEff1BaseMin = 101;
     static constexpr uint16_t cEff1BaseMax = 111;
     static constexpr uint16_t cEff2Min = 105;
-    static constexpr uint16_t cEff2Max = 110;
+    static constexpr uint16_t cEff2Max = 112;
 
     // Active preset IDs:
     // - eff1_base: base effect (usually 101-110 in GUI_Test presets)
@@ -149,6 +150,9 @@ public:
                 break;
             case SDLK_a:
                 createEffectBundleDouble(0, 110); // SlowFadingBackground (eff2)
+                break;
+            case SDLK_p:
+                createEffectBundleDouble(0, 112); // BouncingPixel (eff2)
                 break;
             case SDLK_n:
                 createEffectBundleDouble(0, 200); // skip

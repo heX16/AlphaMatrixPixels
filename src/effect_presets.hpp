@@ -26,6 +26,7 @@ using amp::csRenderFill;
 using amp::csRenderAverageArea;
 using amp::csRenderMatrixCopy;
 using amp::csRenderSlowFadingBackground;
+using amp::csRenderBouncingPixel;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
@@ -258,6 +259,15 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 fade->fadeAlpha = 240;
 
                 effectManager.add(fade);
+                break;
+            }
+        case 112: // BouncingPixel
+            {
+                auto* bouncingPixel = new csRenderBouncingPixel();
+                bouncingPixel->color = csColorRGBA{255, 255, 255, 255};
+                bouncingPixel->speed = amp::math::csFP16(1.0f);
+                bouncingPixel->renderRectAutosize = true;
+                effectManager.add(bouncingPixel);
                 break;
             }
         case 111: // 7 horizontal lines with different colors

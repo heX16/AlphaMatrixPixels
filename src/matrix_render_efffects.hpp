@@ -1404,4 +1404,184 @@ public:
     }
 };
 
+// Effect: single pixel bouncing between the walls of rectDest.
+// TODO: change math to `csFP16`.
+class csRenderBouncingPixel : public csRenderDynamic {
+public:
+    csColorRGBA color{255, 255, 255, 255};
+
+    uint8_t getPropsCount() const override {
+        return csRenderDynamic::propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderDynamic::getPropInfo(propNum, info);
+        if (propNum == propColor) {
+            info.type = PropType::Color;
+            info.name = "Pixel color";
+            info.ptr = &color;
+            info.readOnly = false;
+            info.disabled = false;
+        }
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderDynamic::propChanged(propNum);
+        if (propNum == propMatrixDest || propNum == propRectDest) {
+            needsReset = true;
+        }
+    }
+
+    void recalc(csRandGen& rand, tTime currTime) override {
+        if (disabled || !matrix || rectDest.empty()) {
+            return;
+        }
+
+        if (needsReset) {
+            if (!initialize(rand, currTime)) {
+                return;
+            }
+        }
+
+        const uint16_t timeDelta = currTime - lastUpdateTime;
+        if (timeDelta == 0) {
+            return;
+        }
+
+        lastUpdateTime = currTime;
+        const float dt = static_cast<float>(timeDelta);
+        const float motionScale = dt * kBaseSpeed * speed.to_float();
+        posX += velX * motionScale;
+        posY += velY * motionScale;
+
+        handleBoundaryCollisions(rand);
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrix || rectDest.empty()) {
+            return;
+        }
+
+        const csRect target = rectDest.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord px = static_cast<tMatrixPixelsCoord>(roundf(posX));
+        const tMatrixPixelsCoord py = static_cast<tMatrixPixelsCoord>(roundf(posY));
+        if (px < target.x || px >= target.x + to_coord(target.width) ||
+            py < target.y || py >= target.y + to_coord(target.height)) {
+            return;
+        }
+
+        matrix->setPixel(px, py, color);
+    }
+
+private:
+    static constexpr float kDegToRad = 0.017453292519943295f;
+    static constexpr float kBaseSpeed = 0.05f;
+    static constexpr float kTwoPi = 6.283185307179586f;
+
+    float posX = 0.0f;
+    float posY = 0.0f;
+    float velX = 0.0f;
+    float velY = 0.0f;
+    uint16_t lastUpdateTime = 0;
+    bool needsReset = true;
+
+    bool initialize(csRandGen& rand, tTime currTime) {
+        if (rectDest.width == 0 || rectDest.height == 0) {
+            return false;
+        }
+
+        const float widthF = static_cast<float>(rectDest.width);
+        const float heightF = static_cast<float>(rectDest.height);
+        posX = static_cast<float>(rectDest.x) + widthF * 0.5f;
+        posY = static_cast<float>(rectDest.y) + heightF * 0.5f;
+        const float angle = randomAngle(rand);
+        velX = cosf(angle);
+        velY = sinf(angle);
+        normalizeVelocity();
+
+        lastUpdateTime = currTime;
+        needsReset = false;
+        return true;
+    }
+
+    void handleBoundaryCollisions(csRandGen& rand) {
+        const float minX = static_cast<float>(rectDest.x);
+        const float minY = static_cast<float>(rectDest.y);
+        const float maxX = minX + static_cast<float>(rectDest.width) - 1.0f;
+        const float maxY = minY + static_cast<float>(rectDest.height) - 1.0f;
+
+        bool collidedX = false;
+        bool collidedY = false;
+
+        if (posX < minX) {
+            posX = minX;
+            collidedX = true;
+        } else if (posX > maxX) {
+            posX = maxX;
+            collidedX = true;
+        }
+
+        if (posY < minY) {
+            posY = minY;
+            collidedY = true;
+        } else if (posY > maxY) {
+            posY = maxY;
+            collidedY = true;
+        }
+
+        if (collidedX || collidedY) {
+            reflect(rand, collidedX, collidedY);
+        }
+    }
+
+    void reflect(csRandGen& rand, bool reflectX, bool reflectY) {
+        if (reflectX) {
+            velX = -velX;
+        }
+        if (reflectY) {
+            velY = -velY;
+        }
+        applyRandomSpread(rand);
+        normalizeVelocity();
+    }
+
+    void applyRandomSpread(csRandGen& rand) {
+        const float spreadDeg = randomSpread(rand);
+        const float angleRad = spreadDeg * kDegToRad;
+        const float cosA = cosf(angleRad);
+        const float sinA = sinf(angleRad);
+        const float newX = velX * cosA - velY * sinA;
+        const float newY = velX * sinA + velY * cosA;
+        velX = newX;
+        velY = newY;
+    }
+
+    void normalizeVelocity() {
+        const float mag = sqrtf(velX * velX + velY * velY);
+        if (mag <= 0.0001f) {
+            velX = 1.0f;
+            velY = 0.0f;
+            return;
+        }
+        velX /= mag;
+        velY /= mag;
+    }
+
+    static float randomAngle(csRandGen& rand) {
+        const uint8_t raw = rand.rand();
+        const float fraction = static_cast<float>(raw) / 256.0f;
+        return fraction * kTwoPi;
+    }
+
+    static float randomSpread(csRandGen& rand) {
+        const uint8_t spread = rand.randRange(15, 30);
+        const float sign = (rand.rand() & 0x1) ? 1.0f : -1.0f;
+        return static_cast<float>(spread) * sign;
+    }
+};
+
 } // namespace amp
