@@ -249,18 +249,17 @@ private:
 
 // Container class that manages csMatrixPixels and csEffectManager lifecycle.
 // Creates both objects in constructor and destroys them in destructor.
-class csMatrixSystem {
+class csMatrixSFXSystem {
 public:
     // Construct matrix system with given matrix size.
     // Creates matrix and effect manager, and binds matrix to manager.
-    csMatrixSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
+    csMatrixSFXSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
         : matrix_(new csMatrixPixels(width, height))
         , effectManager_(new csEffectManager()) {
         effectManager_->setMatrix(*matrix_);
     }
 
-    // Destructor: destroys both objects.
-    ~csMatrixSystem() {
+    virtual ~csMatrixSFXSystem() {
         delete effectManager_;
         delete matrix_;
     }

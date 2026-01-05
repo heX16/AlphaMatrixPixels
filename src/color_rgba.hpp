@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 #include <stdint.h>
 
 namespace amp {
@@ -99,14 +100,18 @@ struct CS_PACKED csColorRGBA {
     //   csColorRGBA c1{0x00010203}; // becomes 0xFF010203 (opaque RGB)
     //   csColorRGBA c2{0x7F000000}; // stays 0x7F000000 (alpha-only preserved)
     explicit csColorRGBA(uint32_t packed) : value{0} {
-        const uint8_t Aa = static_cast<uint8_t>((packed >> 24) & 0xFF);
-        const uint8_t Rr = static_cast<uint8_t>((packed >> 16) & 0xFF);
-        const uint8_t Gg = static_cast<uint8_t>((packed >> 8) & 0xFF);
-        const uint8_t Bb = static_cast<uint8_t>(packed & 0xFF);
-        a = (Aa == 0) ? 0xFF : Aa;
-        r = Rr;
-        g = Gg;
-        b = Bb;
+        if (packed == 0) {
+            value = 0;
+        } else {
+            const uint8_t Aa = static_cast<uint8_t>((packed >> 24) & 0xFF);
+            const uint8_t Rr = static_cast<uint8_t>((packed >> 16) & 0xFF);
+            const uint8_t Gg = static_cast<uint8_t>((packed >> 8) & 0xFF);
+            const uint8_t Bb = static_cast<uint8_t>(packed & 0xFF);
+            a = (Aa == 0) ? 0xFF : Aa;
+            r = Rr;
+            g = Gg;
+            b = Bb;
+        }
     }
 
     csColorRGBA& operator=(const csColorRGBA& rhs) = default;

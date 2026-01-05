@@ -72,7 +72,7 @@ public:
     // Internal random generator
     csRandGen int_rand;
     
-    ~csRenderBackgroundColorIndex() {
+    ~csRenderBackgroundColorIndex() override {
         delete[] pixels;
     }
     
@@ -192,7 +192,7 @@ public:
     // Internal random generator
     csRandGen int_rand;
     
-    ~csRenderBackgroundColor() {
+    ~csRenderBackgroundColor() override {
         delete[] pixels;
     }
     
@@ -1041,7 +1041,7 @@ public:
     uint32_t splashesCount = 0;
     bool initialized = false;
     
-    ~csRenderSplashesNoise() {
+    ~csRenderSplashesNoise() override {
         delete[] splashes;
     }
     

@@ -2,6 +2,7 @@
 
 /// Predefined RGB colors
 typedef enum {
+    None = 0x00000000,              ///< @htmlcolorblock{000000} No color
     AliceBlue=0xF0F8FF,             ///< @htmlcolorblock{F0F8FF}
     Amethyst=0x9966CC,              ///< @htmlcolorblock{9966CC}
     AntiqueWhite=0xFAEBD7,          ///< @htmlcolorblock{FAEBD7}
@@ -10,7 +11,7 @@ typedef enum {
     Azure=0xF0FFFF,                 ///< @htmlcolorblock{F0FFFF}
     Beige=0xF5F5DC,                 ///< @htmlcolorblock{F5F5DC}
     Bisque=0xFFE4C4,                ///< @htmlcolorblock{FFE4C4}
-    Black=0x000000,                 ///< @htmlcolorblock{000000}
+    Black=0xFF000000,               ///< @htmlcolorblock{000000}
     BlanchedAlmond=0xFFEBCD,        ///< @htmlcolorblock{FFEBCD}
     Blue=0x0000FF,                  ///< @htmlcolorblock{0000FF}
     BlueViolet=0x8A2BE2,            ///< @htmlcolorblock{8A2BE2}

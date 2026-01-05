@@ -711,7 +711,7 @@ public:
         resizeOrInitSnowflakesArray();
     }
 
-    ~csRenderSnowfall() {
+    ~csRenderSnowfall() override {
         delete[] snowflakes;
         delete bitmap;
     }
@@ -1260,7 +1260,7 @@ public:
         // renderDigit is set externally via propRenderDigit property
     }
 
-    ~csRenderDigitalClock() {
+    ~csRenderDigitalClock() override {
         // renderDigit is managed externally, do not delete
     }
 
