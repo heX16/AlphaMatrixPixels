@@ -28,13 +28,11 @@ constexpr uint16_t cNumLeds = cWidth * cHeight;
 
 CRGB leds[cNumLeds];
 
-amp::csMatrixPixels canvas(cWidth, cHeight);
+// Matrix system: manages matrix and effect manager
+amp::csMatrixSFXSystem system(cWidth, cHeight);
 
 // TODO: WIP...
 amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
-
-amp::csRandGen rng;
-csEffectManager effectManager;
 
 csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
@@ -69,11 +67,9 @@ CLEDController* controller = nullptr;
 
     amp::wifi_ota::setup();
     
-    effectManager.setMatrix(canvas);
-    
     tEffectSwitch.start();  // Start timer with default time (20 seconds)
     tRender.start();        // Start render timer with default time (~60 FPS)
-    loadEffectPreset(effectManager, 5, &canvasX2); // Snowfall
+    loadEffectPreset(*system.effectManager, 5, &canvasX2); // Snowfall
 }
 
 void loop() {
@@ -90,14 +86,14 @@ void loop() {
         tEffectSwitch.start();  // Restart timer with default time
 
         // Clear all effects and add needed ones based on effectIndex
-        effectManager.clearAll();
+        system.effectManager->clearAll();
         if (effectIndex == 0) {
-            //loadEffectPreset(effectManager, 2); // GradientWaves
-            loadEffectPreset(effectManager, 3); // Snowfall
+            //loadEffectPreset(*system.effectManager, 2); // GradientWaves
+            loadEffectPreset(*system.effectManager, 3); // Snowfall
         } else if (effectIndex == 1) {
-            loadEffectPreset(effectManager, 2); // GradientWaves
+            loadEffectPreset(*system.effectManager, 2); // GradientWaves
         } else {
-            loadEffectPreset(effectManager, 1); // Plasma
+            loadEffectPreset(*system.effectManager, 1); // Plasma
         }
     }
     
@@ -106,12 +102,12 @@ void loop() {
         const amp::tTime currTime = static_cast<amp::tTime>(millis());
 
         canvasX2.clear();
-        canvas.clear();
+        system.matrix->clear();
         
         // Update and render all effects
-        effectManager.updateAndRenderAll(rng, currTime);
+        system.recalcAndRender(currTime);
 
-        amp::copyMatrixToFastLED(canvas, leds, cNumLeds, amp::csMappingPattern::SerpentineHorizontalInverted);
+        amp::copyMatrixToFastLED(*system.matrix, leds, cNumLeds, amp::csMappingPattern::SerpentineHorizontalInverted);
         FastLED.show();
         
         tRender.start();  // Restart timer with default time

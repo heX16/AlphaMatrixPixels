@@ -37,14 +37,11 @@ constexpr int cButton2Pin = 8;
 #define AMP_ENABLE_COLOR_CORRECTION 1
 #define AMP_COLOR_CORRECTION TypicalLEDStrip
 
-amp::csMatrixPixels canvas(12, 5);
-amp::csRandGen rng;
-
 // Real-time clock
 RTC_DS3231 rtc;
 
-// Effect manager
-csEffectManager effectManager;
+// Matrix system: manages matrix and effect manager
+amp::csMatrixSFXSystem system(cSrcWidth, cSrcHeight);
 
 // Remap helper: remaps 2D matrix to 1D matrix using custom mapping array
 // Based on copy_line_index_helper.hpp from GUI_Test
@@ -108,8 +105,6 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    effectManager.setMatrix(canvas);
-
     // Initialize RTC
     Wire.begin();
     rtc.begin();
@@ -122,7 +117,7 @@ void setup() {
     pinMode(cButton2Pin, INPUT_PULLUP);
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, 301); // Clock
+    loadEffectPreset(*system.effectManager, 301); // Clock
 
     #if AMP_ENABLE_SERIAL_DEBUG
     // Initialize Serial for debug output
@@ -151,21 +146,21 @@ void loop() {
     // TODO: время может отсутствовать - если модуль сбосился и не инициализирован
     DateTime now = rtc.now();
 
-    canvas.clear();
+    system.matrix->clear();
 
     #ifdef HORIZONTAL_LINE_DEBUG_MODE
     // Draw horizontal line in canvas for debugging
     // Calculate line position based on seconds (moves down every second)
-    uint8_t lineY = (now.second() % canvas.height());
+    uint8_t lineY = (now.second() % system.matrix->height());
     amp::csColorRGBA c(0xff0000);
-    canvas.fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), canvas.width(), 1}, c);
+    system.matrix->fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), system.matrix->width(), 1}, c);
     #endif
 
     #if AMP_ENABLE_CLOCK
     // Update time for clock effect
     // Use safe type casting via queryClassFamily to check if effect is csRenderDigitalClock
     if (auto* clock = static_cast<amp::csRenderDigitalClock*>(
-        effectManager[0]->queryClassFamily(amp::PropType::EffectDigitalClock)
+        (*system.effectManager)[0]->queryClassFamily(amp::PropType::EffectDigitalClock)
     )) {
         #ifdef DIGIT_TEST_MODE
         // Test mode: display last digit of seconds on all 4 positions
@@ -199,11 +194,11 @@ void loop() {
         // Normal mode: render effects
         #if AMP_ENABLE_CLOCK
         // Update and render all effects
-        effectManager.updateAndRenderAll(rng, currTime);
+        system.recalcAndRender(currTime);
         #endif
         
         // Remap 2D matrix to 1D matrix (after effects render)
-        remapHelper.update(canvas, rng, currTime);
+        remapHelper.update(*system.matrix, system.randGen, currTime);
         
         // Check if first button is pressed - fill matrix with white
         /*if (digitalRead(cButton2Pin) == LOW) {
@@ -224,7 +219,7 @@ void loop() {
     
     if (currentTime - lastDebugPrintTime >= 1000) {
         Serial.println("----");
-        amp::printMatrixToSerialDebug(canvas);
+        amp::printMatrixToSerialDebug(*system.matrix);
         lastDebugPrintTime = currentTime;
     }
     #endif
