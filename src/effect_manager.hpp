@@ -8,7 +8,6 @@
 #include <limits.h>
 #include "matrix_pixels.hpp"
 #include "matrix_render.hpp"
-#include "matrix_pixels.hpp"
 
 namespace amp {
 
@@ -248,43 +247,45 @@ private:
 };
 
 // Container class that manages csMatrixPixels and csEffectManager lifecycle.
-// Creates both objects in constructor and destroys them in destructor.
+// Creates both objects in constructor via virtual factory methods and destroys them in destructor.
 class csMatrixSFXSystem {
 public:
     // Construct matrix system with given matrix size.
-    // Creates matrix and effect manager, and binds matrix to manager.
+    // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
     csMatrixSFXSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
-        : matrix_(new csMatrixPixels(width, height))
-        , effectManager_(new csEffectManager()) {
-        effectManager_->setMatrix(*matrix_);
+        : matrix(createMatrix(width, height))
+        , effectManager(createEffectManager()) {
+        if (effectManager) {
+            effectManager->setMatrix(*matrix);
+        }
     }
 
+    // Virtual destructor: destroys both objects.
     virtual ~csMatrixSFXSystem() {
-        delete effectManager_;
-        delete matrix_;
+        if (effectManager) {
+            delete effectManager;
+            effectManager = nullptr;
+        }
+        if (matrix) {
+            delete matrix;
+            matrix = nullptr;
+        }
     }
 
-    // Get matrix pointer.
-    csMatrixPixels* getMatrix() {
-        return matrix_;
+    // Public fields: direct access to matrix and effect manager pointers.
+    csMatrixPixels* matrix;
+    csEffectManager* effectManager;
+
+protected:
+    // Virtual factory method for creating matrix. Override to customize matrix creation.
+    virtual csMatrixPixels* createMatrix(tMatrixPixelsSize width, tMatrixPixelsSize height) {
+        return new csMatrixPixels(width, height);
     }
 
-    const csMatrixPixels* getMatrix() const {
-        return matrix_;
+    // Virtual factory method for creating effect manager. Override to customize manager creation.
+    virtual csEffectManager* createEffectManager() {
+        return new csEffectManager();
     }
-
-    // Get effect manager pointer.
-    csEffectManager* getEffectManager() {
-        return effectManager_;
-    }
-
-    const csEffectManager* getEffectManager() const {
-        return effectManager_;
-    }
-
-private:
-    csMatrixPixels* matrix_;
-    csEffectManager* effectManager_;
 };
 
 } // namespace amp
