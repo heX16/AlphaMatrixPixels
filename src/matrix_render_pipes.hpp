@@ -71,6 +71,48 @@ public:
     }
 };
 
+// Base class for post-frame effects.
+// Post-frame effects work differently from regular effects: they don't render during the normal
+// render() phase. Instead, they process the final frame in onFrameDone() after all other effects
+// have been rendered. This allows them to apply transformations to the complete frame.
+class csRenderPostFrame : public csRenderMatrixPipeBase {
+public:
+    // Class family identifier
+    static constexpr PropType ClassFamilyId = PropType::EffectPostFrame;
+
+    PropType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    void* queryClassFamily(PropType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        return csRenderMatrixPipeBase::queryClassFamily(familyId);
+    }
+
+    void recalc(csRandGen& /*rand*/, tTime /*currTime*/) override {
+        // Intentionally empty:
+        // Post-frame effects don't use recalc() because their timing is driven from onFrameDone()
+        // to avoid flickering artifacts when recalc() is called in a timing/order that doesn't
+        // correspond to completed frames.
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        // Intentionally empty: rendering is handled in onFrameDone() after all effects are rendered.
+    }
+
+    void onFrameDone(csMatrixPixels& frame, csRandGen& rand, tTime currTime) override {
+        if (disabled) {
+            return;
+        }
+        // Derived classes should override this method to implement their specific post-frame logic.
+        (void)frame;
+        (void)rand;
+        (void)currTime;
+    }
+};
+
 // Effect: average area by computing average color of source area and filling destination area with it.
 // Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
 class csRenderAverageArea : public csRenderMatrixPipeBase {
@@ -399,7 +441,7 @@ public:
 // Effect: slow fade trail from source matrix to destination.
 // The effect keeps an internal buffer that accumulates the source
 // and gradually reduces its alpha each recalc tick (max 16Hz).
-class csRenderSlowFadingBackground : public csRenderMatrixPipeBase {
+class csRenderSlowFadingBackground : public csRenderPostFrame {
 public:
     static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
     static constexpr uint8_t propFadeAlpha = base + 1;
@@ -410,7 +452,9 @@ public:
     // Internal buffer that stores the accumulated image.
     csMatrixPixels* buffer = nullptr;
 
-    // Fade multiplier applied to each pixel alpha on recalc (0-255).
+    // User-facing trail strength (0-255): higher = slower fade.
+    // Note: internally we apply a non-linear curve so the lower half of the range
+    // is much more usable (small values no longer disappear "instantly").
     uint8_t fadeAlpha = 224;
 
     // Timestamp of last fade step (wrap-safe, tTime is uint16_t).
@@ -423,7 +467,7 @@ public:
     }
 
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
-        csRenderMatrixPipeBase::getPropInfo(propNum, info);
+        csRenderPostFrame::getPropInfo(propNum, info);
         if (propNum == propFadeAlpha) {
             info.type = PropType::UInt8;
             info.name = "Fade alpha";
@@ -438,23 +482,15 @@ public:
     }
 
     void propChanged(uint8_t propNum) override {
-        csRenderMatrixPipeBase::propChanged(propNum);
+        csRenderPostFrame::propChanged(propNum);
         if (propNum == propRectSource) {
             updateBuffer();
         }
     }
 
-    void recalc(csRandGen& /*rand*/, tTime /*currTime*/) override {
-        // Intentionally empty:
-        // fadeBuffer timing is driven from onFrameDone() to avoid flickering artifacts
-        // when recalc() is called in a timing/order that doesn't correspond to completed frames.
-    }
-
-    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        // Intentionally empty: rendering is handled in onFrameDone.
-    }
-
     void onFrameDone(csMatrixPixels& frame, csRandGen& /*rand*/, tTime currTime) override {
+        // Base class handles disabled check, but we need to check it here too since
+        // base method returns early and we can't detect that with void return type.
         if (disabled) {
             return;
         }
@@ -499,20 +535,6 @@ public:
                 frame.setPixelRewrite(fx, fy, composite);
             }
         }
-    }
-
-    // Class family identifier
-    static constexpr PropType ClassFamilyId = PropType::EffectPostFrame;
-
-    PropType getClassFamily() const override {
-        return ClassFamilyId;
-    }
-
-    void* queryClassFamily(PropType familyId) override {
-        if (familyId == ClassFamilyId) {
-            return this;
-        }
-        return csRenderMatrixPipeBase::queryClassFamily(familyId);
     }
 
 private:
