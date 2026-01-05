@@ -438,10 +438,9 @@ public:
     }
 };
 
-// Effect: slow fade trail from source matrix to destination.
-// The effect keeps an internal buffer that accumulates the source
-// and gradually reduces its alpha each recalc tick (max 16Hz).
-class csRenderSlowFadingBackground : public csRenderPostFrame {
+// Base class for slow fading effects that accumulate frames in a buffer.
+// Derived classes only need to override composePixel() to specify the blending order.
+class csRenderSlowFadingBase : public csRenderPostFrame {
 public:
     static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
     static constexpr uint8_t propFadeAlpha = base + 1;
@@ -477,7 +476,7 @@ public:
         }
     }
 
-    ~csRenderSlowFadingBackground() override {
+    ~csRenderSlowFadingBase() override {
         delete buffer;
     }
 
@@ -530,12 +529,20 @@ public:
                 const tMatrixPixelsCoord fy = rectSource.y + to_coord(y);
                 const csColorRGBA cur = frame.getPixel(fx, fy);
                 const csColorRGBA trail = buffer->getPixel(x, y);
-                const csColorRGBA composite = csColorRGBA::sourceOverStraight(trail, cur);
+                
+                // Virtual method to determine blending order
+                const csColorRGBA composite = composePixel(cur, trail);
+                
                 buffer->setPixelRewrite(x, y, composite);
                 frame.setPixelRewrite(fx, fy, composite);
             }
         }
     }
+
+protected:
+    // Virtual method to compose current frame and trail.
+    // Derived classes override this to specify the blending order.
+    virtual csColorRGBA composePixel(csColorRGBA cur, csColorRGBA trail) const = 0;
 
 private:
     // Convert user-facing fadeAlpha (0..255) to an actual fade multiplier (0..255).
@@ -599,14 +606,6 @@ private:
                 } else {
                     newAlpha = mul8(pixel.a, getFadeMul(fadeAlpha));
                 }
-                //newAlpha = mul8(pixel.a, fadeAlpha);
-                
-                
-                /*if (pixel.a < 16) {
-                    newAlpha = 0;
-                } else {
-                    newAlpha = pixel.a - 16;
-                }*/
 
                 if (newAlpha != pixel.a) {
                     pixel.a = newAlpha;
@@ -614,6 +613,35 @@ private:
                 }
             }
         }
+    }
+};
+
+// Effect: slow fade trail from source matrix to destination.
+// The effect keeps an internal buffer that accumulates the source
+// and gradually reduces its alpha each recalc tick (max 16Hz).
+// Current frame is drawn over the trail (trail = background).
+class csRenderSlowFadingBackground : public csRenderSlowFadingBase {
+protected:
+    csColorRGBA composePixel(csColorRGBA cur, csColorRGBA trail) const override {
+        // Current frame over trail (trail = background)
+        return csColorRGBA::sourceOverStraight(trail, cur);
+    }
+};
+
+// Effect: slow fade overlay that draws accumulated trail over the current frame.
+// Creates a "slow motion" effect where pixels gradually appear and disappear.
+// Unlike csRenderSlowFadingBackground, this effect draws the trail OVER the original frame.
+class csRenderSlowFadingOverlay : public csRenderSlowFadingBase {
+public:
+    // Default is higher than SlowFadingBackground for stronger blur effect.
+    csRenderSlowFadingOverlay() {
+        fadeAlpha = 240;
+    }
+
+protected:
+    csColorRGBA composePixel(csColorRGBA cur, csColorRGBA trail) const override {
+        // Trail over current frame (trail = foreground)
+        return csColorRGBA::sourceOverStraight(cur, trail);
     }
 };
 
