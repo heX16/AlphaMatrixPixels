@@ -8,6 +8,9 @@
 #include <limits.h>
 #include "matrix_pixels.hpp"
 #include "matrix_render.hpp"
+#include "matrix_pixels.hpp"
+
+namespace amp {
 
 class csEffectManager {
 public:
@@ -16,12 +19,13 @@ public:
 
     csEffectManager() = default;
 
-    ~csEffectManager() {
+    // Virtual destructor: safe deletion through base pointer in polymorphic class.
+    virtual ~csEffectManager() {
         clearAll();
     }
 
     // Add effect (returns index or notFound if array is full or effect is null)
-    uint8_t add(amp::csEffectBase* eff) {
+    uint8_t add(csEffectBase* eff) {
         if (!eff) {
             return notFound;
         }
@@ -45,7 +49,7 @@ public:
 
     // Set effect at specific index (removes existing effect if present)
     // NOTE: This is the ONLY way to write/set effects. operator[] is read-only.
-    void set(uint8_t index, amp::csEffectBase* eff) {
+    void set(uint8_t index, csEffectBase* eff) {
         if (index >= maxEffects) {
             return;
         }
@@ -76,7 +80,7 @@ public:
             return;
         }
 
-        amp::csEffectBase* eff = effects[index];
+        csEffectBase* eff = effects[index];
         if (!eff) {
             return;
         }
@@ -87,20 +91,20 @@ public:
                 continue; // Skip null or the effect being deleted
             }
 
-            amp::csEffectBase* currentEff = effects[i];
+            csEffectBase* currentEff = effects[i];
             const uint8_t propCount = currentEff->getPropsCount();
 
             // Enumerate all properties
             for (uint8_t propNum = 1; propNum <= propCount; ++propNum) {
-                amp::csPropInfo info;
+                csPropInfo info;
                 currentEff->getPropInfo(propNum, info);
 
                 // Check if property is of type Effect (pointer to effect)
                 // All effect family types are >= EffectBase ("Effect*")
                 // Using >= ensures we catch all current and future effect family types
-                if ((info.type >= amp::PropType::EffectBase) && (info.ptr != nullptr)) {
+                if ((info.type >= PropType::EffectBase) && (info.ptr != nullptr)) {
                     // Compare pointer value with the effect being deleted
-                    amp::csEffectBase** effectPtr = static_cast<amp::csEffectBase**>(info.ptr);
+                    csEffectBase** effectPtr = static_cast<csEffectBase**>(info.ptr);
                     if (*effectPtr == eff) {
                         // Found reference to the effect being deleted
                         *effectPtr = nullptr;
@@ -118,17 +122,17 @@ public:
     }
 
     // Set matrix and bind to all effects
-    void setMatrix(amp::csMatrixPixels& m) {
+    void setMatrix(csMatrixPixels& m) {
         matrix = &m;
         bindMatrix();
     }
 
     // Get matrix pointer
-    amp::csMatrixPixels* getMatrix() {
+    csMatrixPixels* getMatrix() {
         return matrix;
     }
 
-    const amp::csMatrixPixels* getMatrix() const {
+    const csMatrixPixels* getMatrix() const {
         return matrix;
     }
 
@@ -145,15 +149,15 @@ public:
     }
 
     // Update and render all effects
-    void updateAndRenderAll(amp::csRandGen& randGen, amp::tTime currTime) {
+    void updateAndRenderAll(csRandGen& randGen, tTime currTime) {
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);
             }
         }
 
-        auto isPostFrame = [](amp::csEffectBase* eff) -> bool {
-            return eff->queryClassFamily(amp::PropType::EffectPostFrame) != nullptr;
+        auto isPostFrame = [](csEffectBase* eff) -> bool {
+            return eff->queryClassFamily(PropType::EffectPostFrame) != nullptr;
         };
 
         for (uint8_t i = 0; i < maxEffects; ++i) {
@@ -184,64 +188,108 @@ public:
     }
 
     // Access effects
-    amp::csEffectBase* get(uint8_t index) {
+    csEffectBase* get(uint8_t index) {
         return (index < maxEffects) ? effects[index] : nullptr;
     }
 
-    const amp::csEffectBase* get(uint8_t index) const {
+    const csEffectBase* get(uint8_t index) const {
         return (index < maxEffects) ? effects[index] : nullptr;
     }
 
     // Read-only access via operator[] (for reading only, use set() for writing)
-    amp::csEffectBase* operator[](uint8_t index) {
+    csEffectBase* operator[](uint8_t index) {
         return get(index);
     }
 
     // Read-only access via operator[] (for reading only, use set() for writing)
-    const amp::csEffectBase* operator[](uint8_t index) const {
+    const csEffectBase* operator[](uint8_t index) const {
         return get(index);
     }
 
     // Iterators for range-based for
-    amp::csEffectBase** begin() {
+    csEffectBase** begin() {
         return effects;
     }
 
-    amp::csEffectBase** end() {
+    csEffectBase** end() {
         return effects + maxEffects;
     }
 
-    const amp::csEffectBase* const* begin() const {
+    const csEffectBase* const* begin() const {
         return effects;
     }
 
-    const amp::csEffectBase* const* end() const {
+    const csEffectBase* const* end() const {
         return effects + maxEffects;
     }
 
 private:
-    amp::csMatrixPixels* matrix = nullptr;
-    amp::csEffectBase* effects[maxEffects] = {};
+    csMatrixPixels* matrix = nullptr;
+    csEffectBase* effects[maxEffects] = {};
 
-    void bindEffectMatrix(amp::csEffectBase* eff) {
+    void bindEffectMatrix(csEffectBase* eff) {
         if (!eff || !matrix) {
             return;
         }
-        if (auto* m = static_cast<amp::csRenderMatrixBase*>(
-            eff->queryClassFamily(amp::PropType::EffectMatrixDest)
+        if (auto* m = static_cast<csRenderMatrixBase*>(
+            eff->queryClassFamily(PropType::EffectMatrixDest)
         )) {
             m->setMatrix(matrix);
         }
     }
 
     // incapsulation of `delete`
-    void deleteEffect(amp::csEffectBase* eff) {
+    void deleteEffect(csEffectBase* eff) {
         if (!eff) {
             return;
         }
         delete eff;
     }
 };
+
+// Container class that manages csMatrixPixels and csEffectManager lifecycle.
+// Creates both objects in constructor and destroys them in destructor.
+class csMatrixSystem {
+public:
+    // Construct matrix system with given matrix size.
+    // Creates matrix and effect manager, and binds matrix to manager.
+    csMatrixSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
+        : matrix_(new csMatrixPixels(width, height))
+        , effectManager_(new csEffectManager()) {
+        effectManager_->setMatrix(*matrix_);
+    }
+
+    // Destructor: destroys both objects.
+    ~csMatrixSystem() {
+        delete effectManager_;
+        delete matrix_;
+    }
+
+    // Get matrix pointer.
+    csMatrixPixels* getMatrix() {
+        return matrix_;
+    }
+
+    const csMatrixPixels* getMatrix() const {
+        return matrix_;
+    }
+
+    // Get effect manager pointer.
+    csEffectManager* getEffectManager() {
+        return effectManager_;
+    }
+
+    const csEffectManager* getEffectManager() const {
+        return effectManager_;
+    }
+
+private:
+    csMatrixPixels* matrix_;
+    csEffectManager* effectManager_;
+};
+
+} // namespace amp
+
 
 #endif // EFFECT_MANAGER_HPP
 
