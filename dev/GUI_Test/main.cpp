@@ -360,8 +360,10 @@ public:
         if (w == 0 || h == 0) {
             return;
         }
-        // Recreate system with new matrix size
-        system = amp::csMatrixSFXSystem{w, h};
+        // Delete old matrix
+        system.deleteMatrix();
+        // Create new matrix with new size
+        system.setMatrix(system.createMatrix(w, h));
         copyLineIndexHelper.configureRemapEffect(system.matrix);
     }
 

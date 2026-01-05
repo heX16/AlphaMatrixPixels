@@ -10,8 +10,9 @@ cd "$(dirname "$0")" || exit 1
 BUILDDIR="builddir"
 
 # Setup build directory (local to GUI_Test)
-meson setup --reconfigure "$BUILDDIR" --buildtype=debug
+# meson setup --reconfigure "$BUILDDIR" --buildtype=debug
 
 # Compile
 meson compile -C "$BUILDDIR"
 
+./builddir/HXLED_GUI_Test.exe

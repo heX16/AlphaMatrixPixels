@@ -5,3 +5,4 @@
 /other/*
 /hided_code/*
 .~lock.*.ods#
+.cursor/*.log
