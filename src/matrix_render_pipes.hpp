@@ -516,6 +516,22 @@ public:
     }
 
 private:
+    // Convert user-facing fadeAlpha (0..255) to an actual fade multiplier (0..255).
+    //
+    // We intentionally apply a non-linear curve to expand the "useful" range:
+    // small fadeAlpha values were previously fading too aggressively (exponential decay),
+    // making trails effectively invisible. By squaring the "decay amount", we make the
+    // lower half of the range much softer while keeping the upper range similar.
+    //
+    // Mapping:
+    // - fadeAlpha = 255 -> fadeMul = 255 (no fading)
+    // - fadeAlpha = 0   -> fadeMul = 0   (instant clear)
+    static constexpr uint8_t getFadeMul(uint8_t fadeAlpha) noexcept {
+        const uint8_t decay = static_cast<uint8_t>(255u - fadeAlpha);
+        const uint8_t decay2 = mul8(decay, decay); // non-linear: square (0..255)
+        return static_cast<uint8_t>(255u - decay2);
+    }
+
     void updateBuffer() {
         if (rectSource.empty()) {
             delete buffer;
@@ -559,7 +575,7 @@ private:
                         newAlpha = 0;
                     }
                 } else {
-                    newAlpha = mul8(pixel.a, fadeAlpha);
+                    newAlpha = mul8(pixel.a, getFadeMul(fadeAlpha));
                 }
                 //newAlpha = mul8(pixel.a, fadeAlpha);
                 

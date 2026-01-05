@@ -246,7 +246,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* fade = new csRenderSlowFadingBackground();
 
                 // Slightly slower fade by default (higher = slower).
-                fade->fadeAlpha = 250;
+                fade->fadeAlpha = 128;
 
                 effectManager.add(fade);
                 break;
