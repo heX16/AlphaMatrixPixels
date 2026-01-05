@@ -60,7 +60,7 @@ public:
     static constexpr uint16_t cEff1BaseMin = 101;
     static constexpr uint16_t cEff1BaseMax = 112;
     static constexpr uint16_t cEff2Min = 105;
-    static constexpr uint16_t cEff2Max = 112;
+    static constexpr uint16_t cEff2Max = 113;
 
     // Active preset IDs:
     // - eff1_base: base effect (usually 101-110 in GUI_Test presets)

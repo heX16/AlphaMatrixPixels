@@ -11,28 +11,14 @@
 #include "fixed_point.hpp"
 #include "fonts.h"
 
-using amp::csColorRGBA;
-using amp::csMatrixPixels;
-using amp::tMatrixPixelsSize;
-using amp::csRenderGradientWaves;
-using amp::csRenderGradientWavesFP;
-using amp::csRenderPlasma;
-using amp::csRenderGlyph;
-using amp::csRenderCircleGradient;
-using amp::csRenderSnowfall;
-using amp::csRenderDigitalClock;
-using amp::csRenderDigitalClockDigit;
-using amp::csRenderFill;
-using amp::csRenderAverageArea;
-using amp::csRenderMatrixCopy;
-using amp::csRenderSlowFadingBackground;
-using amp::csRenderBouncingPixel;
+using namespace amp;
+using namespace amp::math;
 
 // Abstract function: adds effects to the array based on effect ID
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
 // matrixSecondBuffer: optional second buffer for effects that need it (e.g., case 5)
-inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, amp::csMatrixPixels* matrixSecondBuffer = nullptr) {
+inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     if (effectId == 0) {
         return;
     }
@@ -212,6 +198,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             break;
         }
         case 109: // Clock (3x5 font)
+        case 110: // Clock (3x5 font) (BG color - none)
             {
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
@@ -223,7 +210,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 // Calculate clock rect size: 4 digits + 3 spacings between them
                 const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
                 const tMatrixPixelsSize clockHeight = fontHeight;
-                
+
                 // Create clock effect
                 auto* clock = new csRenderDigitalClock();
                 clock->spacing = 0;
@@ -232,7 +219,10 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* digitGlyph = clock->createRenderDigit();
                 digitGlyph->setFont(font);
                 digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-                digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
+                if (effectId == 109)
+                  digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
+                if (effectId == 110)
+                  digitGlyph->backgroundColor = csColorRGBA{0, 0, 0, 0};
                 digitGlyph->renderRectAutosize = false;
                 digitGlyph->disabled = true; // Disable direct rendering, only used by clock
                 
@@ -251,7 +241,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 110: // SlowFadingBackground (post-frame trail)
+        case 111: // SlowFadingBackground (post-frame trail)
             {
                 auto* fade = new csRenderSlowFadingBackground();
 
@@ -261,7 +251,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(fade);
                 break;
             }
-        case 111: // 7 horizontal lines with different colors
+        case 112: // 7 horizontal lines with different colors
             {
                 if (!effectManager.getMatrix()) {
                     break;
@@ -301,7 +291,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 }
                 break;
             }
-        case 112: // BouncingPixel
+        case 113: // BouncingPixel
             {
                 auto* bouncingPixel = new csRenderBouncingPixel();
                 bouncingPixel->color = csColorRGBA{128, 255, 255, 255};
