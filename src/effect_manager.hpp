@@ -147,14 +147,17 @@ public:
         }
     }
 
-    // Update and render all effects
-    void updateAndRenderAll(csRandGen& randGen, tTime currTime) {
+    // Recalc all effects (update internal state, no rendering)
+    void recalc(csRandGen& randGen, tTime currTime) {
         for (uint8_t i = 0; i < maxEffects; ++i) {
             if (effects[i] != nullptr) {
                 effects[i]->recalc(randGen, currTime);
             }
         }
+    }
 
+    // Render all effects and call onFrameDone for post-frame effects
+    void render(csRandGen& randGen, tTime currTime) {
         auto isPostFrame = [](csEffectBase* eff) -> bool {
             return eff->queryClassFamily(PropType::EffectPostFrame) != nullptr;
         };
@@ -275,6 +278,17 @@ public:
     // Public fields: direct access to matrix and effect manager pointers.
     csMatrixPixels* matrix;
     csEffectManager* effectManager;
+
+    // Convenience method: recalc and render all effects in one call.
+    void recalcAndRender(csRandGen& randGen, tTime currTime) {
+        if (effectManager) {
+            effectManager->recalc(randGen, currTime);
+            effectManager->render(randGen, currTime);
+        }
+    }
+
+    //TODO: add `update(currTime)` method to update all effects and remap the matrix.
+    //  и этот метод должен вызываться в loop(), и использовать таймеры для определения частоты вызова.
 
 protected:
     // Virtual factory method for creating matrix. Override to customize matrix creation.

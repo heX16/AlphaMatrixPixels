@@ -15,14 +15,13 @@
 #include "led_config.hpp"
 
 
-amp::csMatrixPixels canvas(cSrcWidth, cSrcHeight);
 amp::csRandGen rng;
 
 // Real-time clock
 RTC_DS3231 rtc;
 
-// Effect manager
-csEffectManager effectManager;
+// Matrix system: manages matrix and effect manager
+amp::csMatrixSFXSystem system(cSrcWidth, cSrcHeight);
 
 // Remap helper: remaps 2D matrix to 1D matrix using custom mapping array
 // Based on copy_line_index_helper.hpp from GUI_Test
@@ -85,25 +84,23 @@ void setup() {
     Wire.begin();
     rtc.begin();
 
-    effectManager.setMatrix(canvas);
-
     // For manual time setting (uncomment if needed):
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(effectManager, 205); // Plasma
-    loadEffectPreset(effectManager, 202); // Clock negative
+    loadEffectPreset(*system.effectManager, 205); // Plasma
+    loadEffectPreset(*system.effectManager, 202); // Clock negative
 }
 
 void loop() {
     // Read time from RTC
     DateTime now = rtc.now();
 
-    canvas.clear();
+    system.matrix->clear();
 
     // Update time for clock effect
     // Search through all effects to find csRenderDigitalClock
-    for (auto* effect : effectManager) {
+    for (auto* effect : *system.effectManager) {
         if (effect == nullptr) {
             continue;
         }
@@ -120,23 +117,24 @@ void loop() {
     const amp::tTime currTime = static_cast<amp::tTime>(millis());
     
     // Normal mode: render effects
-    // Update and render all effects
-    effectManager.updateAndRenderAll(rng, currTime);
+    // Recalc and render all effects
+    system.effectManager->recalc(rng, currTime);
+    system.effectManager->render(rng, currTime);
     
 
     //#define HORIZONTAL_LINE_DEBUG_MODE
     #ifdef HORIZONTAL_LINE_DEBUG_MODE
     // Draw horizontal line in canvas for debugging
     // Calculate line position based on seconds (moves down every second)
-    uint8_t lineY = (now.second() % canvas.height());
-    canvas.fillArea(
+    uint8_t lineY = (now.second() % system.matrix->height());
+    system.matrix->fillArea(
         amp::csRect{0, 
-        static_cast<amp::tMatrixPixelsCoord>(lineY), canvas.width(), 1}, 
+        static_cast<amp::tMatrixPixelsCoord>(lineY), system.matrix->width(), 1}, 
         amp::csColorRGBA(0x888800));
     #endif
 
     // Remap 2D matrix to 1D matrix (after effects render)
-    remapHelper.update(canvas, rng, currTime);
+    remapHelper.update(*system.matrix, rng, currTime);
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, 
         leds, cRemapDestMatrixLen,
