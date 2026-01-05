@@ -48,8 +48,7 @@ public:
     SDL_Event event{};
     TTF_Font* font{nullptr};
 
-    csRandGen randGen{};
-    amp::csMatrixSFXSystem system{0, 0};
+    amp::csMatrixSFXSystem system;
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
@@ -302,8 +301,8 @@ public:
                     clock->time = ticks / 1000u;
                 }
             }
-            system.recalcAndRender(randGen, currTime);
-            copyLineIndexHelper.updateCopyLineIndexSource(randGen, currTime);
+            system.recalcAndRender(currTime);
+            copyLineIndexHelper.updateCopyLineIndexSource(system.randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
             //SDL_Delay(20); // 50 FPS

@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "matrix_pixels.hpp"
 #include "matrix_render.hpp"
+#include "rand_gen.hpp"
 
 namespace amp {
 
@@ -253,11 +254,23 @@ private:
 // Creates both objects in constructor via virtual factory methods and destroys them in destructor.
 class csMatrixSFXSystem {
 public:
+    // Construct matrix system with empty matrix (0x0).
+    // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
+    csMatrixSFXSystem()
+        : matrix(createMatrix(0, 0))
+        , effectManager(createEffectManager())
+        , randGen(csRandGen::RAND16_SEED) {
+        if (effectManager) {
+            effectManager->setMatrix(*matrix);
+        }
+    }
+
     // Construct matrix system with given matrix size.
     // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
     csMatrixSFXSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
         : matrix(createMatrix(width, height))
-        , effectManager(createEffectManager()) {
+        , effectManager(createEffectManager())
+        , randGen(csRandGen::RAND16_SEED) {
         if (effectManager) {
             effectManager->setMatrix(*matrix);
         }
@@ -278,13 +291,26 @@ public:
     // Public fields: direct access to matrix and effect manager pointers.
     csMatrixPixels* matrix;
     csEffectManager* effectManager;
+    csRandGen randGen;
 
-    // Convenience method: recalc and render all effects in one call.
-    void recalcAndRender(csRandGen& randGen, tTime currTime) {
+    // Recalc all effects (update internal state, no rendering).
+    void recalc(tTime currTime) {
         if (effectManager) {
             effectManager->recalc(randGen, currTime);
+        }
+    }
+
+    // Render all effects and call onFrameDone for post-frame effects.
+    void render(tTime currTime) {
+        if (effectManager) {
             effectManager->render(randGen, currTime);
         }
+    }
+
+    // Convenience method: recalc and render all effects in one call.
+    void recalcAndRender(tTime currTime) {
+        recalc(currTime);
+        render(currTime);
     }
 
     //TODO: add `update(currTime)` method to update all effects and remap the matrix.

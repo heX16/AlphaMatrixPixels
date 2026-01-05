@@ -15,8 +15,6 @@
 #include "led_config.hpp"
 
 
-amp::csRandGen rng;
-
 // Real-time clock
 RTC_DS3231 rtc;
 
@@ -118,8 +116,8 @@ void loop() {
     
     // Normal mode: render effects
     // Recalc and render all effects
-    system.effectManager->recalc(rng, currTime);
-    system.effectManager->render(rng, currTime);
+    system.recalc(currTime);
+    system.render(currTime);
     
 
     //#define HORIZONTAL_LINE_DEBUG_MODE
@@ -134,7 +132,7 @@ void loop() {
     #endif
 
     // Remap 2D matrix to 1D matrix (after effects render)
-    remapHelper.update(*system.matrix, rng, currTime);
+    remapHelper.update(*system.matrix, system.randGen, currTime);
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, 
         leds, cRemapDestMatrixLen,
