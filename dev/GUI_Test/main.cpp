@@ -58,7 +58,7 @@ public:
     static constexpr uint16_t cEff1BaseMin = 101;
     static constexpr uint16_t cEff1BaseMax = 112;
     static constexpr uint16_t cEff2Min = 105;
-    static constexpr uint16_t cEff2Max = 113;
+    static constexpr uint16_t cEff2Max = 114;
 
     // Active preset IDs:
     // - eff1_base: base effect (usually 101-110 in GUI_Test presets)
@@ -151,6 +151,9 @@ public:
                 break;
             case SDLK_a:
                 createEffectBundleDouble(0, 110); // SlowFadingBackground (eff2)
+                break;
+            case SDLK_f:
+                createEffectBundleDouble(0, 114); // SlowFadingOverlay (eff2)
                 break;
             case SDLK_n:
                 createEffectBundleDouble(0, 200); // skip

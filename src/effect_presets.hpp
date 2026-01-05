@@ -300,6 +300,17 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(bouncingPixel);
                 break;
             }
+        case 114: // SlowFadingOverlay (post-frame trail overlay)
+            {
+                auto* fade = new csRenderSlowFadingOverlay();
+
+                // Default fadeAlpha is already set to 240 in constructor.
+                // Can be adjusted if needed:
+                // fade->fadeAlpha = 240;
+
+                effectManager.add(fade);
+                break;
+            }
         case 200:
             ; // slip - remove "effect2"
         

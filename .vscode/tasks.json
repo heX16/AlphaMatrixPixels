@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "cd dev/GUI_Test && meson setup builddir --buildtype=debug && meson compile -C builddir && ./builddir/HXLED_GUI_Test.exe"
+                "cd dev/GUI_Test && meson setup builddir --buildtype=debug && meson compile -C builddir"
             ],
             "group": {
                 "kind": "build",
