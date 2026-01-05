@@ -529,12 +529,9 @@ public:
                 const tMatrixPixelsCoord fy = rectSource.y + to_coord(y);
                 const csColorRGBA cur = frame.getPixel(fx, fy);
                 const csColorRGBA trail = buffer->getPixel(x, y);
-                
-                // Virtual method to determine blending order
-                const csColorRGBA composite = composePixel(cur, trail);
-                
-                buffer->setPixelRewrite(x, y, composite);
-                frame.setPixelRewrite(fx, fy, composite);
+
+                // Derived classes can override processPixel() to customize how the buffer/frame are updated.
+                processPixel(frame, fx, fy, x, y, cur, trail);
             }
         }
     }
@@ -544,23 +541,22 @@ protected:
     // Derived classes override this to specify the blending order.
     virtual csColorRGBA composePixel(csColorRGBA cur, csColorRGBA trail) const = 0;
 
-private:
-    // Convert user-facing fadeAlpha (0..255) to an actual fade multiplier (0..255).
-    //
-    // We intentionally apply a non-linear curve to expand the "useful" range:
-    // small fadeAlpha values were previously fading too aggressively (exponential decay),
-    // making trails effectively invisible. By squaring the "decay amount", we make the
-    // lower half of the range much softer while keeping the upper range similar.
-    //
-    // Mapping:
-    // - fadeAlpha = 255 -> fadeMul = 255 (no fading)
-    // - fadeAlpha = 0   -> fadeMul = 0   (instant clear)
-    static constexpr uint8_t getFadeMul(uint8_t fadeAlpha) noexcept {
-        const uint8_t decay = static_cast<uint8_t>(255u - fadeAlpha);
-        const uint8_t decay2 = mul8(decay, decay); // non-linear: square (0..255)
-        return static_cast<uint8_t>(255u - decay2);
+    // Pixel processing hook.
+    // Default implementation keeps the original behavior: compute a single composite color
+    // and write it both to the internal buffer and to the output frame.
+    virtual void processPixel(csMatrixPixels& frame,
+                              tMatrixPixelsCoord fx,
+                              tMatrixPixelsCoord fy,
+                              tMatrixPixelsSize x,
+                              tMatrixPixelsSize y,
+                              csColorRGBA cur,
+                              csColorRGBA trail) {
+        const csColorRGBA composite = composePixel(cur, trail);
+        buffer->setPixelRewrite(x, y, composite);
+        frame.setPixelRewrite(fx, fy, composite);
     }
 
+    // Protected methods for derived classes to use
     void updateBuffer() {
         if (rectSource.empty()) {
             delete buffer;
@@ -614,6 +610,23 @@ private:
             }
         }
     }
+
+private:
+    // Convert user-facing fadeAlpha (0..255) to an actual fade multiplier (0..255).
+    //
+    // We intentionally apply a non-linear curve to expand the "useful" range:
+    // small fadeAlpha values were previously fading too aggressively (exponential decay),
+    // making trails effectively invisible. By squaring the "decay amount", we make the
+    // lower half of the range much softer while keeping the upper range similar.
+    //
+    // Mapping:
+    // - fadeAlpha = 255 -> fadeMul = 255 (no fading)
+    // - fadeAlpha = 0   -> fadeMul = 0   (instant clear)
+    static constexpr uint8_t getFadeMul(uint8_t fadeAlpha) noexcept {
+        const uint8_t decay = static_cast<uint8_t>(255u - fadeAlpha);
+        const uint8_t decay2 = mul8(decay, decay); // non-linear: square (0..255)
+        return static_cast<uint8_t>(255u - decay2);
+    }
 };
 
 // Effect: slow fade trail from source matrix to destination.
@@ -628,20 +641,80 @@ protected:
     }
 };
 
-// Effect: slow fade overlay that draws accumulated trail over the current frame.
-// Creates a "slow motion" effect where pixels gradually appear and disappear.
-// Unlike csRenderSlowFadingBackground, this effect draws the trail OVER the original frame.
+// Effect: slow fading overlay ("slow motion") that draws the accumulated trail over the current frame.
+//
+// Key idea:
+// - We keep an internal buffer that accumulates pixels slowly (per-frame), then fades it over time.
+// - The displayed frame is computed from the accumulated buffer + (optionally) a direct contribution
+//   of the current frame.
+//
+// Why this exists / transparent background gotcha:
+// - If the current frame contains a fully opaque pixel on a fully transparent background
+//   (typical "particles" / "snowflakes" style effect), showing `cur` directly makes that pixel
+//   appear instantly, even if the buffer is accumulating slowly.
+// - To achieve a slow reveal, we must avoid showing `cur` as-is and instead drive visibility mainly
+//   from the accumulated buffer.
+//
+// Output model:
+// - First we accumulate:     accumulated = sourceOverStraight(trail, cur, accumulationAlpha)
+// - Then we display:         out = sourceOverStraight(accumulated, cur, directAlpha)
+//
+// Tuning:
+// - `directAlpha = 0`   -> pure slow reveal (no instant "pop" on transparent background)
+// - `directAlpha = 255` -> instant visibility of current frame (buffer mainly adds fading trail)
 class csRenderSlowFadingOverlay : public csRenderSlowFadingBase {
 public:
+    static constexpr uint8_t base = csRenderSlowFadingBase::propLast;
+    static constexpr uint8_t propDirectAlpha = base + 1;
+    static constexpr uint8_t propLast = propDirectAlpha;
+
     // Default is higher than SlowFadingBackground for stronger blur effect.
     csRenderSlowFadingOverlay() {
         fadeAlpha = 240;
     }
 
+    // Property introspection
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderSlowFadingBase::getPropInfo(propNum, info);
+        if (propNum == propDirectAlpha) {
+            info.type = PropType::UInt8;
+            info.name = "Direct alpha";
+            info.ptr = &directAlpha;
+            info.readOnly = false;
+            info.disabled = false;
+        }
+    }
+
 protected:
+    // How much of the current frame is directly visible (0..255).
+    // 0   -> fully driven by accumulated buffer (slow reveal)
+    // 255 -> current frame appears instantly (buffer mostly affects the fade-out trail)
+    uint8_t directAlpha = 0;
+
     csColorRGBA composePixel(csColorRGBA cur, csColorRGBA trail) const override {
         // Trail over current frame (trail = foreground)
         return csColorRGBA::sourceOverStraight(cur, trail);
+    }
+
+    void processPixel(csMatrixPixels& frame,
+                      tMatrixPixelsCoord fx,
+                      tMatrixPixelsCoord fy,
+                      tMatrixPixelsSize x,
+                      tMatrixPixelsSize y,
+                      csColorRGBA cur,
+                      csColorRGBA trail) override {
+        // Accumulate: current frame over existing trail in buffer (slowly).
+        // NOTE: accumulationAlpha is currently fixed to 16.
+        const csColorRGBA accumulated = csColorRGBA::sourceOverStraight(trail, cur, 16);
+        buffer->setPixelRewrite(x, y, accumulated);
+
+        // Display: accumulated buffer, plus optional direct feed-through of the current frame.
+        const csColorRGBA composite = csColorRGBA::sourceOverStraight(accumulated, cur, directAlpha);
+        frame.setPixelRewrite(fx, fy, composite);
     }
 };
 
