@@ -48,9 +48,8 @@ public:
     SDL_Event event{};
     TTF_Font* font{nullptr};
 
-    csMatrixPixels matrix{0, 0};
     csRandGen randGen{};
-    csEffectManager effectManager;
+    amp::csMatrixSFXSystem system{0, 0};
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
@@ -181,14 +180,14 @@ public:
             case SDLK_KP_PLUS:
             case SDLK_PLUS:
                 // Increase scale for dynamic effects
-                adjustEffectScale(effectManager[0], 0.1f);
-                adjustEffectScale(effectManager[1], 0.1f);
+                adjustEffectScale((*system.effectManager)[0], 0.1f);
+                adjustEffectScale((*system.effectManager)[1], 0.1f);
                 break;
             case SDLK_KP_MINUS:
             case SDLK_MINUS:
                 // Decrease scale for dynamic effects
-                adjustEffectScale(effectManager[0], -0.1f);
-                adjustEffectScale(effectManager[1], -0.1f);
+                adjustEffectScale((*system.effectManager)[0], -0.1f);
+                adjustEffectScale((*system.effectManager)[1], -0.1f);
                 break;
             default:
                 break;
@@ -213,14 +212,14 @@ public:
         }
 
         // Clear all effects
-        effectManager.clearAll();
+        system.effectManager->clearAll();
 
         // Default order: base first, then overlay.
         if (eff1_base != 0) {
-            loadEffectPreset(effectManager, eff1_base);
+            loadEffectPreset(*system.effectManager, eff1_base);
         }
         if (eff2 != 0) {
-            loadEffectPreset(effectManager, eff2);
+            loadEffectPreset(*system.effectManager, eff2);
         }
     }
 
@@ -274,7 +273,7 @@ public:
         
         recreateMatrix(16, 16);
         createEffectBundleDouble(101, 0); // GradientWaves
-        copyLineIndexHelper.configureRemapEffect(&matrix);
+        copyLineIndexHelper.configureRemapEffect(system.matrix);
         return true;
     }
 
@@ -288,12 +287,12 @@ public:
                 }
             }
 
-            matrix.clear();
+            system.matrix->clear();
 
             const uint32_t ticks = SDL_GetTicks();
             const amp::tTime currTime = static_cast<amp::tTime>(ticks);
 
-            for (auto* eff : effectManager) {
+            for (auto* eff : *system.effectManager) {
                 if (!eff) {
                     continue;
                 }
@@ -303,7 +302,7 @@ public:
                     clock->time = ticks / 1000u;
                 }
             }
-            effectManager.updateAndRenderAll(randGen, currTime);
+            system.recalcAndRender(randGen, currTime);
             copyLineIndexHelper.updateCopyLineIndexSource(randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
@@ -335,14 +334,14 @@ public:
 
     void renderProc() {
         // Render matrix using driver_sdl2 module
-        amp::renderMatrixToSDL(matrix, renderer, screenWidth, screenHeight,
+        amp::renderMatrixToSDL(*system.matrix, renderer, screenWidth, screenHeight,
                                 true,  // clearBeforeRender
                                 false  // presentAfterRender - we'll call it after drawing scale
                                );
 
         // Draw scale property
-        if (effectManager[0]) {
-            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(effectManager[0])) {
+        if ((*system.effectManager)[0]) {
+            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>((*system.effectManager)[0])) {
                 const float scaleValue = dynamicEffect->scale.to_float();
                 drawNumber(10, 10, scaleValue, "scale: %.2f");
             }
@@ -362,13 +361,13 @@ public:
         if (w == 0 || h == 0) {
             return;
         }
-        matrix = csMatrixPixels{w, h};
-        effectManager.setMatrix(matrix);
-        copyLineIndexHelper.configureRemapEffect(&matrix);
+        // Recreate system with new matrix size
+        system = amp::csMatrixSFXSystem{w, h};
+        copyLineIndexHelper.configureRemapEffect(system.matrix);
     }
 
     void done() {
-        effectManager.clearAll();
+        system.effectManager->clearAll();
         if (font) {
             TTF_CloseFont(font);
         }
