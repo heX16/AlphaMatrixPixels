@@ -7,13 +7,13 @@
  * 
  * Usage:
  *   1. Include: #include "effect_presets_local.hpp"
- *   2. Call: loadEffectPresetLocal(*system.effectManager, 202);
+ *   2. Call: loadEffectPresetLocal(*sfxSystem.effectManager, 202);
  *   3. To specify effect list: edit `switch (effectId) {` in `loadEffectPresetLocal()`,
  *      add `EFFECT_CASE(id)` lines for each effect you need
  * 
  * Example:
- *   loadEffectPresetLocal(*system.effectManager, 205); // Plasma
- *   loadEffectPresetLocal(*system.effectManager, 202); // Clock negative
+ *   loadEffectPresetLocal(*sfxSystem.effectManager, 205); // Plasma
+ *   loadEffectPresetLocal(*sfxSystem.effectManager, 202); // Clock negative
  */
 
 #ifndef EFFECT_PRESETS_LOCAL_HPP

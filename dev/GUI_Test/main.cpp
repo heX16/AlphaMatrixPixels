@@ -48,7 +48,7 @@ public:
     SDL_Event event{};
     TTF_Font* font{nullptr};
 
-    amp::csMatrixSFXSystem system;
+    amp::csMatrixSFXSystem sfxSystem;
     
     // Helper for csRenderRemapByIndexMatrix functionality
     csCopyLineIndexHelper copyLineIndexHelper;
@@ -182,14 +182,14 @@ public:
             case SDLK_KP_PLUS:
             case SDLK_PLUS:
                 // Increase scale for dynamic effects
-                adjustEffectScale((*system.effectManager)[0], 0.1f);
-                adjustEffectScale((*system.effectManager)[1], 0.1f);
+                adjustEffectScale((*sfxSystem.effectManager)[0], 0.1f);
+                adjustEffectScale((*sfxSystem.effectManager)[1], 0.1f);
                 break;
             case SDLK_KP_MINUS:
             case SDLK_MINUS:
                 // Decrease scale for dynamic effects
-                adjustEffectScale((*system.effectManager)[0], -0.1f);
-                adjustEffectScale((*system.effectManager)[1], -0.1f);
+                adjustEffectScale((*sfxSystem.effectManager)[0], -0.1f);
+                adjustEffectScale((*sfxSystem.effectManager)[1], -0.1f);
                 break;
             default:
                 break;
@@ -214,14 +214,14 @@ public:
         }
 
         // Clear all effects
-        system.effectManager->clearAll();
+        sfxSystem.effectManager->clearAll();
 
         // Default order: base first, then overlay.
         if (eff1_base != 0) {
-            loadEffectPreset(*system.effectManager, eff1_base);
+            loadEffectPreset(*sfxSystem.effectManager, eff1_base);
         }
         if (eff2 != 0) {
-            loadEffectPreset(*system.effectManager, eff2);
+            loadEffectPreset(*sfxSystem.effectManager, eff2);
         }
     }
 
@@ -275,7 +275,7 @@ public:
         
         recreateMatrix(16, 16);
         createEffectBundleDouble(101, 0); // GradientWaves
-        copyLineIndexHelper.configureRemapEffect(system.matrix);
+        copyLineIndexHelper.configureRemapEffect(sfxSystem.matrix);
         return true;
     }
 
@@ -289,12 +289,12 @@ public:
                 }
             }
 
-            system.matrix->clear();
+            sfxSystem.matrix->clear();
 
             const uint32_t ticks = SDL_GetTicks();
             const amp::tTime currTime = static_cast<amp::tTime>(ticks);
 
-            for (auto* eff : *system.effectManager) {
+            for (auto* eff : *sfxSystem.effectManager) {
                 if (!eff) {
                     continue;
                 }
@@ -304,8 +304,8 @@ public:
                     clock->time = ticks / 1000u;
                 }
             }
-            system.recalcAndRender(currTime);
-            copyLineIndexHelper.updateCopyLineIndexSource(system.randGen, currTime);
+            sfxSystem.recalcAndRender(currTime);
+            copyLineIndexHelper.updateCopyLineIndexSource(sfxSystem.randGen, currTime);
             renderProc();
             SDL_Delay(16); // ~60 FPS
             //SDL_Delay(20); // 50 FPS
@@ -336,14 +336,14 @@ public:
 
     void renderProc() {
         // Render matrix using driver_sdl2 module
-        amp::renderMatrixToSDL(*system.matrix, renderer, screenWidth, screenHeight,
+        amp::renderMatrixToSDL(*sfxSystem.matrix, renderer, screenWidth, screenHeight,
                                 true,  // clearBeforeRender
                                 false  // presentAfterRender - we'll call it after drawing scale
                                );
 
         // Draw scale property
-        if ((*system.effectManager)[0]) {
-            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>((*system.effectManager)[0])) {
+        if ((*sfxSystem.effectManager)[0]) {
+            if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>((*sfxSystem.effectManager)[0])) {
                 const float scaleValue = dynamicEffect->scale.to_float();
                 drawNumber(10, 10, scaleValue, "scale: %.2f");
             }
@@ -364,14 +364,14 @@ public:
             return;
         }
         // Delete old matrix
-        system.deleteMatrix();
+        sfxSystem.deleteMatrix();
         // Create new matrix with new size
-        system.setMatrix(system.createMatrix(w, h));
-        copyLineIndexHelper.configureRemapEffect(system.matrix);
+        sfxSystem.setMatrix(sfxSystem.createMatrix(w, h));
+        copyLineIndexHelper.configureRemapEffect(sfxSystem.matrix);
     }
 
     void done() {
-        system.effectManager->clearAll();
+        sfxSystem.effectManager->clearAll();
         if (font) {
             TTF_CloseFont(font);
         }
