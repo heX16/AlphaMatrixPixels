@@ -5,6 +5,7 @@
 #include "color_rgba.hpp"
 #include "effect_manager.hpp"
 #include "effect_presets.hpp"
+#include "effect_presets_local.hpp"
 #include "matrix_render_pipes.hpp"
 #include "amp_progmem.hpp"
 #include "driver_serial.hpp"
@@ -86,8 +87,8 @@ void setup() {
     // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     // Load clock effect preset (creates clock and digitGlyph, adds them to manager)
-    loadEffectPreset(*system.effectManager, 205); // Plasma
-    loadEffectPreset(*system.effectManager, 202); // Clock negative
+    loadEffectPresetLocal(*system.effectManager, 205); // Plasma
+    loadEffectPresetLocal(*system.effectManager, 202); // Clock negative
 }
 
 void loop() {
