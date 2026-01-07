@@ -56,6 +56,7 @@ public:
 
     static constexpr int frac_bits = FracBits;
     static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits);
+    static constexpr fp_type one_raw = scale; // Raw value for 1.0
     static constexpr fp_type min_raw = traits::min_raw;
     static constexpr fp_type max_raw = traits::max_raw;
 
