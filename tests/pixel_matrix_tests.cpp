@@ -264,6 +264,98 @@ void test_fp_trig(TestStats& stats) {
     );
 }
 
+void test_setPixelFloat_exact_center(TestStats& stats) {
+    const char* testName = "setPixelFloat_exact_center";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Exact center at (2, 2) - should draw single pixel with full alpha
+    m.setPixelFloat(csFP16::from_int(2), csFP16::from_int(2), color);
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 2), 255, 100, 200, 50), "exact center draws single pixel with full alpha");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "neighbor pixel stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
+}
+
+void test_setPixelFloat_offset_vertical_down(TestStats& stats) {
+    const char* testName = "setPixelFloat_offset_vertical_down";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Offset (0, +0.5) - should split between (2,2) and (2,3)
+    // max_offset_raw = 8 (0.5 * 16), weight = (8 * 255 + 8) / 16 = 128
+    m.setPixelFloat(csFP16::from_int(2), csFP16{2.5f}, color);
+    const csColorRGBA center = m.getPixel(2, 2);
+    const csColorRGBA secondary = m.getPixel(2, 3);
+    expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
+    expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
+    expect_true(stats, testName, __LINE__, colorEq(center, center.a, 100, 200, 50), "center pixel has correct RGB");
+    expect_true(stats, testName, __LINE__, colorEq(secondary, secondary.a, 100, 200, 50), "secondary pixel has correct RGB");
+}
+
+void test_setPixelFloat_offset_vertical_up(TestStats& stats) {
+    const char* testName = "setPixelFloat_offset_vertical_up";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Offset (0, -0.5) - should split between (2,2) and (2,1)
+    m.setPixelFloat(csFP16::from_int(2), csFP16{1.5f}, color);
+    const csColorRGBA center = m.getPixel(2, 2);
+    const csColorRGBA secondary = m.getPixel(2, 1);
+    expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
+    expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
+    expect_true(stats, testName, __LINE__, colorEq(center, center.a, 100, 200, 50), "center pixel has correct RGB");
+    expect_true(stats, testName, __LINE__, colorEq(secondary, secondary.a, 100, 200, 50), "secondary pixel has correct RGB");
+}
+
+void test_setPixelFloat_offset_diagonal(TestStats& stats) {
+    const char* testName = "setPixelFloat_offset_diagonal";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Offset (+0.5, +0.5) - equal components, should use diagonal direction
+    m.setPixelFloat(csFP16{2.5f}, csFP16{2.5f}, color);
+    const csColorRGBA center = m.getPixel(2, 2);
+    const csColorRGBA secondary = m.getPixel(3, 3);
+    expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
+    expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
+    expect_true(stats, testName, __LINE__, colorEq(center, center.a, 100, 200, 50), "center pixel has correct RGB");
+    expect_true(stats, testName, __LINE__, colorEq(secondary, secondary.a, 100, 200, 50), "secondary pixel has correct RGB");
+}
+
+void test_setPixelFloat_offset_horizontal(TestStats& stats) {
+    const char* testName = "setPixelFloat_offset_horizontal";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Offset (+0.5, 0) - should split between (2,2) and (3,2)
+    m.setPixelFloat(csFP16{2.5f}, csFP16::from_int(2), color);
+    const csColorRGBA center = m.getPixel(2, 2);
+    const csColorRGBA secondary = m.getPixel(3, 2);
+    expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
+    expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
+    expect_true(stats, testName, __LINE__, colorEq(center, center.a, 100, 200, 50), "center pixel has correct RGB");
+    expect_true(stats, testName, __LINE__, colorEq(secondary, secondary.a, 100, 200, 50), "secondary pixel has correct RGB");
+}
+
+void test_setPixelFloat_large_offset(TestStats& stats) {
+    const char* testName = "setPixelFloat_large_offset";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Large offset (+0.75, +0.25) - should favor horizontal direction (dx > dy)
+    m.setPixelFloat(csFP16{2.75f}, csFP16{2.25f}, color);
+    const csColorRGBA center = m.getPixel(2, 2);
+    const csColorRGBA secondary = m.getPixel(3, 2); // horizontal, not vertical
+    expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
+    expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "vertical pixel stays clear (horizontal chosen)");
+}
+
+void test_setPixelFloat_out_of_bounds(TestStats& stats) {
+    const char* testName = "setPixelFloat_out_of_bounds";
+    csMatrixPixels m{3, 3};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Try to draw outside bounds - should be silently ignored
+    m.setPixelFloat(csFP16{-0.5f}, csFP16{1.5f}, color);
+    m.setPixelFloat(csFP16{5.5f}, csFP16{1.5f}, color);
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), 0, 0, 0, 0), "out of bounds pixel stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "out of bounds pixel stays clear");
+}
+
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
@@ -287,6 +379,14 @@ int main() {
     test_fp16_basic(stats);
     test_fp32_basic(stats);
     test_fp_trig(stats);
+
+    test_setPixelFloat_exact_center(stats);
+    test_setPixelFloat_offset_vertical_down(stats);
+    test_setPixelFloat_offset_vertical_up(stats);
+    test_setPixelFloat_offset_diagonal(stats);
+    test_setPixelFloat_offset_horizontal(stats);
+    test_setPixelFloat_large_offset(stats);
+    test_setPixelFloat_out_of_bounds(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
     if (stats.failed != 0) {
