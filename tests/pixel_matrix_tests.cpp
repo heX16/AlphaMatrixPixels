@@ -459,6 +459,86 @@ void test_setPixelFloat_out_of_bounds(TestStats& stats) {
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "out of bounds pixel stays clear");
 }
 
+void test_setPixelFloat4_exact_center(TestStats& stats) {
+    const char* testName = "setPixelFloat4_exact_center";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Exact center at (2,2) - should draw exactly one pixel with full alpha.
+    m.setPixelFloat4(csFP16::from_int(2), csFP16::from_int(2), color);
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 2), 255, 100, 200, 50), "exact center draws single pixel with full alpha");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 2), 0, 0, 0, 0), "neighbor pixel stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
+}
+
+void test_setPixelFloat4_offset_horizontal(TestStats& stats) {
+    const char* testName = "setPixelFloat4_offset_horizontal";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // x = 2.5, y = 2.0 -> bilinear splits into two pixels: (2,2) and (3,2) at ~50/50.
+    m.setPixelFloat4(csFP16{2.5f}, csFP16::from_int(2), color);
+    const csColorRGBA p00 = m.getPixel(2, 2);
+    const csColorRGBA p10 = m.getPixel(3, 2);
+    expect_true(stats, testName, __LINE__, p00.a > 0 && p10.a > 0, "both pixels have alpha");
+    expect_eq_int(stats, testName, __LINE__, p00.a, 128, "left pixel alpha is ~50%");
+    expect_eq_int(stats, testName, __LINE__, p10.a, 128, "right pixel alpha is ~50%");
+    expect_colorRGBMatches(stats, testName, __LINE__, p00, color, 2, "left pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, p10, color, 2, "right pixel");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "unrelated neighbor stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 3), 0, 0, 0, 0), "unrelated neighbor stays clear");
+}
+
+void test_setPixelFloat4_offset_vertical(TestStats& stats) {
+    const char* testName = "setPixelFloat4_offset_vertical";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // x = 2.0, y = 2.5 -> bilinear splits into two pixels: (2,2) and (2,3) at ~50/50.
+    m.setPixelFloat4(csFP16::from_int(2), csFP16{2.5f}, color);
+    const csColorRGBA p00 = m.getPixel(2, 2);
+    const csColorRGBA p01 = m.getPixel(2, 3);
+    expect_true(stats, testName, __LINE__, p00.a > 0 && p01.a > 0, "both pixels have alpha");
+    expect_eq_int(stats, testName, __LINE__, p00.a, 128, "top pixel alpha is ~50%");
+    expect_eq_int(stats, testName, __LINE__, p01.a, 128, "bottom pixel alpha is ~50%");
+    expect_colorRGBMatches(stats, testName, __LINE__, p00, color, 2, "top pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, p01, color, 2, "bottom pixel");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 2), 0, 0, 0, 0), "unrelated neighbor stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 3), 0, 0, 0, 0), "unrelated neighbor stays clear");
+}
+
+void test_setPixelFloat4_offset_diagonal(TestStats& stats) {
+    const char* testName = "setPixelFloat4_offset_diagonal";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // x = 2.5, y = 2.5 -> bilinear splits into 4 pixels equally (~25% each).
+    m.setPixelFloat4(csFP16{2.5f}, csFP16{2.5f}, color);
+    const csColorRGBA p00 = m.getPixel(2, 2);
+    const csColorRGBA p10 = m.getPixel(3, 2);
+    const csColorRGBA p01 = m.getPixel(2, 3);
+    const csColorRGBA p11 = m.getPixel(3, 3);
+    expect_eq_int(stats, testName, __LINE__, p00.a, 64, "p00 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, p10.a, 64, "p10 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, p01.a, 64, "p01 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, p11.a, 64, "p11 alpha is ~25%");
+    expect_colorRGBMatches(stats, testName, __LINE__, p00, color, 2, "p00");
+    expect_colorRGBMatches(stats, testName, __LINE__, p10, color, 2, "p10");
+    expect_colorRGBMatches(stats, testName, __LINE__, p01, color, 2, "p01");
+    expect_colorRGBMatches(stats, testName, __LINE__, p11, color, 2, "p11");
+}
+
+void test_setPixelFloat4_out_of_bounds(TestStats& stats) {
+    const char* testName = "setPixelFloat4_out_of_bounds";
+    csMatrixPixels m{3, 3};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Use a coordinate where some taps are in-bounds and others are out-of-bounds.
+    // x=-0.5 => x0=-1, fx=0.5. y=1.5 => y0=1, fy=0.5.
+    m.setPixelFloat4(csFP16{-0.5f}, csFP16{1.5f}, color);
+    // Only (0,1) and (0,2) are inside; each should get ~25% alpha (64).
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 1).a, 64, "in-bounds tap alpha matches");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 2).a, 64, "in-bounds tap alpha matches");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 1), 0, 0, 0, 0), "other pixels stay clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 2), 0, 0, 0, 0), "other pixels stay clear");
+}
+
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
@@ -490,6 +570,12 @@ int main() {
     test_setPixelFloat_offset_horizontal(stats);
     test_setPixelFloat_large_offset(stats);
     test_setPixelFloat_out_of_bounds(stats);
+
+    test_setPixelFloat4_exact_center(stats);
+    test_setPixelFloat4_offset_horizontal(stats);
+    test_setPixelFloat4_offset_vertical(stats);
+    test_setPixelFloat4_offset_diagonal(stats);
+    test_setPixelFloat4_out_of_bounds(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
     if (stats.failed != 0) {

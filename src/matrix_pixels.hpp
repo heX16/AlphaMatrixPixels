@@ -169,6 +169,69 @@ public:
         }
     }
 
+    // Blend source color over destination pixels using classical 4-tap bilinear splat.
+    // Integer coordinates are treated as pixel centers, so (10.0, 1.0) affects exactly one pixel.
+    // The source color is distributed to the 4 neighboring pixel centers around floor(x), floor(y).
+    inline void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
+        // Fast path: exact pixel center.
+        if (x.frac_raw() == 0 && y.frac_raw() == 0) {
+            setPixel(static_cast<tMatrixPixelsCoord>(x.int_trunc()),
+                     static_cast<tMatrixPixelsCoord>(y.int_trunc()),
+                     color);
+            return;
+        }
+
+        // Use floor-based cell origin so fractions are always in [0,1) even for negative coordinates.
+        const tMatrixPixelsCoord x0 = static_cast<tMatrixPixelsCoord>(x.floor_int());
+        const tMatrixPixelsCoord y0 = static_cast<tMatrixPixelsCoord>(y.floor_int());
+
+        const csFP16 fx = x - csFP16::from_int(x0);
+        const csFP16 fy = y - csFP16::from_int(y0);
+
+        // csFP16 is 12.4, so the fractional part is 0..15 (scale=16).
+        const uint16_t fx_raw = static_cast<uint16_t>(fx.frac_raw());
+        const uint16_t fy_raw = static_cast<uint16_t>(fy.frac_raw());
+        const uint16_t inv_fx = static_cast<uint16_t>(csFP16::scale) - fx_raw; // 16 - fx
+        const uint16_t inv_fy = static_cast<uint16_t>(csFP16::scale) - fy_raw; // 16 - fy
+
+        // Weights sum to 256 (16*16). Each weight is in [0..256].
+        const uint16_t w00 = static_cast<uint16_t>(inv_fx * inv_fy);
+        const uint16_t w10 = static_cast<uint16_t>(fx_raw * inv_fy);
+        const uint16_t w01 = static_cast<uint16_t>(inv_fx * fy_raw);
+        const uint16_t w11 = static_cast<uint16_t>(fx_raw * fy_raw);
+
+        auto weight_to_alpha = [&](uint16_t w) noexcept -> uint8_t {
+            // Round to nearest: (a*w)/256
+            return static_cast<uint8_t>((static_cast<uint32_t>(color.a) * static_cast<uint32_t>(w) + 128u) >> 8);
+        };
+
+        const uint8_t a00 = weight_to_alpha(w00);
+        const uint8_t a10 = weight_to_alpha(w10);
+        const uint8_t a01 = weight_to_alpha(w01);
+        const uint8_t a11 = weight_to_alpha(w11);
+
+        if (a00 > 0) {
+            setPixel(x0, y0, csColorRGBA{a00, color.r, color.g, color.b});
+        }
+        if (a10 > 0) {
+            setPixel(x0 + 1, y0, csColorRGBA{a10, color.r, color.g, color.b});
+        }
+        if (a01 > 0) {
+            setPixel(x0, y0 + 1, csColorRGBA{a01, color.r, color.g, color.b});
+        }
+        if (a11 > 0) {
+            setPixel(x0 + 1, y0 + 1, csColorRGBA{a11, color.r, color.g, color.b});
+        }
+    }
+
+    // Blend source color over destination pixels using classical 4-tap bilinear splat with global alpha multiplier.
+    inline void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+        // Apply global alpha multiplier to color's alpha channel first.
+        const uint8_t effective_alpha = mul8(color.a, alpha);
+        const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
+        setPixelFloat4(x, y, effective_color);
+    }
+
     // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
     inline void setPixelFloat(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
         // Apply global alpha multiplier to color's alpha channel first
