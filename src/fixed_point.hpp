@@ -157,9 +157,27 @@ public:
         }
     }
     
-    // Returns fractional part in raw format (0 to scale-1).
-    // Example: `csFP16(3.75f).frac_raw() == 12 (0.75 * 16)`
+    // Returns fractional part in _raw_ format (0 to scale-1). Always non-negative.
+    // For negative numbers, this is NOT the signed fractional part, just the lower bits.
+    // Example: 
+    //   `csFP16(3.75f).frac_raw() == 12 (0.75 * 16)`
+    //   `csFP16(-3.75f).frac_raw() == 4` (not -12)
     [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
+
+    // Returns signed fractional part in raw format (-(scale-1) to (scale-1)).
+    // This corresponds to the fractional part after truncation towards zero.
+    // Examples:
+    //   `csFP16(3.75f).frac_raw_signed() == 12`
+    //   `csFP16(-3.75f).frac_raw_signed() == -12`
+    //   `csFP16(-3.25f).frac_raw_signed() == -4`
+    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw_signed() const noexcept {
+        const fp_type frac = frac_raw();
+        return (raw >= 0 || frac == 0) ?
+            frac :
+            static_cast<fp_type>(frac - scale);
+    }
+    
+    
 
     // Rounds to nearest integer (ties up).
     // Example: `csFP16(3.5f).round_int() == 4, csFP16(3.4f).round_int() == 3`
