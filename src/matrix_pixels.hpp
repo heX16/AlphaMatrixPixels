@@ -105,35 +105,42 @@ public:
     // Fixed-point coordinates allow positioning between pixels; color is distributed across 1-2 pixels
     // with alpha proportional to distance from pixel center.
     inline void setPixelFloat(math::csFP16 x, math::csFP16 y, csColorRGBA color) noexcept {
-        // Get center pixel by rounding
+        // Round to nearest pixel to find the center pixel
         const tMatrixPixelsCoord cx = static_cast<tMatrixPixelsCoord>(x.round_int());
         const tMatrixPixelsCoord cy = static_cast<tMatrixPixelsCoord>(y.round_int());
 
-        // Check if exact center (no fractional part)
+        // Check if exact pixel center (no fractional part)
         if (x.frac_raw() == 0 && y.frac_raw() == 0) {
             // Draw single pixel with full alpha
             setPixel(cx, cy, color);
             return;
         }
 
-        // Calculate offset from center using csFP16 operations
+        // Calculate offset from rounded center to determine direction.
+        // Compute offsets from the center pixel. These tell us how far the point is from the center
+        // Note: cx/cy are integer pixel coords; we convert them to csFP16 via from_int()
+        // (exact, no float) so dx/dy are computed in fixed-point units.
         const math::csFP16 cx_fp = math::csFP16::from_int(cx);
         const math::csFP16 cy_fp = math::csFP16::from_int(cy);
+
+        // dx/dy: signed sub-pixel offset from the rounded-center pixel (typically in [-0.5, +0.5]).
+        // Used to pick the sign (+1/-1) for the secondary pixel direction and to compute alpha weights.
         const math::csFP16 dx = x - cx_fp;
         const math::csFP16 dy = y - cy_fp;
 
-        // Get absolute values
-        const math::csFP16 dx_abs = dx.absVal();
-        const math::csFP16 dy_abs = dy.absVal();
+        // Select secondary pixel direction.
+        // IMPORTANT: axis decision uses original fractional parts (relative to the integer grid),
+        // not the abs offset relative to the rounded center (which can lose info, e.g. 2.75 -> -0.25).
+        tMatrixPixelsCoord sx = cx;
+        tMatrixPixelsCoord sy = cy;
 
-        // Select secondary pixel direction based on largest component
-        tMatrixPixelsCoord sx = cx; // secondary x
-        tMatrixPixelsCoord sy = cy; // secondary y
+        const uint8_t fx_axis = static_cast<uint8_t>(x.frac_raw());
+        const uint8_t fy_axis = static_cast<uint8_t>(y.frac_raw());
 
-        if (dy_abs > dx_abs) {
+        if (fy_axis > fx_axis) {
             // Vertical direction
             sy = cy + (dy.raw_value() >= 0 ? 1 : -1);
-        } else if (dx_abs > dy_abs) {
+        } else if (fx_axis > fy_axis) {
             // Horizontal direction
             sx = cx + (dx.raw_value() >= 0 ? 1 : -1);
         } else {
@@ -142,16 +149,17 @@ public:
             sy = cy + (dy.raw_value() >= 0 ? 1 : -1);
         }
 
-        // Calculate alpha weights using fractional parts (uint8_t only, no float)
-        const uint8_t max_offset_raw = static_cast<uint8_t>(max(dx_abs.frac_raw(), dy_abs.frac_raw()));
-        // Normalize to uint8_t: (max_offset_raw * 255 + 8) / 16 (with rounding)
+        // Get absolute fractional parts for weight calculation
+        const uint8_t fx_abs = static_cast<uint8_t>(dx.absVal().frac_raw());
+        const uint8_t fy_abs = static_cast<uint8_t>(dy.absVal().frac_raw());
+
+        // Calculate alpha weights using absolute fractional parts
+        const uint8_t max_offset_raw = max(fx_abs, fy_abs);
         const uint8_t weight_uint8 = static_cast<uint8_t>((static_cast<uint16_t>(max_offset_raw) * 255u + 8u) / 16u);
 
-        // Calculate alpha values for both pixels
         const uint8_t secondary_alpha = mul8(color.a, weight_uint8);
         const uint8_t center_alpha = color.a - secondary_alpha;
 
-        // Draw both pixels with weighted alpha
         if (center_alpha > 0) {
             setPixel(cx, cy, csColorRGBA{center_alpha, color.r, color.g, color.b});
         }

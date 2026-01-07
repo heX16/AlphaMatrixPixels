@@ -255,6 +255,14 @@ void test_fp16_basic(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.15f, "fp16 mul works");
     const csFP16 e = csFP16::from_int(2) / csFP16::from_int(4); // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.15f, "fp16 div works");
+
+    // Signed fractional raw part helper (useful for negative values).
+    const csFP16 n1{3.75f};
+    const csFP16 n2{-3.75f};
+    const csFP16 n3{-3.25f};
+    expect_eq_int(stats, testName, __LINE__, static_cast<long long>(n1.frac_raw_signed()), 12, "fp16 frac_raw_signed positive");
+    expect_eq_int(stats, testName, __LINE__, static_cast<long long>(n2.frac_raw_signed()), -12, "fp16 frac_raw_signed negative");
+    expect_eq_int(stats, testName, __LINE__, static_cast<long long>(n3.frac_raw_signed()), -4, "fp16 frac_raw_signed negative small");
 }
 
 void test_fp32_basic(TestStats& stats) {
