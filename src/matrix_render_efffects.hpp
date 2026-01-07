@@ -679,7 +679,8 @@ public:
     static constexpr uint8_t base = csRenderMatrixBase::propLast;
     static constexpr uint8_t propCount = base + 1;
     static constexpr uint8_t propRestartFillPercent = base + 2;
-    static constexpr uint8_t propLast = propRestartFillPercent;
+    static constexpr uint8_t propSmoothMovement = base + 3;
+    static constexpr uint8_t propLast = propSmoothMovement;
     
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
 
@@ -689,13 +690,14 @@ public:
 
     // Snowflake structure
     struct Snowflake {
-        tMatrixPixelsCoord x = 0;
-        tMatrixPixelsCoord y = 0;
+        math::csFP16 x{0.0f};
+        math::csFP16 y{0.0f};
     };
 
     csColorRGBA color{255, 255, 255, 255};
     uint16_t count = 4; // Number of snowflakes (dynamic)
     uint8_t restartFillPercent = 80; // Restart when fill reaches this percentage (0-100)
+    bool smoothMovement = true; // Enable sub-pixel smooth movement (default: enabled)
 
     // State fields (not mutable, changed in recalc())
     Snowflake* snowflakes = nullptr;
@@ -747,6 +749,13 @@ public:
                 info.readOnly = false;
                 info.disabled = false;
                 break;
+            case propSmoothMovement:
+                info.type = PropType::Bool;
+                info.name = "Smooth movement";
+                info.ptr = &smoothMovement;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
     }
     }
 
@@ -767,10 +776,10 @@ public:
         }
         
         // Random X position in top row (local coordinates: 0..width-1)
-        snowflake.x = to_coord(rand.rand(static_cast<uint8_t>(rectDest.width)));
+        snowflake.x = math::csFP16::from_int(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
         // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
-        snowflake.y = to_coord(cSpawnDelayMin + 
-            rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin));
+        snowflake.y = math::csFP16::from_int(to_coord(cSpawnDelayMin + 
+            rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin)));
     }
     
     void recalc(csRandGen& rand, tTime currTime) override {
@@ -812,17 +821,19 @@ public:
         for (uint16_t i = 0; i < count; ++i) {
             auto& snowflake = snowflakes[i];
             // Handle spawn delay phase: snowflake is moving toward visible area
-            if (snowflake.y < 0) {
-                ++snowflake.y;
+            if (snowflake.y < math::csFP16::from_int(0)) {
+                snowflake.y = snowflake.y + math::csFP16::from_int(1);
                 continue;
             }
-            if (snowflake.x == cSpawnFlagForceInit) {
+            if (snowflake.x == math::csFP16::from_int(cSpawnFlagForceInit)) {
                 randOneSnowflake(snowflake, rand);
                 continue;
             }
 
             // Normal falling logic for visible snowflakes (y >= 0)
-            const tMatrixPixelsCoord nextY = snowflake.y + 1;
+            // Calculate movement delta based on speed (slower movement with sub-pixel precision)
+            const math::csFP16 moveDelta = speed * math::csFP16{0.1f};
+            const math::csFP16 nextY = snowflake.y + moveDelta;
 
             // Common fix logic (takes snowflake reference)
             auto fixSnowflakeAtCurrent = [&](Snowflake& flake) {
@@ -834,8 +845,11 @@ public:
                 // - If snowflake is out of bounds: getPixel returns true (due to outOfBoundsValue = true),
                 //   we do nothing, counter is not incremented.
                 // No boundary check needed: getPixel with outOfBoundsValue = true already handles out-of-bounds.
-                if (!bitmap->getPixel(to_size(flake.x), to_size(flake.y))) {
-                    bitmap->setPixel(to_size(flake.x), to_size(flake.y), true);
+                // Convert fixed-point coordinates to integer for bitmap operations
+                const tMatrixPixelsSize flakeX = to_size(static_cast<tMatrixPixelsCoord>(flake.x.round_int()));
+                const tMatrixPixelsSize flakeY = to_size(static_cast<tMatrixPixelsCoord>(flake.y.round_int()));
+                if (!bitmap->getPixel(flakeX, flakeY)) {
+                    bitmap->setPixel(flakeX, flakeY, true);
                     ++filledPixelsCount;
                 }
 
@@ -858,7 +872,10 @@ public:
 
             // Check collision with existing snowflake or boundary
             // outOfBoundsValue = true means getPixel returns true for out-of-bounds
-            if (bitmap->getPixel(to_size(snowflake.x), to_size(nextY))) {
+            // Convert fixed-point coordinates to integer for bitmap collision check
+            const tMatrixPixelsSize snowflakeX = to_size(static_cast<tMatrixPixelsCoord>(snowflake.x.round_int()));
+            const tMatrixPixelsSize nextYInt = to_size(static_cast<tMatrixPixelsCoord>(nextY.round_int()));
+            if (bitmap->getPixel(snowflakeX, nextYInt)) {
                 fixSnowflakeAtCurrent(snowflake);
                 continue;
             }
@@ -893,23 +910,31 @@ public:
         }
 
         // Draw all falling snowflakes from array (only visible ones, y >= 0)
-        // Convert local coordinates to global coordinates
+        // Convert local fixed-point coordinates to global fixed-point coordinates
         if (!snowflakes || count == 0) {
             return; // Early exit if no array
         }
         for (uint16_t i = 0; i < count; ++i) {
             const auto& snowflake = snowflakes[i];
             // Skip snowflakes in spawn delay phase (negative y)
-            if (snowflake.y < 0) {
+            if (snowflake.y < math::csFP16::from_int(0)) {
                 continue;
             }
 
-            const tMatrixPixelsCoord globalX = rectDest.x + snowflake.x;
-            const tMatrixPixelsCoord globalY = rectDest.y + snowflake.y;
+            // Convert to global fixed-point coordinates
+            const math::csFP16 globalX = math::csFP16::from_int(rectDest.x) + snowflake.x;
+            const math::csFP16 globalY = math::csFP16::from_int(rectDest.y) + snowflake.y;
             // Check if snowflake is within target area (intersection of rect and matrix)
-            if (globalX >= target.x && globalX < endX &&
-                globalY >= target.y && globalY < endY) {
-                matrix->setPixel(globalX, globalY, color);
+            // Convert to integer for bounds check
+            const tMatrixPixelsCoord globalXInt = static_cast<tMatrixPixelsCoord>(globalX.round_int());
+            const tMatrixPixelsCoord globalYInt = static_cast<tMatrixPixelsCoord>(globalY.round_int());
+            if (globalXInt >= target.x && globalXInt < endX &&
+                globalYInt >= target.y && globalYInt < endY) {
+                if (smoothMovement) {
+                    matrix->setPixelFloat(globalX, globalY, color);
+                } else {
+                    matrix->setPixel(globalXInt, globalYInt, color);
+                }
             }
         }
     }
@@ -964,7 +989,7 @@ private:
             return;
         }
         for (uint16_t i = 0; i < count; ++i) {
-            snowflakes[i].x = cSpawnFlagForceInit;
+            snowflakes[i].x = math::csFP16::from_int(cSpawnFlagForceInit);
         }
     }
 
