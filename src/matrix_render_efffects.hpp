@@ -13,7 +13,7 @@
 #include "matrix_boolean.hpp"
 
 
-
+using namespace amp::math;
 
 namespace amp {
 
@@ -23,9 +23,9 @@ public:
     // Scale property for effect size (FP16, default 1.0).
     // Increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
     // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
-    math::csFP16 scale{1.0f};
+    csFP16 scale{1.0f};
     // Speed property for effect animation speed (FP16, default 1.0).
-    math::csFP16 speed{1.0f};
+    csFP16 speed{1.0f};
 
     // NOTE: uint8_t getPropsCount() - count dont changed
 
@@ -690,8 +690,8 @@ public:
 
     // Snowflake structure
     struct Snowflake {
-        math::csFP16 x{0.0f};
-        math::csFP16 y{0.0f};
+        csFP16 x{0.0f};
+        csFP16 y{0.0f};
     };
 
     csColorRGBA color{255, 255, 255, 255};
@@ -776,9 +776,9 @@ public:
         }
         
         // Random X position in top row (local coordinates: 0..width-1)
-        snowflake.x = math::csFP16::from_int(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
+        snowflake.x = csFP16::from_int(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
         // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
-        snowflake.y = math::csFP16::from_int(to_coord(cSpawnDelayMin + 
+        snowflake.y = csFP16::from_int(to_coord(cSpawnDelayMin + 
             rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin)));
     }
     
@@ -821,19 +821,19 @@ public:
         for (uint16_t i = 0; i < count; ++i) {
             auto& snowflake = snowflakes[i];
             // Handle spawn delay phase: snowflake is moving toward visible area
-            if (snowflake.y < math::csFP16::from_int(0)) {
-                snowflake.y = snowflake.y + math::csFP16::from_int(1);
+            if (snowflake.y < csFP16::from_int(0)) {
+                snowflake.y = snowflake.y + csFP16::from_int(1);
                 continue;
             }
-            if (snowflake.x == math::csFP16::from_int(cSpawnFlagForceInit)) {
+            if (snowflake.x == csFP16::from_int(cSpawnFlagForceInit)) {
                 randOneSnowflake(snowflake, rand);
                 continue;
             }
 
             // Normal falling logic for visible snowflakes (y >= 0)
             // Calculate movement delta based on speed (slower movement with sub-pixel precision)
-            const math::csFP16 moveDelta = speed * math::csFP16{0.1f};
-            const math::csFP16 nextY = snowflake.y + moveDelta;
+            const csFP16 moveDelta = speed * csFP16::float_const(0.1f);
+            const csFP16 nextY = snowflake.y + moveDelta;
 
             // Common fix logic (takes snowflake reference)
             auto fixSnowflakeAtCurrent = [&](Snowflake& flake) {
@@ -917,13 +917,13 @@ public:
         for (uint16_t i = 0; i < count; ++i) {
             const auto& snowflake = snowflakes[i];
             // Skip snowflakes in spawn delay phase (negative y)
-            if (snowflake.y < math::csFP16::from_int(0)) {
+            if (snowflake.y < csFP16::from_int(0)) {
                 continue;
             }
 
             // Convert to global fixed-point coordinates
-            const math::csFP16 globalX = math::csFP16::from_int(rectDest.x) + snowflake.x;
-            const math::csFP16 globalY = math::csFP16::from_int(rectDest.y) + snowflake.y;
+            const csFP16 globalX = csFP16::from_int(rectDest.x) + snowflake.x;
+            const csFP16 globalY = csFP16::from_int(rectDest.y) + snowflake.y;
             // Check if snowflake is within target area (intersection of rect and matrix)
             // Convert to integer for bounds check
             const tMatrixPixelsCoord globalXInt = static_cast<tMatrixPixelsCoord>(globalX.round_int());
@@ -989,7 +989,7 @@ private:
             return;
         }
         for (uint16_t i = 0; i < count; ++i) {
-            snowflakes[i].x = math::csFP16::from_int(cSpawnFlagForceInit);
+            snowflakes[i].x = csFP16::from_int(cSpawnFlagForceInit);
         }
     }
 
@@ -1430,23 +1430,36 @@ public:
 };
 
 // Effect: single pixel bouncing between the walls of rectDest.
-// TODO: change math to `csFP16`.
 class csRenderBouncingPixel : public csRenderDynamic {
 public:
+    static constexpr uint8_t base = csRenderDynamic::propLast;
+    static constexpr uint8_t propSmoothMovement = base + 1;
+    static constexpr uint8_t propLast = propSmoothMovement;
+
     csColorRGBA color{255, 255, 255, 255};
+    bool smoothMovement = true; // Enable sub-pixel smooth movement (default: enabled)
 
     uint8_t getPropsCount() const override {
-        return csRenderDynamic::propLast;
+        return propLast;
     }
 
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderDynamic::getPropInfo(propNum, info);
-        if (propNum == propColor) {
-            info.type = PropType::Color;
-            info.name = "Pixel color";
-            info.ptr = &color;
-            info.readOnly = false;
-            info.disabled = false;
+        switch (propNum) {
+            case propColor:
+                info.type = PropType::Color;
+                info.name = "Pixel color";
+                info.ptr = &color;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case propSmoothMovement:
+                info.type = PropType::Bool;
+                info.name = "Smooth movement";
+                info.ptr = &smoothMovement;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
         }
     }
 
@@ -1474,8 +1487,8 @@ public:
         }
 
         lastUpdateTime = currTime;
-        const float dt = static_cast<float>(timeDelta);
-        const float motionScale = dt * kBaseSpeed * speed.to_float();
+        const csFP16 dt = csFP16::from_int(timeDelta);
+        const csFP16 motionScale = speed * kBaseSpeed * dt;
         posX += velX * motionScale;
         posY += velY * motionScale;
 
@@ -1492,25 +1505,28 @@ public:
             return;
         }
 
-        const tMatrixPixelsCoord px = static_cast<tMatrixPixelsCoord>(roundf(posX));
-        const tMatrixPixelsCoord py = static_cast<tMatrixPixelsCoord>(roundf(posY));
+        // Check bounds using rounded integer coordinates
+        const tMatrixPixelsCoord px = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord py = static_cast<tMatrixPixelsCoord>(posY.round_int());
         if (px < target.x || px >= target.x + to_coord(target.width) ||
             py < target.y || py >= target.y + to_coord(target.height)) {
             return;
         }
 
-        matrix->setPixel(px, py, color);
+        if (smoothMovement) {
+            matrix->setPixelFloat(posX, posY, color);
+        } else {
+            matrix->setPixel(px, py, color);
+        }
     }
 
 private:
-    static constexpr float kDegToRad = 0.017453292519943295f;
-    static constexpr float kBaseSpeed = 0.05f;
-    static constexpr float kTwoPi = 6.283185307179586f;
+    static const csFP16 kBaseSpeed;
 
-    float posX = 0.0f;
-    float posY = 0.0f;
-    float velX = 0.0f;
-    float velY = 0.0f;
+    csFP16 posX{0.0f};
+    csFP16 posY{0.0f};
+    csFP16 velX{0.0f};
+    csFP16 velY{0.0f};
     uint16_t lastUpdateTime = 0;
     bool needsReset = true;
 
@@ -1519,13 +1535,13 @@ private:
             return false;
         }
 
-        const float widthF = static_cast<float>(rectDest.width);
-        const float heightF = static_cast<float>(rectDest.height);
-        posX = static_cast<float>(rectDest.x) + widthF * 0.5f;
-        posY = static_cast<float>(rectDest.y) + heightF * 0.5f;
-        const float angle = randomAngle(rand);
-        velX = cosf(angle);
-        velY = sinf(angle);
+        // posX = rectDest.x + rectDest.width * 0.5
+        posX = csFP16::from_int(rectDest.x) + csFP16::from_int(rectDest.width) * csFP16::float_const(0.5f);
+        // posY = rectDest.y + rectDest.height * 0.5
+        posY = csFP16::from_int(rectDest.y) + csFP16::from_int(rectDest.height) * csFP16::float_const(0.5f);
+        const math::csFP16 angle = randomAngle(rand);
+        velX = math::fp16_cos(angle);
+        velY = math::fp16_sin(angle);
         normalizeVelocity();
 
         lastUpdateTime = currTime;
@@ -1534,10 +1550,12 @@ private:
     }
 
     void handleBoundaryCollisions(csRandGen& rand) {
-        const float minX = static_cast<float>(rectDest.x);
-        const float minY = static_cast<float>(rectDest.y);
-        const float maxX = minX + static_cast<float>(rectDest.width) - 1.0f;
-        const float maxY = minY + static_cast<float>(rectDest.height) - 1.0f;
+        const csFP16 minX = csFP16::from_int(rectDest.x);
+        const csFP16 minY = csFP16::from_int(rectDest.y);
+        // maxX = minX + rectDest.width - 1
+        const csFP16 maxX = minX + csFP16::from_int(rectDest.width) - csFP16::float_const(1.0f);
+        // maxY = minY + rectDest.height - 1
+        const csFP16 maxY = minY + csFP16::from_int(rectDest.height) - csFP16::float_const(1.0f);
 
         bool collidedX = false;
         bool collidedY = false;
@@ -1565,48 +1583,60 @@ private:
 
     void reflect(csRandGen& rand, bool reflectX, bool reflectY) {
         if (reflectX) {
-            velX = -velX;
+            !!!
+            velX = csFP16::float_const(0.0f) - velX;
         }
         if (reflectY) {
-            velY = -velY;
+            velY = csFP16::float_const(0.0f) - velY;
         }
         applyRandomSpread(rand);
         normalizeVelocity();
     }
 
     void applyRandomSpread(csRandGen& rand) {
-        const float spreadDeg = randomSpread(rand);
-        const float angleRad = spreadDeg * kDegToRad;
-        const float cosA = cosf(angleRad);
-        const float sinA = sinf(angleRad);
-        const float newX = velX * cosA - velY * sinA;
-        const float newY = velX * sinA + velY * cosA;
+        const math::csFP16 spreadDeg = randomSpread(rand);
+        // angleRad = spreadDeg * kDegToRad
+        const math::csFP16 angleRad = spreadDeg * math::csFP16::kDegToRad;
+        const math::csFP16 cosA = math::fp16_cos(angleRad);
+        const math::csFP16 sinA = math::fp16_sin(angleRad);
+        // newX = velX * cosA - velY * sinA
+        const math::csFP16 newX = velX * cosA - velY * sinA;
+        // newY = velX * sinA + velY * cosA
+        const math::csFP16 newY = velX * sinA + velY * cosA;
         velX = newX;
         velY = newY;
     }
 
     void normalizeVelocity() {
-        const float mag = sqrtf(velX * velX + velY * velY);
-        if (mag <= 0.0001f) {
-            velX = 1.0f;
-            velY = 0.0f;
+        // mag = sqrt(velX^2 + velY^2)
+        const math::csFP16 magSq = velX * velX + velY * velY;
+        const math::csFP16 mag = math::csFP16{sqrtf(magSq.to_float())};
+        if (mag <= math::csFP16::float_const(0.0001f)) {
+            velX = math::csFP16::float_const(1.0f);
+            velY = math::csFP16::float_const(0.0f);
             return;
         }
-        velX /= mag;
-        velY /= mag;
+        velX = velX / mag;
+        velY = velY / mag;
     }
 
-    static float randomAngle(csRandGen& rand) {
+    static math::csFP16 randomAngle(csRandGen& rand) {
         const uint8_t raw = rand.rand();
-        const float fraction = static_cast<float>(raw) / 256.0f;
-        return fraction * kTwoPi;
+        // fraction = raw / 256
+        const math::csFP16 fraction = math::csFP16::from_ratio(raw, 256);
+        // angle = fraction * kTwoPi
+        return fraction * math::csFP16::kTwoPi;
     }
 
-    static float randomSpread(csRandGen& rand) {
+    static math::csFP16 randomSpread(csRandGen& rand) {
         const uint8_t spread = rand.randRange(15, 30);
-        const float sign = (rand.rand() & 0x1) ? 1.0f : -1.0f;
-        return static_cast<float>(spread) * sign;
+        const int8_t sign = (rand.rand() & 0x1) ? 1 : -1;
+        // spreadDeg = spread * sign
+        return math::csFP16::from_int(static_cast<int16_t>(spread) * sign);
     }
 };
+
+// Fixed-point constants for csRenderBouncingPixel
+const csFP16 csRenderBouncingPixel::kBaseSpeed = csFP16::float_const(0.05f);
 
 } // namespace amp
