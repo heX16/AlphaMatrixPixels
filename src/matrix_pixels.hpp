@@ -7,6 +7,7 @@
 #include "matrix_types.hpp"
 #include "rect.hpp"
 #include "math.hpp"
+#include "fixed_point.hpp"
 
 namespace amp {
 
@@ -98,6 +99,73 @@ public:
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color);
         }
+    }
+
+    // Blend source color over destination pixels using sub-pixel positioning.
+    // Fixed-point coordinates allow positioning between pixels; color is distributed across 1-2 pixels
+    // with alpha proportional to distance from pixel center.
+    inline void setPixelFloat(math::csFP16 x, math::csFP16 y, csColorRGBA color) noexcept {
+        // Get center pixel by rounding
+        const tMatrixPixelsCoord cx = static_cast<tMatrixPixelsCoord>(x.round_int());
+        const tMatrixPixelsCoord cy = static_cast<tMatrixPixelsCoord>(y.round_int());
+
+        // Check if exact center (no fractional part)
+        if (x.frac_raw() == 0 && y.frac_raw() == 0) {
+            // Draw single pixel with full alpha
+            setPixel(cx, cy, color);
+            return;
+        }
+
+        // Calculate offset from center using csFP16 operations
+        const math::csFP16 cx_fp = math::csFP16::from_int(cx);
+        const math::csFP16 cy_fp = math::csFP16::from_int(cy);
+        const math::csFP16 dx = x - cx_fp;
+        const math::csFP16 dy = y - cy_fp;
+
+        // Get absolute values
+        const math::csFP16 dx_abs = dx.absVal();
+        const math::csFP16 dy_abs = dy.absVal();
+
+        // Select secondary pixel direction based on largest component
+        tMatrixPixelsCoord sx = cx; // secondary x
+        tMatrixPixelsCoord sy = cy; // secondary y
+
+        if (dy_abs > dx_abs) {
+            // Vertical direction
+            sy = cy + (dy.raw_value() >= 0 ? 1 : -1);
+        } else if (dx_abs > dy_abs) {
+            // Horizontal direction
+            sx = cx + (dx.raw_value() >= 0 ? 1 : -1);
+        } else {
+            // Diagonal direction (equal components)
+            sx = cx + (dx.raw_value() >= 0 ? 1 : -1);
+            sy = cy + (dy.raw_value() >= 0 ? 1 : -1);
+        }
+
+        // Calculate alpha weights using fractional parts (uint8_t only, no float)
+        const uint8_t max_offset_raw = static_cast<uint8_t>(max(dx_abs.frac_raw(), dy_abs.frac_raw()));
+        // Normalize to uint8_t: (max_offset_raw * 255 + 8) / 16 (with rounding)
+        const uint8_t weight_uint8 = static_cast<uint8_t>((static_cast<uint16_t>(max_offset_raw) * 255u + 8u) / 16u);
+
+        // Calculate alpha values for both pixels
+        const uint8_t secondary_alpha = mul8(color.a, weight_uint8);
+        const uint8_t center_alpha = color.a - secondary_alpha;
+
+        // Draw both pixels with weighted alpha
+        if (center_alpha > 0) {
+            setPixel(cx, cy, csColorRGBA{center_alpha, color.r, color.g, color.b});
+        }
+        if (secondary_alpha > 0) {
+            setPixel(sx, sy, csColorRGBA{secondary_alpha, color.r, color.g, color.b});
+        }
+    }
+
+    // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
+    inline void setPixelFloat(math::csFP16 x, math::csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+        // Apply global alpha multiplier to color's alpha channel first
+        const uint8_t effective_alpha = mul8(color.a, alpha);
+        const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
+        setPixelFloat(x, y, effective_color);
     }
 
     // Read pixel; returns transparent black when out of bounds.
