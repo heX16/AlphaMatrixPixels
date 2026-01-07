@@ -60,6 +60,12 @@ public:
     static constexpr fp_type min_raw = traits::min_raw;
     static constexpr fp_type max_raw = traits::max_raw;
 
+    // Basic mathematical constants (defined below for csFP16 and csFP32)
+    static const csFP kPi;
+    static const csFP kPiHalf;
+    static const csFP kTwoPi;
+    static const csFP kDegToRad;
+
 private:
     // Clamp helpers for intermediate math.
     static AMP_CONSTEXPR fp_type clamp_raw(fp_type2 v) noexcept {
@@ -271,6 +277,26 @@ public:
 // Type aliases for backward compatibility
 using csFP16 = csFP<int16_t, 4>;
 using csFP32 = csFP<int32_t, 16>;
+
+// Definitions of mathematical constants for csFP16
+template<>
+inline const csFP16 csFP<int16_t, 4>::kPi = csFP16::float_const(3.141592653589793f);
+template<>
+inline const csFP16 csFP<int16_t, 4>::kPiHalf = csFP16::float_const(1.570796326794897f);
+template<>
+inline const csFP16 csFP<int16_t, 4>::kTwoPi = csFP16::float_const(6.283185307179586f);
+template<>
+inline const csFP16 csFP<int16_t, 4>::kDegToRad = csFP16::float_const(0.017453292519943295f);
+
+// Definitions of mathematical constants for csFP32
+template<>
+inline const csFP32 csFP<int32_t, 16>::kPi = csFP32::float_const(3.141592653589793f);
+template<>
+inline const csFP32 csFP<int32_t, 16>::kPiHalf = csFP32::float_const(1.570796326794897f);
+template<>
+inline const csFP32 csFP<int32_t, 16>::kTwoPi = csFP32::float_const(6.283185307179586f);
+template<>
+inline const csFP32 csFP<int32_t, 16>::kDegToRad = csFP32::float_const(0.017453292519943295f);
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
