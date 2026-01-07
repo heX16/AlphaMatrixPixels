@@ -84,7 +84,7 @@ public:
 class csRenderGradientWavesFP : public csRenderDynamic {
 public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
-    static uint8_t wave_fp(math::csFP32 phase) noexcept {
+    static uint8_t wave_fp(csFP32 phase) noexcept {
         using namespace math;
         static const csFP32 half = csFP32::float_const(0.5f);
         static const csFP32 scale255{255};
@@ -1539,7 +1539,7 @@ private:
         posX = csFP16::from_int(rectDest.x) + csFP16::from_int(rectDest.width) * csFP16::float_const(0.5f);
         // posY = rectDest.y + rectDest.height * 0.5
         posY = csFP16::from_int(rectDest.y) + csFP16::from_int(rectDest.height) * csFP16::float_const(0.5f);
-        const math::csFP16 angle = randomAngle(rand);
+        const csFP16 angle = randomAngle(rand);
         velX = math::fp16_cos(angle);
         velY = math::fp16_sin(angle);
         normalizeVelocity();
@@ -1583,7 +1583,6 @@ private:
 
     void reflect(csRandGen& rand, bool reflectX, bool reflectY) {
         if (reflectX) {
-            !!!
             velX = csFP16::float_const(0.0f) - velX;
         }
         if (reflectY) {
@@ -1594,45 +1593,45 @@ private:
     }
 
     void applyRandomSpread(csRandGen& rand) {
-        const math::csFP16 spreadDeg = randomSpread(rand);
+        const csFP16 spreadDeg = randomSpread(rand);
         // angleRad = spreadDeg * kDegToRad
-        const math::csFP16 angleRad = spreadDeg * math::csFP16::kDegToRad;
-        const math::csFP16 cosA = math::fp16_cos(angleRad);
-        const math::csFP16 sinA = math::fp16_sin(angleRad);
+        const csFP16 angleRad = spreadDeg * csFP16::kDegToRad;
+        const csFP16 cosA = math::fp16_cos(angleRad);
+        const csFP16 sinA = math::fp16_sin(angleRad);
         // newX = velX * cosA - velY * sinA
-        const math::csFP16 newX = velX * cosA - velY * sinA;
+        const csFP16 newX = velX * cosA - velY * sinA;
         // newY = velX * sinA + velY * cosA
-        const math::csFP16 newY = velX * sinA + velY * cosA;
+        const csFP16 newY = velX * sinA + velY * cosA;
         velX = newX;
         velY = newY;
     }
 
     void normalizeVelocity() {
         // mag = sqrt(velX^2 + velY^2)
-        const math::csFP16 magSq = velX * velX + velY * velY;
-        const math::csFP16 mag = math::csFP16{sqrtf(magSq.to_float())};
-        if (mag <= math::csFP16::float_const(0.0001f)) {
-            velX = math::csFP16::float_const(1.0f);
-            velY = math::csFP16::float_const(0.0f);
+        const csFP16 magSq = velX * velX + velY * velY;
+        const csFP16 mag = csFP16{sqrtf(magSq.to_float())};
+        if (mag == csFP16::float_const(0.0f)) {
+            velX = csFP16::float_const(1.0f);
+            velY = csFP16::float_const(0.0f);
             return;
         }
         velX = velX / mag;
         velY = velY / mag;
     }
 
-    static math::csFP16 randomAngle(csRandGen& rand) {
+    static csFP16 randomAngle(csRandGen& rand) {
         const uint8_t raw = rand.rand();
         // fraction = raw / 256
-        const math::csFP16 fraction = math::csFP16::from_ratio(raw, 256);
+        const csFP16 fraction = csFP16::from_ratio(raw, 256);
         // angle = fraction * kTwoPi
-        return fraction * math::csFP16::kTwoPi;
+        return fraction * csFP16::kTwoPi;
     }
 
-    static math::csFP16 randomSpread(csRandGen& rand) {
+    static csFP16 randomSpread(csRandGen& rand) {
         const uint8_t spread = rand.randRange(15, 30);
         const int8_t sign = (rand.rand() & 0x1) ? 1 : -1;
         // spreadDeg = spread * sign
-        return math::csFP16::from_int(static_cast<int16_t>(spread) * sign);
+        return csFP16::from_int(static_cast<int16_t>(spread) * sign);
     }
 };
 

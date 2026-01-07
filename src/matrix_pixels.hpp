@@ -15,6 +15,7 @@ using ::size_t;
 using ::uint8_t;
 using math::max;
 using math::min;
+using math::csFP16;
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
 // Color format: 0xAARRGGBB (A in the most significant byte).
@@ -104,7 +105,7 @@ public:
     // Blend source color over destination pixels using sub-pixel positioning.
     // Fixed-point coordinates allow positioning between pixels; color is distributed across 1-2 pixels
     // with alpha proportional to distance from pixel center.
-    inline void setPixelFloat(math::csFP16 x, math::csFP16 y, csColorRGBA color) noexcept {
+    inline void setPixelFloat(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
         // Round to nearest pixel to find the center pixel
         const tMatrixPixelsCoord cx = static_cast<tMatrixPixelsCoord>(x.round_int());
         const tMatrixPixelsCoord cy = static_cast<tMatrixPixelsCoord>(y.round_int());
@@ -120,13 +121,13 @@ public:
         // Compute offsets from the center pixel. These tell us how far the point is from the center
         // Note: cx/cy are integer pixel coords; we convert them to csFP16 via from_int()
         // (exact, no float) so dx/dy are computed in fixed-point units.
-        const math::csFP16 cx_fp = math::csFP16::from_int(cx);
-        const math::csFP16 cy_fp = math::csFP16::from_int(cy);
+        const csFP16 cx_fp = csFP16::from_int(cx);
+        const csFP16 cy_fp = csFP16::from_int(cy);
 
         // dx/dy: signed sub-pixel offset from the rounded-center pixel (typically in [-0.5, +0.5]).
         // Used to pick the sign (+1/-1) for the secondary pixel direction and to compute alpha weights.
-        const math::csFP16 dx = x - cx_fp;
-        const math::csFP16 dy = y - cy_fp;
+        const csFP16 dx = x - cx_fp;
+        const csFP16 dy = y - cy_fp;
 
         // Select secondary pixel direction.
         // IMPORTANT: axis decision uses original fractional parts (relative to the integer grid),
@@ -169,7 +170,7 @@ public:
     }
 
     // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
-    inline void setPixelFloat(math::csFP16 x, math::csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+    inline void setPixelFloat(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
         // Apply global alpha multiplier to color's alpha channel first
         const uint8_t effective_alpha = mul8(color.a, alpha);
         const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};

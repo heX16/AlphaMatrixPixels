@@ -201,7 +201,7 @@ public:
             return;
         }
         if (auto* dynamicEffect = dynamic_cast<csRenderDynamic*>(eff)) {
-            dynamicEffect->scale = dynamicEffect->scale + amp::math::csFP16{delta};
+            dynamicEffect->scale = dynamicEffect->scale + csFP16{delta};
         }
     }
 

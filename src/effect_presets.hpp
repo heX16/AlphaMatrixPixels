@@ -28,16 +28,16 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
         case 1: // Plasma
             {
                 auto* plasma = new csRenderPlasma();
-                plasma->scale = amp::math::csFP16(0.3f);
-                plasma->speed = amp::math::csFP16(1.0f);
+                plasma->scale = csFP16(0.3f);
+                plasma->speed = csFP16(1.0f);
                 effectManager.add(plasma);
                 break;
             }
         case 2: // GradientWaves
             {
                 auto* gradientWaves = new csRenderGradientWaves();
-                gradientWaves->scale = amp::math::csFP16(0.5f);
-                gradientWaves->speed = amp::math::csFP16(1.0f);
+                gradientWaves->scale = csFP16(0.5f);
+                gradientWaves->speed = csFP16(1.0f);
                 effectManager.add(gradientWaves);
                 break;
             }
@@ -46,7 +46,8 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
                 snowfall->count = 5;
-                snowfall->speed = amp::math::csFP16(1.0f / 4.0f);
+                snowfall->speed = csFP16(1.0f / 4.0f);
+                snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 snowfall->propChanged(csRenderSnowfall::propCount);
                 effectManager.add(snowfall);
                 break;
@@ -78,7 +79,8 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
                 snowfall->count = 5;
-                snowfall->speed = amp::math::csFP16(1.0f / 4.0f);
+                snowfall->speed = csFP16(1.0f / 4.0f);
+                snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 snowfall->propChanged(csRenderSnowfall::propCount);
                 // Add to manager first (it will set canvas), then override with canvasX2
                 effectManager.add(snowfall);
@@ -106,8 +108,12 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             effectManager.add(new csRenderPlasma());
             break;
         case 104: // Snowfall
-            effectManager.add(new csRenderSnowfall());
-            break;
+            {
+                auto* snowfall = new csRenderSnowfall();
+                snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
+                effectManager.add(snowfall);
+                break;
+            }
         
         // Secondary effects (105-108)
         case 105: // Glyph
@@ -295,7 +301,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             {
                 auto* bouncingPixel = new csRenderBouncingPixel();
                 bouncingPixel->color = csColorRGBA{128, 255, 255, 255};
-                bouncingPixel->speed = amp::math::csFP16(0.2f);
+                bouncingPixel->speed = csFP16(0.2f);
                 bouncingPixel->renderRectAutosize = true;
                 effectManager.add(bouncingPixel);
                 break;
