@@ -300,8 +300,8 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
         case 113: // BouncingPixel
             {
                 auto* bouncingPixel = new csRenderBouncingPixel();
-                bouncingPixel->color = csColorRGBA{128, 255, 255, 255};
-                bouncingPixel->speed = csFP16(0.2f);
+                bouncingPixel->color = csColorRGBA{255, 255, 255, 0};
+                bouncingPixel->speed = csFP16(0.5f);
                 bouncingPixel->renderRectAutosize = true;
                 effectManager.add(bouncingPixel);
                 break;

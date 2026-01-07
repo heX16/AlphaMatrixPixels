@@ -1481,16 +1481,32 @@ public:
             }
         }
 
+        // Calculate time step based on speed: higher speed = smaller timeStep (faster updates)
+        // Integer arithmetic: timeStep = (50 * csFP16::scale) / speed.raw
+        if (speed.raw <= 0) {
+            return;
+        }
+        const uint32_t timeStepRaw = 
+            (50U * csFP16::scale) / speed.raw;
+
+        const uint16_t timeStep = 
+            (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
+            
+        if (timeStep == 0) {
+            return;
+        }
+
+        // Check if it's time to update position
         const uint16_t timeDelta = currTime - lastUpdateTime;
-        if (timeDelta == 0) {
+        if (timeDelta < timeStep) {
             return;
         }
 
         lastUpdateTime = currTime;
-        const csFP16 dt = csFP16::from_int(timeDelta);
-        const csFP16 motionScale = speed * kBaseSpeed * dt;
-        posX += velX * motionScale;
-        posY += velY * motionScale;
+
+        // Update position with fixed step movement
+        posX += velX * kMoveStep;
+        posY += velY * kMoveStep;
 
         handleBoundaryCollisions(rand);
     }
@@ -1521,6 +1537,8 @@ public:
     }
 
 private:
+    // Fixed movement step per update (in pixels)
+    static const csFP16 kMoveStep;
     static const csFP16 kBaseSpeed;
 
     csFP16 posX{0.0f};
@@ -1636,6 +1654,7 @@ private:
 };
 
 // Fixed-point constants for csRenderBouncingPixel
+const csFP16 csRenderBouncingPixel::kMoveStep = csFP16::float_const(0.3f);
 const csFP16 csRenderBouncingPixel::kBaseSpeed = csFP16::float_const(0.05f);
 
 } // namespace amp

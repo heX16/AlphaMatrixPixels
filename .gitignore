@@ -6,3 +6,4 @@
 /hided_code/*
 .~lock.*.ods#
 .cursor/*.log
+.cursor/plans/*.plan.md
