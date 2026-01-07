@@ -370,12 +370,67 @@ void test_setPixelFloat_large_offset(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Large offset (+0.75, +0.25) - should favor horizontal direction (dx > dy)
+    const int32_t cx = 2;  // center x
+    const int32_t cy = 2;  // center y
     m.setPixelFloat(csFP16{2.75f}, csFP16{2.25f}, color);
-    const csColorRGBA center = m.getPixel(2, 2);
-    const csColorRGBA secondary = m.getPixel(3, 2); // horizontal, not vertical
+    const csColorRGBA center = m.getPixel(cx, cy);
+    const csColorRGBA secondary = m.getPixel(cx + 1, cy); // horizontal right (should be secondary)
+    
+    // Check center and secondary pixels
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
-    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "vertical pixel stays clear (horizontal chosen)");
+    
+    // Check all neighboring pixels - only horizontal right (+1, 0) should have alpha, others should be clear
+    const csColorRGBA left = m.getPixel(cx - 1, cy);      // horizontal left (-1, 0)
+    const csColorRGBA right = m.getPixel(cx + 1, cy);     // horizontal right (+1, 0) - should be secondary
+    const csColorRGBA top = m.getPixel(cx, cy - 1);       // vertical top (0, -1)
+    const csColorRGBA bottom = m.getPixel(cx, cy + 1);    // vertical bottom (0, +1)
+    const csColorRGBA topLeft = m.getPixel(cx - 1, cy - 1);   // diagonal top-left (-1, -1)
+    const csColorRGBA topRight = m.getPixel(cx + 1, cy - 1);  // diagonal top-right (+1, -1)
+    const csColorRGBA bottomLeft = m.getPixel(cx - 1, cy + 1);  // diagonal bottom-left (-1, +1)
+    const csColorRGBA bottomRight = m.getPixel(cx + 1, cy + 1); // diagonal bottom-right (+1, +1)
+    
+    // Check that only center (cx, cy) and horizontal right (cx+1, cy) have alpha
+    bool hasErrors = false;
+    if (left.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] horizontal left pixel (-1, 0) should be clear but has alpha=" << static_cast<int>(left.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (top.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] vertical top pixel (0, -1) should be clear but has alpha=" << static_cast<int>(top.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (bottom.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] vertical bottom pixel (0, +1) should be clear but has alpha=" << static_cast<int>(bottom.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (topLeft.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] diagonal top-left pixel (-1, -1) should be clear but has alpha=" << static_cast<int>(topLeft.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (topRight.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] diagonal top-right pixel (+1, -1) should be clear but has alpha=" << static_cast<int>(topRight.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (bottomLeft.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] diagonal bottom-left pixel (-1, +1) should be clear but has alpha=" << static_cast<int>(bottomLeft.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (bottomRight.a > 0) {
+        ++stats.failed;
+        std::cerr << "FAIL [" << testName << "] diagonal bottom-right pixel (+1, +1) should be clear but has alpha=" << static_cast<int>(bottomRight.a) << " (line " << __LINE__ << ")\n";
+        hasErrors = true;
+    }
+    if (!hasErrors) {
+        ++stats.passed; // All neighboring pixels are clear
+    }
+    
     // Both pixels should have RGB close to source color (may differ slightly due to blending)
     if (center.a > 0) {
         expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
