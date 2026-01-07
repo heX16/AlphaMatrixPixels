@@ -146,7 +146,9 @@ public:
     [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
     [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
     
-    // int_trunc: for int16_t returns fp_type2, for int32_t returns fp_type
+    // Truncates towards zero. Returns integer part only.
+    // Example: `csFP16(3.75f).int_trunc() == 3, csFP16(-3.75f).int_trunc() == -3`
+    // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] AMP_CONSTEXPR auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
         if constexpr (sizeof(fp_type) == 2) {
             return static_cast<fp_type2>(raw) >> frac_bits;
@@ -155,14 +157,20 @@ public:
         }
     }
     
+    // Returns fractional part in raw format (0 to scale-1).
+    // Example: `csFP16(3.75f).frac_raw() == 12 (0.75 * 16)`
     [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
 
-    // round_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    // Rounds to nearest integer (ties up).
+    // Example: `csFP16(3.5f).round_int() == 4, csFP16(3.4f).round_int() == 3`
+    // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto round_int() const noexcept -> decltype(round_raw_to_int(raw)) {
         return round_raw_to_int(raw);
     }
 
-    // floor_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    // Floors towards negative infinity.
+    // Example: `csFP16(3.75f).floor_int() == 3, csFP16(-3.25f).floor_int() == -4`
+    // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
         if constexpr (sizeof(fp_type) == 2) {
             if (raw >= 0) {
@@ -181,7 +189,9 @@ public:
         }
     }
 
-    // ceil_int: for int16_t returns fp_type2, for int32_t returns fp_type
+    // Ceils towards positive infinity.
+    // Example: `csFP16(3.25f).ceil_int() == 4, csFP16(-3.75f).ceil_int() == -3`
+    // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto ceil_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
         if constexpr (sizeof(fp_type) == 2) {
             if (raw >= 0) {
@@ -200,6 +210,8 @@ public:
         }
     }
 
+    // Returns absolute value. Handles min_raw edge case.
+    // Example: `csFP16(-3.5f).absVal() == csFP16(3.5f)`
     [[nodiscard]] inline csFP absVal() const noexcept {
         return (raw >= 0) ? *this : from_raw(static_cast<fp_type>(raw == min_raw ? max_raw : -raw));
     }
