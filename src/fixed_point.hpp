@@ -101,12 +101,12 @@ private:
         return static_cast<float>(v) / static_cast<float>(scale);
     }
 
-    // round_raw_to_int: for int16_t returns fp_type2, for int32_t returns fp_type
-    static inline auto round_raw_to_int(fp_type v) noexcept -> decltype(static_cast<fp_type2>(v) >> frac_bits) {
+    // round_raw_to_int: returns fp_type (integer part after rounding)
+    static inline fp_type round_raw_to_int(fp_type v) noexcept {
         if constexpr (sizeof(fp_type) == 2) {
             const fp_type2 half = static_cast<fp_type2>(scale) / 2;
             const fp_type2 bias = (v >= 0) ? half : -half;
-            return static_cast<fp_type2>(v + bias) >> frac_bits;
+            return static_cast<fp_type>(static_cast<fp_type2>(v + bias) >> frac_bits);
         } else {
             const fp_type half = scale / 2;
             const fp_type bias = (v >= 0) ? half : -half;
@@ -163,8 +163,8 @@ public:
 
     // Rounds to nearest integer (ties up).
     // Example: `csFP16(3.5f).round_int() == 4, csFP16(3.4f).round_int() == 3`
-    // Returns: fp_type2 for int16_t, fp_type for int32_t
-    [[nodiscard]] inline auto round_int() const noexcept -> decltype(round_raw_to_int(raw)) {
+    // Returns: fp_type (int16_t for csFP16, int32_t for csFP32)
+    [[nodiscard]] inline fp_type round_int() const noexcept {
         return round_raw_to_int(raw);
     }
 
