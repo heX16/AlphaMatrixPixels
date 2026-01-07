@@ -68,24 +68,26 @@ inline bool colorRGBNear(const csColorRGBA& c1, const csColorRGBA& c2, uint8_t t
            std::abs(static_cast<int>(c1.b) - static_cast<int>(c2.b)) <= tolerance;
 }
 
-inline void expect_colorRGBNear(TestStats& stats, const char* testName, int line, 
-                                const csColorRGBA& c1, const csColorRGBA& c2, 
-                                uint8_t tolerance, const char* msg) {
-    const bool isNear = colorRGBNear(c1, c2, tolerance);
+inline void expect_colorRGBMatches(TestStats& stats, const char* testName, int line,
+                                   const csColorRGBA& pixel, const csColorRGBA& expectedColor,
+                                   uint8_t tolerance, const char* pixelName) {
+    const bool isNear = std::abs(static_cast<int>(pixel.r) - static_cast<int>(expectedColor.r)) <= tolerance &&
+                        std::abs(static_cast<int>(pixel.g) - static_cast<int>(expectedColor.g)) <= tolerance &&
+                        std::abs(static_cast<int>(pixel.b) - static_cast<int>(expectedColor.b)) <= tolerance;
     if (isNear) {
         ++stats.passed;
         return;
     }
     
     ++stats.failed;
-    std::cerr << "FAIL [" << testName << "] " << msg << " (line " << line << ")\n";
-    std::cerr << "  color1: A=" << static_cast<int>(c1.a) << " R=" << static_cast<int>(c1.r) 
-              << " G=" << static_cast<int>(c1.g) << " B=" << static_cast<int>(c1.b) << "\n";
-    std::cerr << "  color2: A=" << static_cast<int>(c2.a) << " R=" << static_cast<int>(c2.r) 
-              << " G=" << static_cast<int>(c2.g) << " B=" << static_cast<int>(c2.b) << "\n";
-    std::cerr << "  diff:   R=" << std::abs(static_cast<int>(c1.r) - static_cast<int>(c2.r))
-              << " G=" << std::abs(static_cast<int>(c1.g) - static_cast<int>(c2.g))
-              << " B=" << std::abs(static_cast<int>(c1.b) - static_cast<int>(c2.b))
+    std::cerr << "FAIL [" << testName << "] " << pixelName << " RGB does not match source color (line " << line << ")\n";
+    std::cerr << "  pixel:    A=" << static_cast<int>(pixel.a) << " R=" << static_cast<int>(pixel.r) 
+              << " G=" << static_cast<int>(pixel.g) << " B=" << static_cast<int>(pixel.b) << "\n";
+    std::cerr << "  expected: R=" << static_cast<int>(expectedColor.r) 
+              << " G=" << static_cast<int>(expectedColor.g) << " B=" << static_cast<int>(expectedColor.b) << "\n";
+    std::cerr << "  diff:     R=" << std::abs(static_cast<int>(pixel.r) - static_cast<int>(expectedColor.r))
+              << " G=" << std::abs(static_cast<int>(pixel.g) - static_cast<int>(expectedColor.g))
+              << " B=" << std::abs(static_cast<int>(pixel.b) - static_cast<int>(expectedColor.b))
               << " (tolerance=" << static_cast<int>(tolerance) << ")\n";
 }
 
@@ -313,10 +315,9 @@ void test_setPixelFloat_offset_vertical_down(TestStats& stats) {
     const csColorRGBA secondary = m.getPixel(2, 3);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
-    // Both pixels should have similar RGB (they use same color, may differ slightly due to blending)
-    expect_colorRGBNear(stats, testName, __LINE__, center, secondary, 1, "both pixels have similar RGB");
-    // RGB components should be non-zero (color applied)
-    expect_true(stats, testName, __LINE__, center.r > 0 || center.g > 0 || center.b > 0, "RGB components are non-zero");
+    // Both pixels should have RGB close to source color (may differ slightly due to blending)
+    expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, secondary, color, 2, "secondary pixel");
 }
 
 void test_setPixelFloat_offset_vertical_up(TestStats& stats) {
@@ -329,10 +330,9 @@ void test_setPixelFloat_offset_vertical_up(TestStats& stats) {
     const csColorRGBA secondary = m.getPixel(2, 1);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
-    // Both pixels should have similar RGB (they use same color, may differ slightly due to blending)
-    expect_colorRGBNear(stats, testName, __LINE__, center, secondary, 1, "both pixels have similar RGB");
-    // RGB components should be non-zero (color applied)
-    expect_true(stats, testName, __LINE__, center.r > 0 || center.g > 0 || center.b > 0, "RGB components are non-zero");
+    // Both pixels should have RGB close to source color (may differ slightly due to blending)
+    expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, secondary, color, 2, "secondary pixel");
 }
 
 void test_setPixelFloat_offset_diagonal(TestStats& stats) {
@@ -345,10 +345,9 @@ void test_setPixelFloat_offset_diagonal(TestStats& stats) {
     const csColorRGBA secondary = m.getPixel(3, 3);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
-    // Both pixels should have similar RGB (they use same color, may differ slightly due to blending)
-    expect_colorRGBNear(stats, testName, __LINE__, center, secondary, 1, "both pixels have similar RGB");
-    // RGB components should be non-zero (color applied)
-    expect_true(stats, testName, __LINE__, center.r > 0 || center.g > 0 || center.b > 0, "RGB components are non-zero");
+    // Both pixels should have RGB close to source color (may differ slightly due to blending)
+    expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, secondary, color, 2, "secondary pixel");
 }
 
 void test_setPixelFloat_offset_horizontal(TestStats& stats) {
@@ -361,10 +360,9 @@ void test_setPixelFloat_offset_horizontal(TestStats& stats) {
     const csColorRGBA secondary = m.getPixel(3, 2);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
-    // Both pixels should have similar RGB (they use same color, may differ slightly due to blending)
-    expect_colorRGBNear(stats, testName, __LINE__, center, secondary, 1, "both pixels have similar RGB");
-    // RGB components should be non-zero (color applied)
-    expect_true(stats, testName, __LINE__, center.r > 0 || center.g > 0 || center.b > 0, "RGB components are non-zero");
+    // Both pixels should have RGB close to source color (may differ slightly due to blending)
+    expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
+    expect_colorRGBMatches(stats, testName, __LINE__, secondary, color, 2, "secondary pixel");
 }
 
 void test_setPixelFloat_large_offset(TestStats& stats) {
@@ -378,10 +376,13 @@ void test_setPixelFloat_large_offset(TestStats& stats) {
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
     expect_true(stats, testName, __LINE__, center.a + secondary.a == 255, "alpha sums to full");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "vertical pixel stays clear (horizontal chosen)");
-    // Both pixels should have similar RGB (they use same color, may differ slightly due to blending)
-    expect_colorRGBNear(stats, testName, __LINE__, center, secondary, 1, "both pixels have similar RGB");
-    // RGB components should be non-zero (color applied)
-    expect_true(stats, testName, __LINE__, center.r > 0 || center.g > 0 || center.b > 0, "RGB components are non-zero");
+    // Both pixels should have RGB close to source color (may differ slightly due to blending)
+    if (center.a > 0) {
+        expect_colorRGBMatches(stats, testName, __LINE__, center, color, 2, "center pixel");
+    }
+    if (secondary.a > 0) {
+        expect_colorRGBMatches(stats, testName, __LINE__, secondary, color, 2, "secondary pixel");
+    }
 }
 
 void test_setPixelFloat_out_of_bounds(TestStats& stats) {
