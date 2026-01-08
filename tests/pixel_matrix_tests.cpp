@@ -390,7 +390,6 @@ void test_setPixelFloat_large_offset(TestStats& stats) {
     
     // Check all neighboring pixels - only horizontal right (+1, 0) should have alpha, others should be clear
     const csColorRGBA left = m.getPixel(cx - 1, cy);      // horizontal left (-1, 0)
-    const csColorRGBA right = m.getPixel(cx + 1, cy);     // horizontal right (+1, 0) - should be secondary
     const csColorRGBA top = m.getPixel(cx, cy - 1);       // vertical top (0, -1)
     const csColorRGBA bottom = m.getPixel(cx, cy + 1);    // vertical bottom (0, +1)
     const csColorRGBA topLeft = m.getPixel(cx - 1, cy - 1);   // diagonal top-left (-1, -1)
@@ -525,6 +524,30 @@ void test_setPixelFloat4_offset_diagonal(TestStats& stats) {
     expect_colorRGBMatches(stats, testName, __LINE__, p11, color, 2, "p11");
 }
 
+void test_setPixelFloat4_center_diagonal(TestStats& stats) {
+    const char* testName = "setPixelFloat4_center_diagonal";
+    csMatrixPixels m{5, 5};
+    const csColorRGBA color{255, 100, 200, 50};
+    // Same fractional offsets as out_of_bounds test, but in center where all 4 pixels are in-bounds.
+    // x=1.5 => x0=1, fx=0.5. y=1.5 => y0=1, fy=0.5.
+    // All 4 pixels (1,1), (2,1), (1,2), (2,2) are inside the 5x5 matrix.
+    m.setPixelFloat4(csFP16{1.5f}, csFP16{1.5f}, color);
+    // All 4 pixels should get ~25% alpha (64) each.
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(1, 1).a, 64, "p00 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(2, 1).a, 64, "p10 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(1, 2).a, 64, "p01 alpha is ~25%");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(2, 2).a, 64, "p11 alpha is ~25%");
+    expect_colorRGBMatches(stats, testName, __LINE__, m.getPixel(1, 1), color, 2, "p00");
+    expect_colorRGBMatches(stats, testName, __LINE__, m.getPixel(2, 1), color, 2, "p10");
+    expect_colorRGBMatches(stats, testName, __LINE__, m.getPixel(1, 2), color, 2, "p01");
+    expect_colorRGBMatches(stats, testName, __LINE__, m.getPixel(2, 2), color, 2, "p11");
+    // Check that neighboring pixels stay clear
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 1), 0, 0, 0, 0), "neighbor stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 1), 0, 0, 0, 0), "neighbor stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 0), 0, 0, 0, 0), "neighbor stays clear");
+    expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 3), 0, 0, 0, 0), "neighbor stays clear");
+}
+
 void test_setPixelFloat4_out_of_bounds(TestStats& stats) {
     const char* testName = "setPixelFloat4_out_of_bounds";
     csMatrixPixels m{3, 3};
@@ -575,6 +598,7 @@ int main() {
     test_setPixelFloat4_offset_horizontal(stats);
     test_setPixelFloat4_offset_vertical(stats);
     test_setPixelFloat4_offset_diagonal(stats);
+    test_setPixelFloat4_center_diagonal(stats);
     test_setPixelFloat4_out_of_bounds(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
