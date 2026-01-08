@@ -2,6 +2,7 @@
 // All comments in English (project convention).
 #pragma once
 
+#include <stdint.h>
 #include <FastLED.h>
 
 // Select a preset by number:
@@ -73,9 +74,23 @@ constexpr uint8_t cDataPin = 5;    // D1 GPIO_05
 constexpr uint8_t cClockPin = 4;   // D2 GPIO_04
 // constexpr uint8_t cDataPin = 13;    // GPIO13 (SPI MOSI)
 // constexpr uint8_t cClockPin = 14;   // GPIO14 (SPI SCLK)
+// Matrix size for this configuration
+constexpr uint8_t cWidth = 8;
+constexpr uint8_t cHeight = 7;
+#define AMP_MATRIX_SIZE_DEFINED
 
 #else
 #error "LED_CFG invalid config number"
+#endif
+
+
+// ---------------------------
+// Matrix size configuration
+// ---------------------------
+// Default matrix size (used if not defined in LED_CFG preset above)
+#ifndef AMP_MATRIX_SIZE_DEFINED
+constexpr uint8_t cWidth = 8;
+constexpr uint8_t cHeight = 8;
 #endif
 
 

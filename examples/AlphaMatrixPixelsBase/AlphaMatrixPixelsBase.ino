@@ -22,8 +22,6 @@
 #define AMP_COLOR_CORRECTION TypicalLEDStrip
 #endif
 
-constexpr uint8_t cWidth = 8;
-constexpr uint8_t cHeight = 8;
 constexpr uint16_t cNumLeds = cWidth * cHeight;
 
 CRGB leds[cNumLeds];
