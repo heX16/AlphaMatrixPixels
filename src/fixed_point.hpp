@@ -199,19 +199,9 @@ public:
     // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
         if constexpr (sizeof(fp_type) == 2) {
-            if (raw >= 0) {
-                return static_cast<fp_type2>(raw) >> frac_bits;
-            }
-            const fp_type2 mask = static_cast<fp_type2>(scale - 1);
-            const fp_type2 r = static_cast<fp_type2>(raw);
-            return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
+            return static_cast<fp_type2>(raw) >> frac_bits;
         } else {
-            if (raw >= 0) {
-                return static_cast<fp_type>(raw >> frac_bits);
-            }
-            const fp_type mask = static_cast<fp_type>(scale - 1);
-            const fp_type r = raw;
-            return (r & mask) ? ((r >> frac_bits) - 1) : (r >> frac_bits);
+            return raw >> frac_bits;
         }
     }
 
