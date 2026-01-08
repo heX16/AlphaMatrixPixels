@@ -5,6 +5,18 @@
 #include <stdint.h>
 #include <FastLED.h>
 
+// Output gamma correction (applied to FastLED output buffer right before show()).
+// Set AMP_ENABLE_GAMMA to 0 to disable.
+#define AMP_ENABLE_GAMMA 1
+
+// FastLED color correction (channel scaling), e.g. TypicalLEDStrip.
+// This is NOT gamma correction; it can be enabled together with gamma.
+#define AMP_ENABLE_COLOR_CORRECTION 1
+
+// Color correction type
+#define AMP_COLOR_CORRECTION TypicalLEDStrip
+
+
 // Select a preset by number:
 //   #define LED_CFG 3
 //
@@ -106,10 +118,7 @@ constexpr uint8_t cHeight = 8;
 // - Optionally set AMP_OTA_HOSTNAME / AMP_OTA_PASSWORD
 //
 // The implementation is in `wifi_ota.hpp`.
-
-#ifndef AMP_ENABLE_WIFI_OTA
 #define AMP_ENABLE_WIFI_OTA 1
-#endif
 
 // WiFi credentials (ESP8266/ESP32 only). Leave empty to disable WiFi/OTA.
 //#ifndef AMP_WIFI_SSID
