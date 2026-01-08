@@ -1662,23 +1662,65 @@ const csFP32 csRenderBouncingPixel::kMoveStep = csFP32::float_const(0.3f);
 
 // Bouncing pixel with dual-trail rendering: always draws two pixels (old + new) with alpha split
 // based on subpixel progress between cell centers.
+// 
+// Algorithm:
+// 1. Track previous cell (prevCellX, prevCellY) that we were in before current cell
+// 2. Calculate progress t as: how far current position is from old center toward new center
+// 3. Split alpha: alphaNew = baseAlpha * t, alphaOld = baseAlpha * (1 - t)
 class csRenderBouncingPixelDualTrail : public csRenderBouncingPixel {
 public:
     void recalc(csRandGen& rand, tTime currTime) override {
-        // Call base recalc first to update posX/posY
-        csRenderBouncingPixel::recalc(rand, currTime);
-        
         if (disabled || !matrix || rectDest.empty()) {
             return;
         }
-        
-        // Update previous integer position only when current integer position changes
-        const tMatrixPixelsCoord currX = static_cast<tMatrixPixelsCoord>(posX.round_int());
-        const tMatrixPixelsCoord currY = static_cast<tMatrixPixelsCoord>(posY.round_int());
-        
-        if (currX != prevX || currY != prevY) {
-            prevX = currX;
-            prevY = currY;
+
+        if (needsReset) {
+            if (!initialize(rand, currTime)) {
+                return;
+            }
+            // Initialize previous cell to current cell
+            prevCellX = static_cast<tMatrixPixelsCoord>(posX.round_int());
+            prevCellY = static_cast<tMatrixPixelsCoord>(posY.round_int());
+        }
+
+        // Calculate time step based on speed
+        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
+        if (speedFP32.raw <= 0) {
+            return;
+        }
+        const uint32_t timeStepRaw = (50U * csFP32::scale) / speedFP32.raw;
+        const uint16_t timeStep = (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
+
+        if (timeStep == 0) {
+            return;
+        }
+
+        // Check if it's time to update position
+        const uint16_t timeDelta = currTime - lastUpdateTime;
+        if (timeDelta < timeStep) {
+            return;
+        }
+
+        lastUpdateTime = currTime;
+
+        // Remember which cell we're in before moving
+        const tMatrixPixelsCoord oldCellX = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord oldCellY = static_cast<tMatrixPixelsCoord>(posY.round_int());
+
+        // Update position with fixed step movement
+        posX += velX * kMoveStep;
+        posY += velY * kMoveStep;
+
+        handleBoundaryCollisions(rand);
+
+        // Check if we moved to a different cell
+        const tMatrixPixelsCoord newCellX = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord newCellY = static_cast<tMatrixPixelsCoord>(posY.round_int());
+
+        if (newCellX != oldCellX || newCellY != oldCellY) {
+            // We crossed cell boundary - update previous cell
+            prevCellX = oldCellX;
+            prevCellY = oldCellY;
         }
     }
     
@@ -1692,39 +1734,56 @@ public:
             return;
         }
         
-        // Get current integer coordinates
-        const tMatrixPixelsCoord px = static_cast<tMatrixPixelsCoord>(posX.round_int());
-        const tMatrixPixelsCoord py = static_cast<tMatrixPixelsCoord>(posY.round_int());
+        // Get current cell coordinates
+        const tMatrixPixelsCoord currCellX = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord currCellY = static_cast<tMatrixPixelsCoord>(posY.round_int());
         
-        // Check bounds
-        if (px < target.x || px >= target.x + to_coord(target.width) ||
-            py < target.y || py >= target.y + to_coord(target.height)) {
+        // Check if current cell is in bounds
+        if (currCellX < target.x || currCellX >= target.x + to_coord(target.width) ||
+            currCellY < target.y || currCellY >= target.y + to_coord(target.height)) {
             return;
         }
         
-        // Calculate progress t based on distance from old center to current position
-        // t = clamp(dist(pos, oldCenter) / dist(newCenter, oldCenter), 0..1)
-        const csFP32 oldCenterX = csFP32::from_int(prevX) + csFP32::float_const(0.5f);
-        const csFP32 oldCenterY = csFP32::from_int(prevY) + csFP32::float_const(0.5f);
-        const csFP32 newCenterX = csFP32::from_int(px) + csFP32::float_const(0.5f);
-        const csFP32 newCenterY = csFP32::from_int(py) + csFP32::float_const(0.5f);
+        // If we're in the same cell as previous, just draw one pixel
+        if (prevCellX == currCellX && prevCellY == currCellY) {
+            matrix->setPixel(currCellX, currCellY, color);
+            return;
+        }
         
-        // Distance from current position to old center
-        const csFP32 dxToOld = posX - oldCenterX;
-        const csFP32 dyToOld = posY - oldCenterY;
-        const csFP32 distToOldSq = dxToOld * dxToOld + dyToOld * dyToOld;
-        const csFP32 distToOld = csFP32{sqrtf(distToOldSq.to_float())};
+        // Calculate progress from cell boundary to new cell center
+        // Cell centers are at integer coordinates (pixels at 0.0, 1.0, 2.0, etc.)
+        // Boundary between cells is at (oldCenter + newCenter) / 2
+        const csFP32 oldCenterX = csFP32::from_int(prevCellX);
+        const csFP32 oldCenterY = csFP32::from_int(prevCellY);
+        const csFP32 newCenterX = csFP32::from_int(currCellX);
+        const csFP32 newCenterY = csFP32::from_int(currCellY);
         
-        // Total distance between centers
-        const csFP32 dxTotal = newCenterX - oldCenterX;
-        const csFP32 dyTotal = newCenterY - oldCenterY;
-        const csFP32 distTotalSq = dxTotal * dxTotal + dyTotal * dyTotal;
-        const csFP32 distTotal = csFP32{sqrtf(distTotalSq.to_float())};
+        // Calculate cell boundary (midpoint between two cell centers)
+        const csFP32 half = csFP32::float_const(0.5f);
+        const csFP32 boundaryX = (oldCenterX + newCenterX) * half;
+        const csFP32 boundaryY = (oldCenterY + newCenterY) * half;
         
-        // Calculate t: progress from old center to new center
-        csFP32 t = csFP32::float_const(1.0f);
-        if (distTotal > csFP32::float_const(0.0f)) {
-            t = distToOld / distTotal;
+        // Distance from boundary to new center (this is always 0.5 for adjacent cells)
+        const csFP32 dx_boundary_to_new = newCenterX - boundaryX;
+        const csFP32 dy_boundary_to_new = newCenterY - boundaryY;
+        const csFP32 dist_boundary_to_new_sq = dx_boundary_to_new * dx_boundary_to_new + 
+                                                dy_boundary_to_new * dy_boundary_to_new;
+        
+        // Calculate progress from boundary to current position
+        csFP32 t = csFP32::float_const(0.0f); // Default to start
+        
+        if (dist_boundary_to_new_sq > csFP32::float_const(0.0001f)) {
+            // Vector from boundary to current position
+            const csFP32 dx_from_boundary = posX - boundaryX;
+            const csFP32 dy_from_boundary = posY - boundaryY;
+            
+            // Project onto vector from boundary to new center
+            const csFP32 dot = dx_from_boundary * dx_boundary_to_new + 
+                               dy_from_boundary * dy_boundary_to_new;
+            
+            // Normalize by distance from boundary to new center
+            t = dot / dist_boundary_to_new_sq;
+            
             // Clamp to [0, 1]
             if (t < csFP32::float_const(0.0f)) {
                 t = csFP32::float_const(0.0f);
@@ -1733,29 +1792,37 @@ public:
             }
         }
         
-        // If prev == curr, force t=1 so alphaOld=0
-        if (prevX == px && prevY == py) {
-            t = csFP32::float_const(1.0f);
-        }
-        
-        // Split alpha: alphaNew = A * t, alphaOld = A - alphaNew
+        // Smooth alpha transition between two pixels:
+        // t=0: alphaOld=full, alphaNew=zero (just entered, old pixel bright)
+        // t=0.5: alphaOld=half, alphaNew=half (both medium brightness)
+        // t=1: alphaOld=zero, alphaNew=full (reached center, new pixel bright)
         const uint8_t baseAlpha = color.a;
+        
+        // Old pixel fades out: alpha = baseAlpha * (1 - t)
+        const csFP32 fadeOld = csFP32::float_const(1.0f) - t;
+        const csFP32 alphaOldFP = csFP32::from_int(baseAlpha) * fadeOld;
+        const uint8_t alphaOld = static_cast<uint8_t>(alphaOldFP.round_int());
+        
+        // New pixel fades in: alpha = baseAlpha * t
         const csFP32 alphaNewFP = csFP32::from_int(baseAlpha) * t;
         const uint8_t alphaNew = static_cast<uint8_t>(alphaNewFP.round_int());
-        const uint8_t alphaOld = baseAlpha - alphaNew;
         
-        // Draw two pixels
+        // Draw both pixels with smooth transition
         if (alphaOld > 0) {
-            matrix->setPixel(prevX, prevY, csColorRGBA{alphaOld, color.r, color.g, color.b});
+            const csColorRGBA oldColor{alphaOld, color.r, color.g, color.b};
+            matrix->setPixel(prevCellX, prevCellY, oldColor);
         }
+        
         if (alphaNew > 0) {
-            matrix->setPixel(px, py, csColorRGBA{alphaNew, color.r, color.g, color.b});
+            const csColorRGBA newColor{alphaNew, color.r, color.g, color.b};
+            matrix->setPixel(currCellX, currCellY, newColor);
         }
     }
     
 private:
-    tMatrixPixelsCoord prevX = 0;
-    tMatrixPixelsCoord prevY = 0;
+    // Previous cell coordinates (integer cell indices)
+    tMatrixPixelsCoord prevCellX = 0;
+    tMatrixPixelsCoord prevCellY = 0;
 };
 
 } // namespace amp
