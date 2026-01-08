@@ -82,7 +82,7 @@ void loop() {
 
     // Check if timer has fired and switch to next effect
     if (tEffectSwitch.run()) {
-        effectIndex = (effectIndex + 1) % 3;
+        effectIndex = (effectIndex + 1) % 4;
         tEffectSwitch.start();  // Restart timer with default time
 
         // Clear all effects and add needed ones based on effectIndex
@@ -92,8 +92,10 @@ void loop() {
             loadEffectPreset(*sfxSystem.effectManager, 3); // Snowfall
         } else if (effectIndex == 1) {
             loadEffectPreset(*sfxSystem.effectManager, 2); // GradientWaves
-        } else {
+        } else if (effectIndex == 2) {
             loadEffectPreset(*sfxSystem.effectManager, 1); // Plasma
+        } else {
+            loadEffectPreset(*sfxSystem.effectManager, 116); // 5 BouncingPixels with different bright colors
         }
     }
     

@@ -326,6 +326,28 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(bouncingPixelDualTrail);
                 break;
             }
+        case 116: // 5 BouncingPixels with different bright colors
+            {
+                // Define 5 bright colors
+                // csColorRGBA format: (a, r, g, b)
+                const csColorRGBA colors[5] = {
+                    csColorRGBA{255, 255, 0, 0},      // Red
+                    csColorRGBA{255, 0, 255, 0},      // Green
+                    csColorRGBA{255, 0, 0, 255},      // Blue
+                    csColorRGBA{255, 255, 255, 0},    // Yellow
+                    csColorRGBA{255, 0, 255, 255}     // Cyan
+                };
+                
+                // Create 5 bouncing pixel effects, one for each color
+                for (uint8_t i = 0; i < 5; ++i) {
+                    auto* bouncingPixel = new csRenderBouncingPixel();
+                    bouncingPixel->color = colors[i];
+                    bouncingPixel->speed = csFP16(0.5f);
+                    bouncingPixel->renderRectAutosize = true;
+                    effectManager.add(bouncingPixel);
+                }
+                break;
+            }
         case 200:
             ; // slip - remove "effect2"
         
