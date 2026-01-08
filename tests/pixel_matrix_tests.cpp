@@ -301,6 +301,71 @@ void test_fp_trig(TestStats& stats) {
     );
 }
 
+void test_floor_int(TestStats& stats) {
+    using namespace amp::math;
+    const char* testName = "floor_int";
+    
+    // Test csFP16
+    {
+        const csFP16 zero{0.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(zero.floor_int()), 0, "fp16 floor(0) == 0");
+        
+        const csFP16 pos_int{3.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_int.floor_int()), 3, "fp16 floor(3.0) == 3");
+        
+        const csFP16 pos_frac{3.75f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_frac.floor_int()), 3, "fp16 floor(3.75) == 3");
+        
+        const csFP16 pos_small_frac{3.25f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_small_frac.floor_int()), 3, "fp16 floor(3.25) == 3");
+        
+        const csFP16 neg_int{-3.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_int.floor_int()), -3, "fp16 floor(-3.0) == -3");
+        
+        const csFP16 neg_frac{-3.25f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_frac.floor_int()), -4, "fp16 floor(-3.25) == -4");
+        
+        const csFP16 neg_large_frac{-3.75f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_large_frac.floor_int()), -4, "fp16 floor(-3.75) == -4");
+        
+        const csFP16 pos_tiny{0.1f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_tiny.floor_int()), 0, "fp16 floor(0.1) == 0");
+        
+        const csFP16 neg_tiny{-0.1f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_tiny.floor_int()), -1, "fp16 floor(-0.1) == -1");
+    }
+    
+    // Test csFP32
+    {
+        const csFP32 zero{0.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(zero.floor_int()), 0, "fp32 floor(0) == 0");
+        
+        const csFP32 pos_int{5.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_int.floor_int()), 5, "fp32 floor(5.0) == 5");
+        
+        const csFP32 pos_frac{5.75f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_frac.floor_int()), 5, "fp32 floor(5.75) == 5");
+        
+        const csFP32 pos_small_frac{5.25f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_small_frac.floor_int()), 5, "fp32 floor(5.25) == 5");
+        
+        const csFP32 neg_int{-5.0f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_int.floor_int()), -5, "fp32 floor(-5.0) == -5");
+        
+        const csFP32 neg_frac{-5.25f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_frac.floor_int()), -6, "fp32 floor(-5.25) == -6");
+        
+        const csFP32 neg_large_frac{-5.75f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_large_frac.floor_int()), -6, "fp32 floor(-5.75) == -6");
+        
+        const csFP32 pos_tiny{0.1f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(pos_tiny.floor_int()), 0, "fp32 floor(0.1) == 0");
+        
+        const csFP32 neg_tiny{-0.1f};
+        expect_eq_int(stats, testName, __LINE__, static_cast<long long>(neg_tiny.floor_int()), -1, "fp32 floor(-0.1) == -1");
+    }
+}
+
 void test_setPixelFloat_exact_center(TestStats& stats) {
     const char* testName = "setPixelFloat_exact_center";
     csMatrixPixels m{5, 5};
@@ -585,6 +650,7 @@ int main() {
     test_fp16_basic(stats);
     test_fp32_basic(stats);
     test_fp_trig(stats);
+    test_floor_int(stats);
 
     test_setPixelFloat_exact_center(stats);
     test_setPixelFloat_offset_vertical_down(stats);
