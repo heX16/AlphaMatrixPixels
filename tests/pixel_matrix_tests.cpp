@@ -306,7 +306,7 @@ void test_setPixelFloat_exact_center(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Exact center at (2, 2) - should draw single pixel with full alpha
-    m.setPixelFloat(csFP16::from_int(2), csFP16::from_int(2), color);
+    m.setPixelFloat2(csFP16::from_int(2), csFP16::from_int(2), color);
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 2), 255, 100, 200, 50), "exact center draws single pixel with full alpha");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "neighbor pixel stays clear");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
@@ -318,7 +318,7 @@ void test_setPixelFloat_offset_vertical_down(TestStats& stats) {
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (0, +0.5) - should split between (2,2) and (2,3)
     // max_offset_raw = 8 (0.5 * 16), weight = (8 * 255 + 8) / 16 = 128
-    m.setPixelFloat(csFP16::from_int(2), csFP16{2.5f}, color);
+    m.setPixelFloat2(csFP16::from_int(2), csFP16{2.5f}, color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(2, 3);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -333,7 +333,7 @@ void test_setPixelFloat_offset_vertical_up(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (0, -0.5) - should split between (2,2) and (2,1)
-    m.setPixelFloat(csFP16::from_int(2), csFP16{1.5f}, color);
+    m.setPixelFloat2(csFP16::from_int(2), csFP16{1.5f}, color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(2, 1);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -348,7 +348,7 @@ void test_setPixelFloat_offset_diagonal(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (+0.5, +0.5) - equal components, should use diagonal direction
-    m.setPixelFloat(csFP16{2.5f}, csFP16{2.5f}, color);
+    m.setPixelFloat2(csFP16{2.5f}, csFP16{2.5f}, color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(3, 3);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -363,7 +363,7 @@ void test_setPixelFloat_offset_horizontal(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (+0.5, 0) - should split between (2,2) and (3,2)
-    m.setPixelFloat(csFP16{2.5f}, csFP16::from_int(2), color);
+    m.setPixelFloat2(csFP16{2.5f}, csFP16::from_int(2), color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(3, 2);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -380,7 +380,7 @@ void test_setPixelFloat_large_offset(TestStats& stats) {
     // Large offset (+0.75, +0.25) - should favor horizontal direction (dx > dy)
     const int32_t cx = 2;  // center x
     const int32_t cy = 2;  // center y
-    m.setPixelFloat(csFP16{2.75f}, csFP16{2.25f}, color);
+    m.setPixelFloat2(csFP16{2.75f}, csFP16{2.25f}, color);
     const csColorRGBA center = m.getPixel(cx, cy);
     const csColorRGBA secondary = m.getPixel(cx + 1, cy); // horizontal right (should be secondary)
     
@@ -453,8 +453,8 @@ void test_setPixelFloat_out_of_bounds(TestStats& stats) {
     csMatrixPixels m{3, 3};
     const csColorRGBA color{255, 100, 200, 50};
     // Try to draw outside bounds - should be silently ignored
-    m.setPixelFloat(csFP16{-0.5f}, csFP16{1.5f}, color);
-    m.setPixelFloat(csFP16{5.5f}, csFP16{1.5f}, color);
+    m.setPixelFloat2(csFP16{-0.5f}, csFP16{1.5f}, color);
+    m.setPixelFloat2(csFP16{5.5f}, csFP16{1.5f}, color);
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), 0, 0, 0, 0), "out of bounds pixel stays clear");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "out of bounds pixel stays clear");
 }

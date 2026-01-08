@@ -931,7 +931,7 @@ public:
             if (globalXInt >= target.x && globalXInt < endX &&
                 globalYInt >= target.y && globalYInt < endY) {
                 if (smoothMovement) {
-                    matrix->setPixelFloat(globalX, globalY, color);
+                    matrix->setPixelFloat2(globalX, globalY, color);
                 } else {
                     matrix->setPixel(globalXInt, globalYInt, color);
                 }
@@ -1482,16 +1482,17 @@ public:
         }
 
         // Calculate time step based on speed: higher speed = smaller timeStep (faster updates)
-        // Integer arithmetic: timeStep = (50 * csFP16::scale) / speed.raw
-        if (speed.raw <= 0) {
+        // Integer arithmetic: timeStep = (50 * csFP32::scale) / speedFP32.raw
+        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
+        if (speedFP32.raw <= 0) {
             return;
         }
         const uint32_t timeStepRaw = 
-            (50U * csFP16::scale) / speed.raw;
+            (50U * csFP32::scale) / speedFP32.raw;
 
         const uint16_t timeStep = 
             (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
-            
+
         if (timeStep == 0) {
             return;
         }
@@ -1530,7 +1531,11 @@ public:
         }
 
         if (smoothMovement) {
-            matrix->setPixelFloat(posX, posY, color);
+            matrix->setPixelFloat4(
+                math::fp32_to_fp16(posX),
+                math::fp32_to_fp16(posY),
+                color
+            );
         } else {
             matrix->setPixel(px, py, color);
         }
@@ -1538,13 +1543,12 @@ public:
 
 private:
     // Fixed movement step per update (in pixels)
-    static const csFP16 kMoveStep;
-    static const csFP16 kBaseSpeed;
+    static const csFP32 kMoveStep;
 
-    csFP16 posX{0.0f};
-    csFP16 posY{0.0f};
-    csFP16 velX{0.0f};
-    csFP16 velY{0.0f};
+    csFP32 posX{0.0f};
+    csFP32 posY{0.0f};
+    csFP32 velX{0.0f};
+    csFP32 velY{0.0f};
     uint16_t lastUpdateTime = 0;
     bool needsReset = true;
 
@@ -1554,12 +1558,12 @@ private:
         }
 
         // posX = rectDest.x + rectDest.width * 0.5
-        posX = csFP16::from_int(rectDest.x) + csFP16::from_int(rectDest.width) * csFP16::float_const(0.5f);
+        posX = csFP32::from_int(rectDest.x) + csFP32::from_int(rectDest.width) * csFP32::float_const(0.5f);
         // posY = rectDest.y + rectDest.height * 0.5
-        posY = csFP16::from_int(rectDest.y) + csFP16::from_int(rectDest.height) * csFP16::float_const(0.5f);
-        const csFP16 angle = randomAngle(rand);
-        velX = math::fp16_cos(angle);
-        velY = math::fp16_sin(angle);
+        posY = csFP32::from_int(rectDest.y) + csFP32::from_int(rectDest.height) * csFP32::float_const(0.5f);
+        const csFP32 angle = randomAngle(rand);
+        velX = math::fp32_cos(angle);
+        velY = math::fp32_sin(angle);
         normalizeVelocity();
 
         lastUpdateTime = currTime;
@@ -1568,12 +1572,12 @@ private:
     }
 
     void handleBoundaryCollisions(csRandGen& rand) {
-        const csFP16 minX = csFP16::from_int(rectDest.x);
-        const csFP16 minY = csFP16::from_int(rectDest.y);
+        const csFP32 minX = csFP32::from_int(rectDest.x);
+        const csFP32 minY = csFP32::from_int(rectDest.y);
         // maxX = minX + rectDest.width - 1
-        const csFP16 maxX = minX + csFP16::from_int(rectDest.width) - csFP16::float_const(1.0f);
+        const csFP32 maxX = minX + csFP32::from_int(rectDest.width) - csFP32::float_const(1.0f);
         // maxY = minY + rectDest.height - 1
-        const csFP16 maxY = minY + csFP16::from_int(rectDest.height) - csFP16::float_const(1.0f);
+        const csFP32 maxY = minY + csFP32::from_int(rectDest.height) - csFP32::float_const(1.0f);
 
         bool collidedX = false;
         bool collidedY = false;
@@ -1601,48 +1605,48 @@ private:
 
     void reflect(csRandGen& rand, bool reflectX, bool reflectY) {
         if (reflectX) {
-            velX = csFP16::float_const(0.0f) - velX;
+            velX = csFP32::float_const(0.0f) - velX;
         }
         if (reflectY) {
-            velY = csFP16::float_const(0.0f) - velY;
+            velY = csFP32::float_const(0.0f) - velY;
         }
         applyRandomSpread(rand);
         normalizeVelocity();
     }
 
     void applyRandomSpread(csRandGen& rand) {
-        const csFP16 spreadDeg = randomSpread(rand);
+        const csFP32 spreadDeg = math::fp16_to_fp32(randomSpread(rand));
         // angleRad = spreadDeg * kDegToRad
-        const csFP16 angleRad = spreadDeg * csFP16::kDegToRad;
-        const csFP16 cosA = math::fp16_cos(angleRad);
-        const csFP16 sinA = math::fp16_sin(angleRad);
+        const csFP32 angleRad = spreadDeg * csFP32::kDegToRad;
+        const csFP32 cosA = math::fp32_cos(angleRad);
+        const csFP32 sinA = math::fp32_sin(angleRad);
         // newX = velX * cosA - velY * sinA
-        const csFP16 newX = velX * cosA - velY * sinA;
+        const csFP32 newX = velX * cosA - velY * sinA;
         // newY = velX * sinA + velY * cosA
-        const csFP16 newY = velX * sinA + velY * cosA;
+        const csFP32 newY = velX * sinA + velY * cosA;
         velX = newX;
         velY = newY;
     }
 
     void normalizeVelocity() {
         // mag = sqrt(velX^2 + velY^2)
-        const csFP16 magSq = velX * velX + velY * velY;
-        const csFP16 mag = csFP16{sqrtf(magSq.to_float())};
-        if (mag == csFP16::float_const(0.0f)) {
-            velX = csFP16::float_const(1.0f);
-            velY = csFP16::float_const(0.0f);
+        const csFP32 magSq = velX * velX + velY * velY;
+        const csFP32 mag = csFP32{sqrtf(magSq.to_float())};
+        if (mag == csFP32::float_const(0.0f)) {
+            velX = csFP32::float_const(1.0f);
+            velY = csFP32::float_const(0.0f);
             return;
         }
         velX = velX / mag;
         velY = velY / mag;
     }
 
-    static csFP16 randomAngle(csRandGen& rand) {
+    static csFP32 randomAngle(csRandGen& rand) {
         const uint8_t raw = rand.rand();
         // fraction = raw / 256
-        const csFP16 fraction = csFP16::from_ratio(raw, 256);
+        const csFP32 fraction = csFP32::from_ratio(raw, 256);
         // angle = fraction * kTwoPi
-        return fraction * csFP16::kTwoPi;
+        return fraction * csFP32::kTwoPi;
     }
 
     static csFP16 randomSpread(csRandGen& rand) {
@@ -1654,7 +1658,6 @@ private:
 };
 
 // Fixed-point constants for csRenderBouncingPixel
-const csFP16 csRenderBouncingPixel::kMoveStep = csFP16::float_const(0.3f);
-const csFP16 csRenderBouncingPixel::kBaseSpeed = csFP16::float_const(0.05f);
+const csFP32 csRenderBouncingPixel::kMoveStep = csFP32::float_const(0.3f);
 
 } // namespace amp

@@ -105,13 +105,13 @@ public:
     // Blend source color over destination pixels using sub-pixel positioning.
     // Fixed-point coordinates allow positioning between pixels; color is distributed across 1-2 pixels
     // with alpha proportional to distance from pixel center.
-    inline void setPixelFloat(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
+    inline void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
         // Round to nearest pixel to find the center pixel
         const tMatrixPixelsCoord cx = static_cast<tMatrixPixelsCoord>(x.round_int());
         const tMatrixPixelsCoord cy = static_cast<tMatrixPixelsCoord>(y.round_int());
 
         // Check if exact pixel center (no fractional part)
-        if (x.frac_raw() == 0 && y.frac_raw() == 0) {
+        if (x.frac_abs_raw() == 0 && y.frac_abs_raw() == 0) {
             // Draw single pixel with full alpha
             setPixel(cx, cy, color);
             return;
@@ -135,8 +135,8 @@ public:
         tMatrixPixelsCoord sx = cx;
         tMatrixPixelsCoord sy = cy;
 
-        const uint8_t fx_axis = static_cast<uint8_t>(x.frac_raw());
-        const uint8_t fy_axis = static_cast<uint8_t>(y.frac_raw());
+        const uint8_t fx_axis = static_cast<uint8_t>(x.frac_abs_raw());
+        const uint8_t fy_axis = static_cast<uint8_t>(y.frac_abs_raw());
 
         if (fy_axis > fx_axis) {
             // Vertical direction
@@ -151,8 +151,8 @@ public:
         }
 
         // Get absolute fractional parts for weight calculation
-        const uint8_t fx_abs = static_cast<uint8_t>(dx.absVal().frac_raw());
-        const uint8_t fy_abs = static_cast<uint8_t>(dy.absVal().frac_raw());
+        const uint8_t fx_abs = static_cast<uint8_t>(dx.frac_abs_raw());
+        const uint8_t fy_abs = static_cast<uint8_t>(dy.frac_abs_raw());
 
         // Calculate alpha weights using absolute fractional parts
         const uint8_t max_offset_raw = max(fx_abs, fy_abs);
@@ -174,7 +174,7 @@ public:
     // The source color is distributed to the 4 neighboring pixel centers around floor(x), floor(y).
     inline void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
         // Fast path: exact pixel center.
-        if (x.frac_raw() == 0 && y.frac_raw() == 0) {
+        if (x.frac_abs_raw() == 0 && y.frac_abs_raw() == 0) {
             setPixel(static_cast<tMatrixPixelsCoord>(x.int_trunc()),
                      static_cast<tMatrixPixelsCoord>(y.int_trunc()),
                      color);
@@ -189,8 +189,8 @@ public:
         const csFP16 fy = y - csFP16::from_int(y0);
 
         // csFP16 is 12.4, so the fractional part is 0..15 (scale=16).
-        const uint16_t fx_raw = static_cast<uint16_t>(fx.frac_raw());
-        const uint16_t fy_raw = static_cast<uint16_t>(fy.frac_raw());
+        const uint16_t fx_raw = static_cast<uint16_t>(fx.frac_abs_raw());
+        const uint16_t fy_raw = static_cast<uint16_t>(fy.frac_abs_raw());
         const uint16_t inv_fx = static_cast<uint16_t>(csFP16::scale) - fx_raw; // 16 - fx
         const uint16_t inv_fy = static_cast<uint16_t>(csFP16::scale) - fy_raw; // 16 - fy
 
@@ -233,11 +233,11 @@ public:
     }
 
     // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
-    inline void setPixelFloat(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+    inline void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
         // Apply global alpha multiplier to color's alpha channel first
         const uint8_t effective_alpha = mul8(color.a, alpha);
         const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
-        setPixelFloat(x, y, effective_color);
+        setPixelFloat2(x, y, effective_color);
     }
 
     // Read pixel; returns transparent black when out of bounds.
