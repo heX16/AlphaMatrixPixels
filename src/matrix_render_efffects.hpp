@@ -1541,7 +1541,7 @@ public:
         }
     }
 
-private:
+protected:
     // Fixed movement step per update (in pixels)
     static const csFP32 kMoveStep;
 
@@ -1659,5 +1659,103 @@ private:
 
 // Fixed-point constants for csRenderBouncingPixel
 const csFP32 csRenderBouncingPixel::kMoveStep = csFP32::float_const(0.3f);
+
+// Bouncing pixel with dual-trail rendering: always draws two pixels (old + new) with alpha split
+// based on subpixel progress between cell centers.
+class csRenderBouncingPixelDualTrail : public csRenderBouncingPixel {
+public:
+    void recalc(csRandGen& rand, tTime currTime) override {
+        // Call base recalc first to update posX/posY
+        csRenderBouncingPixel::recalc(rand, currTime);
+        
+        if (disabled || !matrix || rectDest.empty()) {
+            return;
+        }
+        
+        // Update previous integer position only when current integer position changes
+        const tMatrixPixelsCoord currX = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord currY = static_cast<tMatrixPixelsCoord>(posY.round_int());
+        
+        if (currX != prevX || currY != prevY) {
+            prevX = currX;
+            prevY = currY;
+        }
+    }
+    
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrix || rectDest.empty()) {
+            return;
+        }
+        
+        const csRect target = rectDest.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+        
+        // Get current integer coordinates
+        const tMatrixPixelsCoord px = static_cast<tMatrixPixelsCoord>(posX.round_int());
+        const tMatrixPixelsCoord py = static_cast<tMatrixPixelsCoord>(posY.round_int());
+        
+        // Check bounds
+        if (px < target.x || px >= target.x + to_coord(target.width) ||
+            py < target.y || py >= target.y + to_coord(target.height)) {
+            return;
+        }
+        
+        // Calculate progress t based on distance from old center to current position
+        // t = clamp(dist(pos, oldCenter) / dist(newCenter, oldCenter), 0..1)
+        const csFP32 oldCenterX = csFP32::from_int(prevX) + csFP32::float_const(0.5f);
+        const csFP32 oldCenterY = csFP32::from_int(prevY) + csFP32::float_const(0.5f);
+        const csFP32 newCenterX = csFP32::from_int(px) + csFP32::float_const(0.5f);
+        const csFP32 newCenterY = csFP32::from_int(py) + csFP32::float_const(0.5f);
+        
+        // Distance from current position to old center
+        const csFP32 dxToOld = posX - oldCenterX;
+        const csFP32 dyToOld = posY - oldCenterY;
+        const csFP32 distToOldSq = dxToOld * dxToOld + dyToOld * dyToOld;
+        const csFP32 distToOld = csFP32{sqrtf(distToOldSq.to_float())};
+        
+        // Total distance between centers
+        const csFP32 dxTotal = newCenterX - oldCenterX;
+        const csFP32 dyTotal = newCenterY - oldCenterY;
+        const csFP32 distTotalSq = dxTotal * dxTotal + dyTotal * dyTotal;
+        const csFP32 distTotal = csFP32{sqrtf(distTotalSq.to_float())};
+        
+        // Calculate t: progress from old center to new center
+        csFP32 t = csFP32::float_const(1.0f);
+        if (distTotal > csFP32::float_const(0.0f)) {
+            t = distToOld / distTotal;
+            // Clamp to [0, 1]
+            if (t < csFP32::float_const(0.0f)) {
+                t = csFP32::float_const(0.0f);
+            } else if (t > csFP32::float_const(1.0f)) {
+                t = csFP32::float_const(1.0f);
+            }
+        }
+        
+        // If prev == curr, force t=1 so alphaOld=0
+        if (prevX == px && prevY == py) {
+            t = csFP32::float_const(1.0f);
+        }
+        
+        // Split alpha: alphaNew = A * t, alphaOld = A - alphaNew
+        const uint8_t baseAlpha = color.a;
+        const csFP32 alphaNewFP = csFP32::from_int(baseAlpha) * t;
+        const uint8_t alphaNew = static_cast<uint8_t>(alphaNewFP.round_int());
+        const uint8_t alphaOld = baseAlpha - alphaNew;
+        
+        // Draw two pixels
+        if (alphaOld > 0) {
+            matrix->setPixel(prevX, prevY, csColorRGBA{alphaOld, color.r, color.g, color.b});
+        }
+        if (alphaNew > 0) {
+            matrix->setPixel(px, py, csColorRGBA{alphaNew, color.r, color.g, color.b});
+        }
+    }
+    
+private:
+    tMatrixPixelsCoord prevX = 0;
+    tMatrixPixelsCoord prevY = 0;
+};
 
 } // namespace amp

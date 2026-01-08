@@ -317,6 +317,15 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(fade);
                 break;
             }
+        case 115: // BouncingPixelDualTrail
+            {
+                auto* bouncingPixelDualTrail = new csRenderBouncingPixelDualTrail();
+                bouncingPixelDualTrail->color = csColorRGBA{255, 255, 255, 0};
+                bouncingPixelDualTrail->speed = csFP16(0.5f);
+                bouncingPixelDualTrail->renderRectAutosize = true;
+                effectManager.add(bouncingPixelDualTrail);
+                break;
+            }
         case 200:
             ; // slip - remove "effect2"
         
