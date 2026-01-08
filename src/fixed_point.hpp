@@ -166,12 +166,14 @@ public:
         }
     }
     
-    // Returns fractional part in _raw_ format (0 to scale-1). Always non-negative.
-    // For negative numbers, this is NOT the signed fractional part, just the lower bits.
+    // Returns absolute fractional part in raw format (0 to scale-1).
+    // Always returns positive value by using absVal() internally.
     // Example: 
-    //   `csFP16(3.75f).frac_raw() == 12 (0.75 * 16)`
-    //   `csFP16(-3.75f).frac_raw() == 4` (not -12)
-    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw() const noexcept { return static_cast<fp_type>(raw & (scale - 1)); }
+    //   `csFP16(3.75f).frac_abs_raw() == 12 (0.75 * 16)`
+    //   `csFP16(-3.75f).frac_abs_raw() == 12` (correct, not 4)
+    [[nodiscard]] AMP_CONSTEXPR fp_type frac_abs_raw() const noexcept {
+        return absVal().raw & (scale - 1);
+    }
 
     // Returns signed fractional part in raw format (-(scale-1) to (scale-1)).
     // This corresponds to the fractional part after truncation towards zero.
@@ -180,10 +182,7 @@ public:
     //   `csFP16(-3.75f).frac_raw_signed() == -12`
     //   `csFP16(-3.25f).frac_raw_signed() == -4`
     [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw_signed() const noexcept {
-        const fp_type frac = frac_raw();
-        return (raw >= 0 || frac == 0) ?
-            frac :
-            static_cast<fp_type>(frac - scale);
+        return (raw < 0) ? -frac_abs_raw() : frac_abs_raw();
     }
     
     
