@@ -46,9 +46,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
                 snowfall->count = 5;
-                snowfall->speed = csFP16(1.0f / 4.0f);
-                snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 snowfall->propChanged(csRenderSnowfall::propCount);
+                // snowfall->speed = csFP16(1.0f / 4.0f);
+                snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 effectManager.add(snowfall);
                 break;
             }
