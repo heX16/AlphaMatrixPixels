@@ -28,16 +28,16 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propMatrixSource:
-                info.type = PropType::Matrix;
+                info.valueType = PropType::Matrix;
                 info.name = "Matrix source";
-                info.ptr = &matrixSource;
+                info.valuePtr = &matrixSource;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propRectSource:
-                info.type = PropType::Rect;
+                info.valueType = PropType::Rect;
                 info.name = "Rect source";
-                info.ptr = &rectSource;
+                info.valuePtr = &rectSource;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -168,9 +168,9 @@ public:
         csRenderMatrixPipeBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propRewrite:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Rewrite";
-                info.ptr = &rewrite;
+                info.valuePtr = &rewrite;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -289,9 +289,9 @@ public:
         csRenderRemapBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propMatrixIndex:
-                info.type = PropType::Matrix;
+                info.valueType = PropType::Matrix;
                 info.name = "Matrix index";
-                info.ptr = &matrixIndex;
+                info.valuePtr = &matrixIndex;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -468,9 +468,9 @@ public:
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderPostFrame::getPropInfo(propNum, info);
         if (propNum == propFadeAlpha) {
-            info.type = PropType::UInt8;
+            info.valueType = PropType::UInt8;
             info.name = "Fade alpha";
-            info.ptr = &fadeAlpha;
+            info.valuePtr = &fadeAlpha;
             info.readOnly = false;
             info.disabled = false;
         }
@@ -681,9 +681,9 @@ public:
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderSlowFadingBase::getPropInfo(propNum, info);
         if (propNum == propDirectAlpha) {
-            info.type = PropType::UInt8;
+            info.valueType = PropType::UInt8;
             info.name = "Direct alpha";
-            info.ptr = &directAlpha;
+            info.valuePtr = &directAlpha;
             info.readOnly = false;
             info.disabled = false;
         }

@@ -32,12 +32,12 @@ public:
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderMatrixBase::getPropInfo(propNum, info);
         if (propNum == propScale) {
-            info.ptr = &scale;
+            info.valuePtr = &scale;
             info.disabled = false;
             return;
         }
         if (propNum == propSpeed) {
-            info.ptr = &speed;
+            info.valuePtr = &speed;
             info.disabled = false;
             return;
         }
@@ -237,34 +237,34 @@ public:
                 info.disabled = true;
                 break;
             case propSymbolIndex:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Glyph index";
-                info.ptr = &symbolIndex;
+                info.valuePtr = &symbolIndex;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Symbol color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColorBackground:
-                info.ptr = &backgroundColor;
+                info.valuePtr = &backgroundColor;
                 info.disabled = false;
                 break;
             case propFontWidth:
-                info.type = PropType::UInt16;
+                info.valueType = PropType::UInt16;
                 info.name = "Font width";
-                info.ptr = &fontWidth;
+                info.valuePtr = &fontWidth;
                 info.readOnly = true;
                 info.disabled = false;
                 break;
             case propFontHeight:
-                info.type = PropType::UInt16;
+                info.valueType = PropType::UInt16;
                 info.name = "Font height";
-                info.ptr = &fontHeight;
+                info.valuePtr = &fontHeight;
                 info.readOnly = true;
                 info.disabled = false;
                 break;
@@ -412,20 +412,20 @@ public:
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         switch (propNum) {
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Circle color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColorBackground:
-                info.ptr = &backgroundColor;
+                info.valuePtr = &backgroundColor;
                 info.disabled = false;
                 break;
             case propSmoothEdges:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Smooth edges";
-                info.ptr = &smoothEdges;
+                info.valuePtr = &smoothEdges;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -602,9 +602,9 @@ public:
 
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         if (propNum == propGradientOffset) {
-            info.type = PropType::UInt8;
+            info.valueType = PropType::UInt8;
             info.name = "Gradient offset";
-            info.ptr = &gradientOffset;
+            info.valuePtr = &gradientOffset;
             info.readOnly = false;
             info.disabled = false;
             return;
@@ -729,30 +729,30 @@ public:
                 info.disabled = true;
                 break;
             case propCount:
-                info.type = PropType::UInt16;
+                info.valueType = PropType::UInt16;
                 info.name = "Snowflake count";
-                info.ptr = &count;
+                info.valuePtr = &count;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Snowflake color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propRestartFillPercent:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Restart fill percent";
-                info.ptr = &restartFillPercent;
+                info.valuePtr = &restartFillPercent;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propSmoothMovement:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Smooth movement";
-                info.ptr = &smoothMovement;
+                info.valuePtr = &smoothMovement;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1107,9 +1107,9 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Fill color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1155,37 +1155,37 @@ public:
                 info.disabled = true;
                 break;
             case propEffect1:
-                info.type = PropType::EffectBase;
+                info.valueType = PropType::EffectBase;
                 info.name = "Effect 1";
-                info.ptr = &effects[0];
+                info.valuePtr = &effects[0];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propEffect2:
-                info.type = PropType::EffectBase;
+                info.valueType = PropType::EffectBase;
                 info.name = "Effect 2";
-                info.ptr = &effects[1];
+                info.valuePtr = &effects[1];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propEffect3:
-                info.type = PropType::EffectBase;
+                info.valueType = PropType::EffectBase;
                 info.name = "Effect 3";
-                info.ptr = &effects[2];
+                info.valuePtr = &effects[2];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propEffect4:
-                info.type = PropType::EffectBase;
+                info.valueType = PropType::EffectBase;
                 info.name = "Effect 4";
-                info.ptr = &effects[3];
+                info.valuePtr = &effects[3];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propEffect5:
-                info.type = PropType::EffectBase;
+                info.valueType = PropType::EffectBase;
                 info.name = "Effect 5";
-                info.ptr = &effects[4];
+                info.valuePtr = &effects[4];
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1347,9 +1347,9 @@ public:
                 // Extracts last 4 decimal digits (rightmost) from the value.
                 // Digits are extracted right-to-left and displayed left-to-right.
                 // Examples: time=1234 → "4321", time=567 → "7650", time=99 → "9900"
-                info.type = PropType::UInt32;
+                info.valueType = PropType::UInt32;
                 info.name = "Time";
-                info.ptr = &time;
+                info.valuePtr = &time;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1357,16 +1357,16 @@ public:
                 // Render digit property: csEffectBase* pointer to csRenderGlyph effect.
                 // Used for rendering individual digits. Must be csRenderGlyph* or derived.
                 // Memory is managed externally - object does not own the renderDigit.
-                info.type = PropType::EffectGlyph;
+                info.valueType = PropType::EffectGlyph;
                 info.name = "Render digit";
-                info.ptr = reinterpret_cast<void*>(&renderDigit);
+                info.valuePtr = reinterpret_cast<void*>(&renderDigit);
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propSpacing:
-                info.type = PropType::UInt16;
+                info.valueType = PropType::UInt16;
                 info.name = "Spacing";
-                info.ptr = &spacing;
+                info.valuePtr = &spacing;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1447,16 +1447,16 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Pixel color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propSmoothMovement:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Smooth movement";
-                info.ptr = &smoothMovement;
+                info.valuePtr = &smoothMovement;
                 info.readOnly = false;
                 info.disabled = false;
                 break;

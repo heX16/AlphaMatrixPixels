@@ -40,12 +40,13 @@ enum class PropType : uint8_t {
     Rect = 14,
     // `csColorRGBA`
     Color = 15,
+
     // WIP ...
     // указывает на структуру,
     // которая содержит указатель на csEffect, и номер свойства куда нужно писать (prop ID)
     // в названии описывается что контретно делает этот link (как он меняет prop).
     // работает в связке с LinkToEffectPropType.
-    LinkToEffectProp = 16,
+    LinkToEffectProp = 28,
     // WIP `PropType`
     // Read Only. Value type: UInt8.
     // это допустимый тип свойства для LinkToEffectProp.
@@ -58,21 +59,25 @@ enum class PropType : uint8_t {
     // просто в момент записи будет сделанно приведение типа.
     // с EffectBase и подобными - там еще сложнее,
     // учитывается реультат функции queryClassFamily.
-    LinkToEffectPropType = 17,
-    // wip   "_event emmiter_" -> "event recieve point"
+    LinkToEffectPropType = 29,
+
+    // WIP ...
+    // "_event emmiter_" -> "event recieve point"
     // Это указатель на "получатель события".
     // указывает на структуру,
     // которая содержит указатель на csEffect, и номер "EventRecvPoint",
     // csEventBase.EventRecvPoint - это аргумент который передается в функцию
     // которая получает события.
     // EventRecvPoint передается в объекте csEventBase.
-    LinkToEffectEvent = 18,
+    LinkToEffectEvent = 30,
     // wip   "event emmiter" -> "_event recieve point_"
     // Read Only. Value type: UInt8.
     // Это особое свойство.
     // Множество этих свойств создает список.
     // Это просто список "EventRecvPoint".
-    EffectEventRecvPoint = 19,
+    // числа которая содержиться в Value - это номер в `csEventBase.EventRecvPoint`,
+    // этот номер является индификатором события.
+    EffectEventRecvPoint = 31,
 
     // Special:
     EffectBase = 32,
@@ -85,15 +90,17 @@ enum class PropType : uint8_t {
 };
 
 struct csPropInfo {
-    PropType type = PropType::None;
-    propPtr ptr = nullptr;
+    PropType valueType = PropType::None;
+    propPtr valuePtr = nullptr;
     const char* name = nullptr;
     bool readOnly = false;
     bool disabled = false;
 };
 
-class csEventBase {
+struct csEventBase {
+public:
     // Empty - WIP
+    uint8_t EventRecvPoint;
 };
 
 // Base class for all render/effect implementations
@@ -143,51 +150,51 @@ public:
     virtual void getPropInfo(uint8_t propNum, csPropInfo& info) {
         info.readOnly = false;
         info.disabled = true;  // All properties are disabled by default
-        info.ptr = nullptr;    // No fields in this class
+        info.valuePtr = nullptr;    // No fields in this class
 
         switch (propNum) {
             case propMatrixDest:
-                info.type = PropType::Matrix;
+                info.valueType = PropType::Matrix;
                 info.name = "Matrix dest";
                 break;
             case propRectDest:
-                info.type = PropType::Rect;
+                info.valueType = PropType::Rect;
                 info.name = "Rect dest";
                 break;
             case propRenderRectAutosize:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Render rect autosize";
                 break;
             case propDisabled:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Disabled";
                 break;
             case propScale:
-                info.type = PropType::FP16;
+                info.valueType = PropType::FP16;
                 info.name = "Scale";
                 break;
             case propSpeed:
-                info.type = PropType::FP16;
+                info.valueType = PropType::FP16;
                 info.name = "Speed";
                 break;
             case propAlpha:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Alpha";
                 break;
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Color";
                 break;
             case propColor2:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Color 2";
                 break;
             case propColor3:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Color 3";
                 break;
             case propColorBackground:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Background color";
                 break;
             default:
@@ -329,19 +336,19 @@ public:
 
         switch (propNum) {
             case propRenderRectAutosize:
-                info.ptr = &renderRectAutosize;
+                info.valuePtr = &renderRectAutosize;
                 info.disabled = false;
                 break;
             case propRectDest:
-                info.ptr = &rectDest;
+                info.valuePtr = &rectDest;
                 info.disabled = false;
                 break;
             case propMatrixDest:
-                info.ptr = &matrix;
+                info.valuePtr = &matrix;
                 info.disabled = false;
                 break;
             case propDisabled:
-                info.ptr = &disabled;
+                info.valuePtr = &disabled;
                 info.disabled = false;
                 break;
             default:

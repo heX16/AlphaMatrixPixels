@@ -102,9 +102,9 @@ public:
                 // Check if property is of type Effect (pointer to effect)
                 // All effect family types are >= EffectBase ("Effect*")
                 // Using >= ensures we catch all current and future effect family types
-                if ((info.type >= PropType::EffectBase) && (info.ptr != nullptr)) {
+                if ((info.valueType >= PropType::EffectBase) && (info.valuePtr != nullptr)) {
                     // Compare pointer value with the effect being deleted
-                    csEffectBase** effectPtr = static_cast<csEffectBase**>(info.ptr);
+                    csEffectBase** effectPtr = static_cast<csEffectBase**>(info.valuePtr);
                     if (*effectPtr == eff) {
                         // Found reference to the effect being deleted
                         *effectPtr = nullptr;

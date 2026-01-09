@@ -126,16 +126,16 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propUseRandomColor:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Use random color";
-                info.ptr = &useRandomColor;
+                info.valuePtr = &useRandomColor;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Selected color";
-                info.ptr = &selectedColor;
+                info.valuePtr = &selectedColor;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -246,16 +246,16 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propUseRandomColor:
-                info.type = PropType::Bool;
+                info.valueType = PropType::Bool;
                 info.name = "Use random color";
-                info.ptr = &useRandomColor;
+                info.valuePtr = &useRandomColor;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Selected color";
-                info.ptr = &selectedColor;
+                info.valuePtr = &selectedColor;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -307,9 +307,9 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propColor:
-                info.type = PropType::Color;
+                info.valueType = PropType::Color;
                 info.name = "Color";
-                info.ptr = &color;
+                info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -354,9 +354,9 @@ public:
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propWide:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Wide";
-                info.ptr = &wide;
+                info.valuePtr = &wide;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -472,16 +472,16 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propLevel:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Level";
-                info.ptr = &level;
+                info.valuePtr = &level;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propPercent:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Percent";
-                info.ptr = &percent;
+                info.valuePtr = &percent;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -537,20 +537,20 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propPos:
-                info.type = PropType::Int32;
+                info.valueType = PropType::Int32;
                 info.name = "Position";
-                info.ptr = &pos;
+                info.valuePtr = &pos;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propDir:
-                info.type = PropType::Int8;
+                info.valueType = PropType::Int8;
                 info.name = "Direction";
-                info.ptr = &dir;
+                info.valuePtr = &dir;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -640,34 +640,34 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propPos:
-                info.type = PropType::Int32;
+                info.valueType = PropType::Int32;
                 info.name = "Position";
-                info.ptr = &pos;
+                info.valuePtr = &pos;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propLen:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Length";
-                info.ptr = &len;
+                info.valuePtr = &len;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propDir:
-                info.type = PropType::Int8;
+                info.valueType = PropType::Int8;
                 info.name = "Direction";
-                info.ptr = &dir;
+                info.valuePtr = &dir;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propTrimTail:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Trim tail";
-                info.ptr = &trim_tail;
+                info.valuePtr = &trim_tail;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -771,9 +771,9 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propLevel:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Level";
-                info.ptr = &level;
+                info.valuePtr = &level;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -870,27 +870,27 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propLen:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Length";
-                info.ptr = &len;
+                info.valuePtr = &len;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propPos:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Position";
-                info.ptr = &pos;
+                info.valuePtr = &pos;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propDir:
-                info.type = PropType::Int8;
+                info.valueType = PropType::Int8;
                 info.name = "Direction";
-                info.ptr = &dir;
+                info.valuePtr = &dir;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -982,13 +982,13 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propTarget:
-                info.type = PropType::Ptr;
+                info.valueType = PropType::Ptr;
                 info.name = "Target effect";
-                info.ptr = &target;
+                info.valuePtr = &target;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1053,13 +1053,13 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propLevel:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Level";
-                info.ptr = &level;
+                info.valuePtr = &level;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1169,27 +1169,27 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propLen:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Length";
-                info.ptr = &len;
+                info.valuePtr = &len;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propPos:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Position";
-                info.ptr = &pos;
+                info.valuePtr = &pos;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propDir:
-                info.type = PropType::Int8;
+                info.valueType = PropType::Int8;
                 info.name = "Direction";
-                info.ptr = &dir;
+                info.valuePtr = &dir;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1292,13 +1292,13 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propPos:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Position";
-                info.ptr = &pos;
+                info.valuePtr = &pos;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
@@ -1361,13 +1361,13 @@ public:
         csRenderDynamic::getPropInfo(propNum, info);
         switch (propNum) {
             case propSpeed:
-                info.ptr = &speed;
+                info.valuePtr = &speed;
                 info.disabled = false;
                 break;
             case propPercent:
-                info.type = PropType::UInt8;
+                info.valueType = PropType::UInt8;
                 info.name = "Percent";
-                info.ptr = &percent;
+                info.valuePtr = &percent;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
