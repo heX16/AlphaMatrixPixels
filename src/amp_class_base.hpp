@@ -29,6 +29,8 @@ enum class PropType : uint8_t {
     Bool = 9,
     Ptr = 10,
     // PROGMEM const
+    PtrConst = 10,
+    // PROGMEM const
     StrConst = 11,
     Str = 12,
     // `csMatrixPixels`
