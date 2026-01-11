@@ -136,11 +136,31 @@ void getPropInfo(uint8_t propNum, csPropInfo& info) override {
 
 #### 4. Переопределить `propChanged()` (опционально)
 
+Метод вызывается при изменении свойства через систему интроспекции. Используется для синхронизации полей, обновления кэша или валидации значений.
+
+**Важно:**
+- Вызывать метод базового класса только в `default` (чтобы не срабатывала логика для подавленных свойств)
+- Нумерация свойств с 1
+- Вызывается только при изменении через интроспекцию, не при прямом изменении полей
+
+**Пример:**
+
 ```cpp
 void propChanged(uint8_t propNum) override {
-    csRenderDynamic::propChanged(propNum);
-    if (propNum == propIntensity) {
-        // Обновить кэш или пересчитать зависимости
+    switch (propNum) {
+        case propRectDest: {
+            // Синхронизировать связанные поля
+            const tMatrixPixelsSize minSize = math::min(rectDest.width, rectDest.height);
+            rectDest.width = minSize;
+            rectDest.height = minSize;
+            break;
+        }
+        case propIntensity:
+            // Обновить кэш
+            break;
+        default:
+            csRenderDynamic::propChanged(propNum);
+            break;
     }
 }
 ```

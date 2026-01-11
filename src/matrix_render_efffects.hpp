@@ -1153,7 +1153,6 @@ public:
     }
 
     void propChanged(uint8_t propNum) override {
-        csRenderRectangle::propChanged(propNum);
         switch (propNum) {
             case propRenderRectAutosize:
                 // Empty - propRenderRectAutosize is disabled
@@ -1166,6 +1165,7 @@ public:
                 break;
             }
             default:
+                csRenderRectangle::propChanged(propNum);
                 break;
         }
     }
