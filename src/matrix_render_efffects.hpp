@@ -1126,6 +1126,86 @@ public:
     }
 };
 
+// Effect: draw a filled triangle inscribed in a rectangle.
+// Triangle vertices:
+// - Right bottom corner of rectangle
+// - Left bottom corner of rectangle
+// - Top center of rectangle
+class csRenderTriangle : public csRenderMatrixBase {
+public:
+    csColorRGBA color{255, 255, 255, 255};
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propColor:
+                info.valueType = PropType::Color;
+                info.name = "Triangle color";
+                info.valuePtr = &color;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case propRectDest:
+                info.valuePtr = &rectDest;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrix) {
+            return;
+        }
+
+        const csRect target = rectDest.intersect(matrix->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        // Calculate triangle vertices relative to rectDest
+        const float x1 = static_cast<float>(rectDest.x + to_coord(rectDest.width) - 1);
+        const float y1 = static_cast<float>(rectDest.y + to_coord(rectDest.height) - 1);
+        const float x2 = static_cast<float>(rectDest.x);
+        const float y2 = static_cast<float>(rectDest.y + to_coord(rectDest.height) - 1);
+        const float x3 = static_cast<float>(rectDest.x) + static_cast<float>(rectDest.width) * 0.5f;
+        const float y3 = static_cast<float>(rectDest.y);
+
+        // Precompute edge vectors for efficiency
+        const float dx12 = x2 - x1;
+        const float dy12 = y2 - y1;
+        const float dx23 = x3 - x2;
+        const float dy23 = y3 - y2;
+        const float dx31 = x1 - x3;
+        const float dy31 = y1 - y3;
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+
+        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
+            const float py = static_cast<float>(y) + 0.5f;
+            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
+                const float px = static_cast<float>(x) + 0.5f;
+
+                // Edge function for each edge (cross product)
+                // Edge 1: from vertex 1 to vertex 2
+                const float edge1 = (px - x1) * dy12 - (py - y1) * dx12;
+                // Edge 2: from vertex 2 to vertex 3
+                const float edge2 = (px - x2) * dy23 - (py - y2) * dx23;
+                // Edge 3: from vertex 3 to vertex 1
+                const float edge3 = (px - x3) * dy31 - (py - y3) * dx31;
+
+                // Point is inside triangle if all edge functions have the same sign
+                const bool inside = (edge1 >= 0.0f && edge2 >= 0.0f && edge3 >= 0.0f) ||
+                                   (edge1 <= 0.0f && edge2 <= 0.0f && edge3 <= 0.0f);
+
+                if (inside) {
+                    matrix->setPixel(x, y, color);
+                }
+            }
+        }
+    }
+};
+
 // Effect: fill square area (point) with solid color.
 // Width and height are always equal (minimum of the two is used).
 // propRenderRectAutosize is disabled.
