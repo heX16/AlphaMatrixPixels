@@ -14,8 +14,14 @@
 
 namespace amp {
 
+class csEffectBase;
+class csEventHandlerArgs;
+
 // Generic property pointer type for render property introspection (WIP).
-using propPtr = void*;
+using tPropPtr = void*;
+
+// Type alias for a pointer to a member function of csEffectBase with the same signature as receiveEvent
+using tReceiverEventHandlerPtr = void (csEffectBase::*)(const csEventHandlerArgs&);
 
 // Property type for render property introspection (WIP).
 enum class PropType : uint8_t {
@@ -42,42 +48,51 @@ enum class PropType : uint8_t {
     Color = 15,
 
     // WIP ...
-    // указывает на структуру,
-    // которая содержит указатель на csEffect, и номер свойства куда нужно писать (prop ID)
-    // в названии описывается что контретно делает этот link (как он меняет prop).
-    // работает в связке с LinkToEffectPropType.
+    /*
+
+    Name -  описывает что контретно делает этот link (как он меняет prop).
+    Указывает на структуру,
+    структура содержит:
+    - `csEffect * ptrEffect` - указатель на целевой эффект.
+    - `propNum` - номер свойства целевого эффекта куда нужно писать (prop ID).
+       смотри `getPropInfo(>> propNum << ...);`.
+    - `PropType validTypeRO` - допустимый тип для указателя на csEffect. READ ONLY.
+    например если это свойство имеет значение `PropType::UInt16`,
+    то это значит что LinkToEffectProp может указывать только на свойства имеющие такой тип.
+    на самом деле это не совсем так. точнее совсем не так.
+    алгоритмы связывания делают умную работу,
+    например все числа можно связывать между друг другом,
+    просто в момент записи будет сделанно приведение типа.
+    с EffectBase и подобными - там еще сложнее,
+    учитывается реультат функции queryClassFamily.
+    */
     LinkToEffectProp = 28,
-    // WIP `PropType`
-    // Read Only. Value type: UInt8.
-    // это допустимый тип свойства для LinkToEffectProp.
-    // это свойство всегда должно следовать за LinkToEffectProp.
-    // например если это свойство имеет значение `PropType::UInt16`,
-    // то это значит что LinkToEffectProp может указывать только на свойства имеющие такой тип.
-    // на самом деле это не совсем так. точнее совсем не так.
-    // алгоритмы связывания делают умную работу,
-    // например все числа можно связывать между друг другом,
-    // просто в момент записи будет сделанно приведение типа.
-    // с EffectBase и подобными - там еще сложнее,
-    // учитывается реультат функции queryClassFamily.
-    LinkToEffectPropType = 29,
 
     // WIP ...
-    // "_event emmiter_" -> "event recieve point"
-    // Это указатель на "получатель события".
-    // указывает на структуру,
-    // которая содержит указатель на csEffect, и номер "EventRecvPoint",
-    // csEventBase.EventRecvPoint - это аргумент который передается в функцию
-    // которая получает события.
-    // EventRecvPoint передается в объекте csEventBase.
-    LinkToEffectEvent = 30,
-    // wip   "event emmiter" -> "_event recieve point_"
+    /*
+    Генератор событий.
+    **event emitter** -> event receiver.
+    Имя - это текстовое описание события ().
+    Указатель на `csEffect`.
+    Он содержит указатель получателя события (или `nullptr`).
+    которая содержит указатель на csEffect, и номер "EventRecvPoint",
+    csEventBase.EventRecvPoint - это аргумент который передается в функцию
+    которая получает события.
+    EventRecvPoint передается в объекте csEventBase.
+    */
+    EventEmitterLinkToRecv = 29,
+    // event emitter --(**Num**)--> event receiver.
+    // Генератор событий - номер обработчика в приемнике.
+    // Имя - должно отсутствовать, потомучто это свойство связанное с `EventEmitterLinkToRecv`.
+    EventEmitterHandlerNum = 30,
+    // event emitter -> **event receiver**
     // Read Only. Value type: UInt8.
+    // Это номер приемника события.
     // Это особое свойство.
-    // Множество этих свойств создает список.
-    // Это просто список "EventRecvPoint".
+    // Множество этих свойств создает список список "EventRecvPoint".
     // числа которая содержиться в Value - это номер в `csEventBase.EventRecvPoint`,
     // этот номер является индификатором события.
-    EffectEventRecvPoint = 31,
+    EventReceiverHandlerNum = 31,
 
     // Special:
     EffectBase = 32,
@@ -90,18 +105,52 @@ enum class PropType : uint8_t {
 };
 
 struct csPropInfo {
+    // Type of the property value
     PropType valueType = PropType::None;
-    propPtr valuePtr = nullptr;
+    // Pointer to the property value
+    tPropPtr valuePtr = nullptr;
+    // Name of the property
     const char* name = nullptr;
+    // Detailed description
+    const char* desc = nullptr;
+    // Is the property read only?
     bool readOnly = false;
+    // Is the property disabled?
+    // `true` - property must be hidden from the user GUI.
     bool disabled = false;
 };
 
-struct csEventBase {
-public:
-    // Empty - WIP
-    uint8_t EventRecvPoint;
+// WIP...
+// see: enum `PropType.LinkToEffectProp`
+struct csPropLinkToProp {
+    csEffectBase * effect;
+    // Target property number
+    uint8_t propNum;
+    // READ ONLY. Valid type of the target property.
+    PropType validTypeRO;
 };
+
+// WIP...
+// see: enum `PropType.EventEmitterLinkToRecv`
+class csEventHandlerArgs {
+public:
+    // WIP...
+
+    // "Event number" in the `receiveEvent` function
+    uint8_t eventNum;
+    // random source
+    csRandGen * rand;
+    // time
+    tTime currTime;
+};
+
+// see: enum `PropType.EventEmitterLinkToRecv`
+struct csEventEmitterLinkToRecv {
+    csEffectBase * eventReceiver;
+    uint8_t eventNum;
+    // READ ONLY. Valid class of the receiver.
+    PropType validReceiverClass;
+}
 
 // Base class for all render/effect implementations
 // Contains standard property types without the actual fields - only their property ID.
@@ -112,21 +161,23 @@ public:
 
     virtual ~csEffectBase() = default;
 
-    // Standard property constants
-    static constexpr uint8_t propMatrixDest = 1;
-    static constexpr uint8_t propRectDest = 2;
-    static constexpr uint8_t propRenderRectAutosize = 3;
-    static constexpr uint8_t propDisabled = 4;
+    // Standard property constants:
+
+    static constexpr uint8_t propClassName = 1;
+    static constexpr uint8_t propMatrixDest = 2;
+    static constexpr uint8_t propRectDest = 3;
+    static constexpr uint8_t propRenderRectAutosize = 4;
+    static constexpr uint8_t propDisabled = 5;
     // Scale property: 
     // increasing value (scale > 1.0) → larger scale → effect stretches → fewer details visible (like "zooming out");
     // decreasing value (scale < 1.0) → smaller scale → effect compresses → more details visible (like "zooming in").
-    static constexpr uint8_t propScale = 5;
-    static constexpr uint8_t propSpeed = 6;
-    static constexpr uint8_t propAlpha = 7;
-    static constexpr uint8_t propColor = 8;
-    static constexpr uint8_t propColor2 = 9;
-    static constexpr uint8_t propColor3 = 10;
-    static constexpr uint8_t propColorBackground = 11;
+    static constexpr uint8_t propScale = 6;
+    static constexpr uint8_t propSpeed = 7;
+    static constexpr uint8_t propAlpha = 8;
+    static constexpr uint8_t propColor = 9;
+    static constexpr uint8_t propColor2 = 10;
+    static constexpr uint8_t propColor3 = 11;
+    static constexpr uint8_t propColorBackground = 12;
 
     // `propLast` - Special "property" - the last one in the list. 
     // Shadowed in each derived class.
@@ -151,8 +202,15 @@ public:
         info.readOnly = false;
         info.disabled = true;  // All properties are disabled by default
         info.valuePtr = nullptr;    // No fields in this class
+        info.desc = nullptr;
 
         switch (propNum) {
+            case propClassName:
+                info.valueType = PropType::StrConst;
+                info.valuePtr = (tPropPtr)getClassName();
+                info.name = "Class name";
+                info.desc = "Name of the class";
+                break;
             case propMatrixDest:
                 info.valueType = PropType::Matrix;
                 info.name = "Matrix dest";
@@ -229,24 +287,21 @@ public:
         (void)currTime;
     }
 
-    // Event generation hook
     // generate one event to external object
-    virtual bool getEvent(csRandGen& rand,
-                          tTime currTime,
-                          csEventBase& event,
-                          uint16_t eventNum) const {
-        (void)rand;
-        (void)currTime;
+    bool sendEvent(csEventHandlerArgs& event) {
         (void)event;
-        (void)eventNum;
         return false;
     }
 
     // Event receive hook
     // receive one event from external object
-    virtual void receiveEvent(const csEventBase& event) {
+    virtual void receiveEvent(const csEventHandlerArgs& event) {
         (void)event;
     }
+
+    // Get class name
+    // see also: `propClassName`
+    virtual const char* getClassName() const { return "csEffectBase"; }
 
     // Class family identification system (replacement for dynamic_cast without RTTI)
     //
