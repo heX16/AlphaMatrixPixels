@@ -231,6 +231,7 @@ public:
     }
 
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        // TODO: getPropInfo - ПОДУМАТЬ!!!
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propRenderRectAutosize:
@@ -430,6 +431,7 @@ public:
                 info.disabled = false;
                 break;
             default:
+                // TODO: getPropInfo - ПОДУМАТЬ!!!
                 csRenderMatrixBase::getPropInfo(propNum, info);
                 break;
         }
