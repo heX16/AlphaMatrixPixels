@@ -157,7 +157,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 const tMatrixPixelsSize clockHeight = fontHeight;
                 
                 // Create fill effect (background) - covers clock rect
-                auto* fill = new csRenderFill();
+                auto* fill = new csRenderRectangle();
                 fill->color = csColorRGBA{192, 0, 0, 0};
                 fill->renderRectAutosize = false;
                 fill->rectDest = amp::csRect{1, 1, amp::to_size(clockWidth+2), amp::to_size(clockHeight+2)};
@@ -284,7 +284,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 
                 // Create 7 fill effects, one for each horizontal line
                 for (uint8_t i = 0; i < lineCount; ++i) {
-                    auto* fill = new csRenderFill();
+                    auto* fill = new csRenderRectangle();
                     fill->color = colors[i];
                     fill->renderRectAutosize = false;
                     fill->rectDest = amp::csRect{
@@ -421,7 +421,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 
                 // Create 5 fill effects, one for each horizontal line
                 for (uint8_t i = 0; i < lineCount; ++i) {
-                    auto* fill = new csRenderFill();
+                    auto* fill = new csRenderRectangle();
                     fill->color = colors[i];
                     fill->renderRectAutosize = false;
                     fill->rectDest = amp::csRect{

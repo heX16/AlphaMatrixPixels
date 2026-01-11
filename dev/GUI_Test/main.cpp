@@ -29,7 +29,7 @@ using amp::csRenderCircleGradient;
 using amp::csRenderDynamic;
 using amp::csRenderSnowfall;
 using amp::csRenderDigitalClock;
-using amp::csRenderFill;
+using amp::csRenderRectangle;
 using amp::csRenderAverageArea;
 using amp::csRenderRemap1DByConstArray;
 using amp::csRenderBouncingPixel;

@@ -1101,7 +1101,7 @@ public:
 };
 
 // Effect: fill rectangular area with solid color.
-class csRenderFill : public csRenderMatrixBase {
+class csRenderRectangle : public csRenderMatrixBase {
 public:
     csColorRGBA color{255, 255, 255, 255};
 
@@ -1110,7 +1110,7 @@ public:
         switch (propNum) {
             case propColor:
                 info.valueType = PropType::Color;
-                info.name = "Fill color";
+                info.name = "Rectangle color";
                 info.valuePtr = &color;
                 info.readOnly = false;
                 info.disabled = false;
@@ -1123,6 +1123,51 @@ public:
             return;
         }
         matrix->fillArea(rectDest, color);
+    }
+};
+
+// Effect: fill square area (point) with solid color.
+// Width and height are always equal (minimum of the two is used).
+// propRenderRectAutosize is disabled.
+class csRenderPoint : public csRenderRectangle {
+public:
+    csRenderPoint() {
+        // Initialize width and height to 1
+        rectDest.width = 1;
+        rectDest.height = 1;
+        // Disable autosize
+        renderRectAutosize = false;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderRectangle::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propRenderRectAutosize:
+                // Hide propRenderRectAutosize
+                info.disabled = true;
+                break;
+            case propColor:
+                info.name = "Point color";
+                break;
+        }
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderRectangle::propChanged(propNum);
+        switch (propNum) {
+            case propRenderRectAutosize:
+                // Empty - propRenderRectAutosize is disabled
+                break;
+            case propRectDest: {
+                // Synchronize width and height: use minimum of the two
+                const tMatrixPixelsSize minSize = math::min(rectDest.width, rectDest.height);
+                rectDest.width = minSize;
+                rectDest.height = minSize;
+                break;
+            }
+            default:
+                break;
+        }
     }
 };
 
