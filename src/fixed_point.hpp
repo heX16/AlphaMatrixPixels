@@ -128,7 +128,7 @@ private:
 
 public:
     csFP() = default;
-    explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
+    AMP_CONSTEXPR explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
 
     static inline csFP from_raw(fp_type r) noexcept {
         csFP out{};
@@ -146,7 +146,6 @@ public:
     }
     
     static csFP from_float(float v) noexcept { return csFP(v); }
-    static inline csFP float_const(float v) noexcept { return from_raw(float_to_raw_constexpr(v)); }
     static inline csFP from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
         // round-to-nearest, ties up
         // Note: intermediate math uses fp_type2. Large numer/denom may overflow.
@@ -274,35 +273,35 @@ using csFP32 = csFP<int32_t, 16>;
 
 // Definitions of mathematical constants for csFP16
 template<>
-inline const csFP16 csFP<int16_t, 4>::pi = csFP16::float_const(3.141592653589793f);
+inline const csFP16 csFP<int16_t, 4>::pi = csFP16(3.141592653589793f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::piHalf = csFP16::float_const(1.570796326794897f);
+inline const csFP16 csFP<int16_t, 4>::piHalf = csFP16(1.570796326794897f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::pi2 = csFP16::float_const(6.283185307179586f);
+inline const csFP16 csFP<int16_t, 4>::pi2 = csFP16(6.283185307179586f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::degToRad = csFP16::float_const(0.017453292519943295f);
+inline const csFP16 csFP<int16_t, 4>::degToRad = csFP16(0.017453292519943295f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::half = csFP16::float_const(0.5f);
+inline const csFP16 csFP<int16_t, 4>::half = csFP16(0.5f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::zero = csFP16::float_const(0.0f);
+inline const csFP16 csFP<int16_t, 4>::zero = csFP16(0.0f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::one = csFP16::float_const(1.0f);
+inline const csFP16 csFP<int16_t, 4>::one = csFP16(1.0f);
 
 // Definitions of mathematical constants for csFP32
 template<>
-inline const csFP32 csFP<int32_t, 16>::pi = csFP32::float_const(3.141592653589793f);
+inline const csFP32 csFP<int32_t, 16>::pi = csFP32(3.141592653589793f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::piHalf = csFP32::float_const(1.570796326794897f);
+inline const csFP32 csFP<int32_t, 16>::piHalf = csFP32(1.570796326794897f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::pi2 = csFP32::float_const(6.283185307179586f);
+inline const csFP32 csFP<int32_t, 16>::pi2 = csFP32(6.283185307179586f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::degToRad = csFP32::float_const(0.017453292519943295f);
+inline const csFP32 csFP<int32_t, 16>::degToRad = csFP32(0.017453292519943295f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::half = csFP32::float_const(0.5f);
+inline const csFP32 csFP<int32_t, 16>::half = csFP32(0.5f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::zero = csFP32::float_const(0.0f);
+inline const csFP32 csFP<int32_t, 16>::zero = csFP32(0.0f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::one = csFP32::float_const(1.0f);
+inline const csFP32 csFP<int32_t, 16>::one = csFP32(1.0f);
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {

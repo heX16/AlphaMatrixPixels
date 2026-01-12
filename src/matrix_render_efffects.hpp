@@ -113,9 +113,9 @@ public:
         t = t * speedFP32;
 
         // Fixed-point constants.
-        static const csFP32 k08 = csFP32::float_const(0.7f);
-        static const csFP32 k04 = csFP32::float_const(0.3f);
-        static const csFP32 k05 = csFP32::float_const(0.4f);
+        static constexpr csFP32 k08 = csFP32(0.7f);
+        static constexpr csFP32 k04 = csFP32(0.3f);
+        static constexpr csFP32 k05 = csFP32(0.4f);
         // Convert scale from FP16 to FP32 and invert: divide by scale so larger values stretch the waves (bigger scale = more stretched).
         const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
         const csFP32 invScaleFP32 = (scaleFP32.raw > 0) ? (csFP32::one / scaleFP32) : csFP32::one;
@@ -832,7 +832,7 @@ public:
 
             // Normal falling logic for visible snowflakes (y >= 0)
             // Calculate movement delta based on speed (slower movement with sub-pixel precision)
-            const csFP16 moveDelta = speed * csFP16::float_const(0.1f);
+            const csFP16 moveDelta = speed * csFP16(0.1f);
             const csFP16 nextY = snowflake.y + moveDelta;
 
             // Common fix logic (takes snowflake reference)
@@ -1751,7 +1751,7 @@ protected:
 };
 
 // Fixed-point constants for csRenderBouncingPixel
-const csFP32 csRenderBouncingPixel::kMoveStep = csFP32::float_const(0.3f);
+const csFP32 csRenderBouncingPixel::kMoveStep = csFP32(0.3f);
 
 // Bouncing pixel with dual-trail rendering: always draws two pixels (old + new) with alpha split
 // based on subpixel progress between cell centers.
@@ -1864,7 +1864,7 @@ public:
         // Calculate progress from boundary to current position
         csFP32 t = csFP32::zero; // Default to start
 
-        if (dist_boundary_to_new_sq > csFP32::float_const(0.0001f)) {
+        if (dist_boundary_to_new_sq > csFP32(0.0001f)) {
             // Vector from boundary to current position
             const csFP32 dx_from_boundary = posX - boundaryX;
             const csFP32 dy_from_boundary = posY - boundaryY;
