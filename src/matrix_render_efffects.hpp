@@ -11,6 +11,7 @@
 #include "matrix_render.hpp"
 #include "fonts.h"
 #include "matrix_boolean.hpp"
+#include "render_geometric.hpp"
 
 
 using namespace amp::math;
@@ -155,7 +156,7 @@ public:
         if (target.empty()) {
             return;
         }
-        
+
         const float scaleF = scale.to_float();
         // Invert scale: divide by scale so larger values stretch the waves (bigger scale = more stretched).
         const float invScaleF = (scaleF > 0.0f) ? (1.0f / scaleF) : 1.0f;
@@ -325,7 +326,7 @@ public:
         if (symbolIndex >= font->count()) {
             return;
         }
-            
+
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
             const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
             for (tMatrixPixelsSize col = 0; col < glyphWidth; ++col) {
@@ -333,7 +334,7 @@ public:
                     const tMatrixPixelsCoord px = offsetX + to_coord(col);
                     const tMatrixPixelsCoord py = offsetY + to_coord(row);
                     matrix->setPixel(px, py, color);
-                } 
+                }
             }
         }
     }
@@ -368,7 +369,7 @@ public:
         if (symbolIndex >= font->count()) {
             return;
         }
-            
+
         for (tMatrixPixelsSize row = 0; row < glyphHeight; ++row) {
             const uint32_t glyphRow = font->getRowBits(static_cast<uint16_t>(symbolIndex), static_cast<uint16_t>(row));
             // get the row bits for all segments (its a number "8")
@@ -683,7 +684,7 @@ public:
     static constexpr uint8_t propRestartFillPercent = base + 2;
     static constexpr uint8_t propSmoothMovement = base + 3;
     static constexpr uint8_t propLast = propSmoothMovement;
-    
+
     static constexpr uint8_t compactSnowInterval = 10; // Call compactSnow every N snowfalls
 
     // Snowflake array configuration
@@ -776,14 +777,14 @@ public:
         if (rectDest.width == 0) {
             return;
         }
-        
+
         // Random X position in top row (local coordinates: 0..width-1)
         snowflake.x = csFP16::from_int(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
         // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
-        snowflake.y = csFP16::from_int(to_coord(cSpawnDelayMin + 
+        snowflake.y = csFP16::from_int(to_coord(cSpawnDelayMin +
             rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin)));
     }
-    
+
     void recalc(csRandGen& rand, tTime currTime) override {
         if (disabled) {
             return;
@@ -1152,513 +1153,6 @@ public:
         }
     }
 
-    // Render filled triangle in target rectangle
-    void fillTriangleSlow(const csRect& target, float x1, float y1, float x2, float y2, float x3, float y3) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Precompute edge vectors for efficiency
-        const float dx12 = x2 - x1;
-        const float dy12 = y2 - y1;
-        const float dx23 = x3 - x2;
-        const float dy23 = y3 - y2;
-        const float dx31 = x1 - x3;
-        const float dy31 = y1 - y3;
-
-        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
-        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-
-        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            const float py = static_cast<float>(y) + 0.5f;
-            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const float px = static_cast<float>(x) + 0.5f;
-
-                // Edge function for each edge (cross product)
-                // Edge 1: from vertex 1 to vertex 2
-                const float edge1 = (px - x1) * dy12 - (py - y1) * dx12;
-                // Edge 2: from vertex 2 to vertex 3
-                const float edge2 = (px - x2) * dy23 - (py - y2) * dx23;
-                // Edge 3: from vertex 3 to vertex 1
-                const float edge3 = (px - x3) * dy31 - (py - y3) * dx31;
-
-                // Point is inside triangle if all edge functions have the same sign
-                const bool inside = (edge1 >= 0.0f && edge2 >= 0.0f && edge3 >= 0.0f) ||
-                                   (edge1 <= 0.0f && edge2 <= 0.0f && edge3 <= 0.0f);
-
-                if (inside) {
-                    matrix->setPixel(x, y, color);
-                }
-            }
-        }
-    }
-
-    // Render filled triangle using scanline algorithm with incremental approach (x += slope)
-    void fillTriangleScanlineFast(const csRect& target, 
-                              float xTop, float yTop,   // Top vertex
-                              float xMid, float yMid,   // Middle vertex (by Y)
-                              float xBot, float yBot) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Validate vertex ordering: yTop < yMid < yBot
-        if (yTop >= yMid || yMid >= yBot) {
-            return;
-        }
-
-        // Calculate edge slopes
-        const float dy1 = yMid - yTop;
-        const float dy2 = yBot - yTop;
-        const float dy3 = yBot - yMid;
-
-        // Handle division by zero for horizontal edges
-        const float slope1 = (dy1 != 0.0f) ? ((xMid - xTop) / dy1) : 0.0f;
-        const float slope2 = (dy2 != 0.0f) ? ((xBot - xTop) / dy2) : 0.0f;
-        const float slope3 = (dy3 != 0.0f) ? ((xBot - xMid) / dy3) : 0.0f;
-
-        const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
-        const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
-
-        // Top section: from yTop to yMid
-        const tMatrixPixelsCoord yMidCoord = static_cast<tMatrixPixelsCoord>(yMid + 0.5f);
-        const tMatrixPixelsCoord yTopStart = static_cast<tMatrixPixelsCoord>(yTop + 0.5f);
-        const tMatrixPixelsCoord yTopClipped = (yTopStart < target.y) ? target.y : yTopStart;
-        const tMatrixPixelsCoord yMidClipped = (yMidCoord > targetEndY) ? targetEndY : yMidCoord;
-
-        // Initialize X positions for first scanline
-        float xLeft = xTop;
-        float xRight = xTop;
-        if (yTopClipped > yTopStart) {
-            // Adjust initial positions if we start below yTop due to clipping
-            const float dyOffset = static_cast<float>(yTopClipped) + 0.5f - yTop;
-            xLeft += slope1 * dyOffset;
-            xRight += slope2 * dyOffset;
-        }
-
-        for (tMatrixPixelsCoord y = yTopClipped; y < yMidClipped; ++y) {
-            // Update X positions incrementally
-            if (y > yTopClipped) {
-                xLeft += slope1;
-                xRight += slope2;
-            }
-
-            // Determine left and right edges
-            const float xMin = (xLeft < xRight) ? xLeft : xRight;
-            const float xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-
-        // Bottom section: from yMid to yBot
-        const tMatrixPixelsCoord yBotCoord = static_cast<tMatrixPixelsCoord>(yBot + 0.5f);
-        const tMatrixPixelsCoord yMidStart = (yMidCoord < target.y) ? target.y : yMidCoord;
-        const tMatrixPixelsCoord yBotClipped = (yBotCoord > targetEndY) ? targetEndY : yBotCoord;
-
-        // Initialize X positions for first scanline of bottom section
-        xLeft = xMid;
-        // Calculate xRight at yMid for continuity
-        const float dyFromTopToMid = yMid - yTop;
-        xRight = xTop + slope2 * dyFromTopToMid;
-        if (yMidStart > yMidCoord) {
-            // Adjust initial positions if we start below yMid due to clipping
-            const float dyOffset = static_cast<float>(yMidStart) + 0.5f - yMid;
-            xLeft += slope3 * dyOffset;
-            xRight += slope2 * dyOffset;
-        }
-
-        for (tMatrixPixelsCoord y = yMidStart; y < yBotClipped; ++y) {
-            // Update X positions incrementally
-            if (y > yMidStart) {
-                xLeft += slope3;
-                xRight += slope2;
-            }
-
-            // Determine left and right edges
-            const float xMin = (xLeft < xRight) ? xLeft : xRight;
-            const float xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-    }
-
-    // Render filled triangle using scanline algorithm with direct X calculation on each scanline
-    void fillTriangleScanline(const csRect& target, 
-                                     float xTop, float yTop,   // Top vertex
-                                     float xMid, float yMid,   // Middle vertex (by Y)
-                                     float xBot, float yBot) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Validate vertex ordering: yTop < yMid < yBot
-        if (yTop >= yMid || yMid >= yBot) {
-            return;
-        }
-
-        const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
-        const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
-
-        // Top section: from yTop to yMid
-        const tMatrixPixelsCoord yMidCoord = static_cast<tMatrixPixelsCoord>(yMid + 0.5f);
-        const tMatrixPixelsCoord yTopStart = static_cast<tMatrixPixelsCoord>(yTop + 0.5f);
-        const tMatrixPixelsCoord yTopClipped = (yTopStart < target.y) ? target.y : yTopStart;
-        const tMatrixPixelsCoord yMidClipped = (yMidCoord > targetEndY) ? targetEndY : yMidCoord;
-
-        const float dy1 = yMid - yTop;
-        const float dy2 = yBot - yTop;
-
-        for (tMatrixPixelsCoord y = yTopClipped; y < yMidClipped; ++y) {
-            const float yFloat = static_cast<float>(y) + 0.5f;
-            const float dyFromTop = yFloat - yTop;
-
-            // Calculate X positions directly using linear equation
-            float xLeft, xRight;
-            if (dy1 != 0.0f) {
-                xLeft = xTop + dyFromTop * (xMid - xTop) / dy1;
-            } else {
-                xLeft = xTop; // Horizontal edge
-            }
-            if (dy2 != 0.0f) {
-                xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
-            } else {
-                xRight = xTop; // Horizontal edge
-            }
-
-            // Determine left and right edges
-            const float xMin = (xLeft < xRight) ? xLeft : xRight;
-            const float xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-
-        // Bottom section: from yMid to yBot
-        const tMatrixPixelsCoord yBotCoord = static_cast<tMatrixPixelsCoord>(yBot + 0.5f);
-        const tMatrixPixelsCoord yMidStart = (yMidCoord < target.y) ? target.y : yMidCoord;
-        const tMatrixPixelsCoord yBotClipped = (yBotCoord > targetEndY) ? targetEndY : yBotCoord;
-
-        const float dy3 = yBot - yMid;
-
-        for (tMatrixPixelsCoord y = yMidStart; y < yBotClipped; ++y) {
-            const float yFloat = static_cast<float>(y) + 0.5f;
-            const float dyFromMid = yFloat - yMid;
-            const float dyFromTop = yFloat - yTop;
-
-            // Calculate X positions directly using linear equation
-            float xLeft, xRight;
-            if (dy3 != 0.0f) {
-                xLeft = xMid + dyFromMid * (xBot - xMid) / dy3;
-            } else {
-                xLeft = xMid; // Horizontal edge
-            }
-            if (dy2 != 0.0f) {
-                xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
-            } else {
-                xRight = xTop; // Horizontal edge
-            }
-
-            // Determine left and right edges
-            const float xMin = (xLeft < xRight) ? xLeft : xRight;
-            const float xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-    }
-
-    // Render filled triangle in target rectangle (csFP32 version)
-    void fillTriangleSlowFP32(const csRect& target, csFP32 x1, csFP32 y1, csFP32 x2, csFP32 y2, csFP32 x3, csFP32 y3) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Precompute edge vectors for efficiency
-        const csFP32 dx12 = x2 - x1;
-        const csFP32 dy12 = y2 - y1;
-        const csFP32 dx23 = x3 - x2;
-        const csFP32 dy23 = y3 - y2;
-        const csFP32 dx31 = x1 - x3;
-        const csFP32 dy31 = y1 - y3;
-
-        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
-        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-
-        static const csFP32 half = csFP32::float_const(0.5f);
-        static const csFP32 zero = csFP32::float_const(0.0f);
-
-        for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            const csFP32 py = csFP32::from_int(y) + half;
-            for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const csFP32 px = csFP32::from_int(x) + half;
-
-                // Edge function for each edge (cross product)
-                // Edge 1: from vertex 1 to vertex 2
-                const csFP32 edge1 = (px - x1) * dy12 - (py - y1) * dx12;
-                // Edge 2: from vertex 2 to vertex 3
-                const csFP32 edge2 = (px - x2) * dy23 - (py - y2) * dx23;
-                // Edge 3: from vertex 3 to vertex 1
-                const csFP32 edge3 = (px - x3) * dy31 - (py - y3) * dx31;
-
-                // Point is inside triangle if all edge functions have the same sign
-                const bool inside = (edge1 >= zero && edge2 >= zero && edge3 >= zero) ||
-                                   (edge1 <= zero && edge2 <= zero && edge3 <= zero);
-
-                if (inside) {
-                    matrix->setPixel(x, y, color);
-                }
-            }
-        }
-    }
-
-    // Render filled triangle using scanline algorithm with incremental approach (x += slope) (csFP32 version)
-    void fillTriangleScanlineFastFP32(const csRect& target, 
-                              csFP32 xTop, csFP32 yTop,   // Top vertex
-                              csFP32 xMid, csFP32 yMid,   // Middle vertex (by Y)
-                              csFP32 xBot, csFP32 yBot) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Validate vertex ordering: yTop < yMid < yBot
-        static const csFP32 zero = csFP32::float_const(0.0f);
-        if (yTop >= yMid || yMid >= yBot) {
-            return;
-        }
-
-        // Calculate edge slopes
-        const csFP32 dy1 = yMid - yTop;
-        const csFP32 dy2 = yBot - yTop;
-        const csFP32 dy3 = yBot - yMid;
-
-        // Handle division by zero for horizontal edges
-        const csFP32 slope1 = (dy1.raw != 0) ? ((xMid - xTop) / dy1) : zero;
-        const csFP32 slope2 = (dy2.raw != 0) ? ((xBot - xTop) / dy2) : zero;
-        const csFP32 slope3 = (dy3.raw != 0) ? ((xBot - xMid) / dy3) : zero;
-
-        const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
-        const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
-
-        static const csFP32 half = csFP32::float_const(0.5f);
-
-        // Top section: from yTop to yMid
-        const tMatrixPixelsCoord yMidCoord = static_cast<tMatrixPixelsCoord>(yMid.to_float() + 0.5f);
-        const tMatrixPixelsCoord yTopStart = static_cast<tMatrixPixelsCoord>(yTop.to_float() + 0.5f);
-        const tMatrixPixelsCoord yTopClipped = (yTopStart < target.y) ? target.y : yTopStart;
-        const tMatrixPixelsCoord yMidClipped = (yMidCoord > targetEndY) ? targetEndY : yMidCoord;
-
-        // Initialize X positions for first scanline
-        csFP32 xLeft = xTop;
-        csFP32 xRight = xTop;
-        if (yTopClipped > yTopStart) {
-            // Adjust initial positions if we start below yTop due to clipping
-            const csFP32 dyOffset = csFP32::from_int(yTopClipped) + half - yTop;
-            xLeft += slope1 * dyOffset;
-            xRight += slope2 * dyOffset;
-        }
-
-        for (tMatrixPixelsCoord y = yTopClipped; y < yMidClipped; ++y) {
-            // Update X positions incrementally
-            if (y > yTopClipped) {
-                xLeft += slope1;
-                xRight += slope2;
-            }
-
-            // Determine left and right edges
-            const csFP32 xMin = (xLeft < xRight) ? xLeft : xRight;
-            const csFP32 xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin.to_float() + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax.to_float() + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-
-        // Bottom section: from yMid to yBot
-        const tMatrixPixelsCoord yBotCoord = static_cast<tMatrixPixelsCoord>(yBot.to_float() + 0.5f);
-        const tMatrixPixelsCoord yMidStart = (yMidCoord < target.y) ? target.y : yMidCoord;
-        const tMatrixPixelsCoord yBotClipped = (yBotCoord > targetEndY) ? targetEndY : yBotCoord;
-
-        // Initialize X positions for first scanline of bottom section
-        xLeft = xMid;
-        // Calculate xRight at yMid for continuity
-        const csFP32 dyFromTopToMid = yMid - yTop;
-        xRight = xTop + slope2 * dyFromTopToMid;
-        if (yMidStart > yMidCoord) {
-            // Adjust initial positions if we start below yMid due to clipping
-            const csFP32 dyOffset = csFP32::from_int(yMidStart) + half - yMid;
-            xLeft += slope3 * dyOffset;
-            xRight += slope2 * dyOffset;
-        }
-
-        for (tMatrixPixelsCoord y = yMidStart; y < yBotClipped; ++y) {
-            // Update X positions incrementally
-            if (y > yMidStart) {
-                xLeft += slope3;
-                xRight += slope2;
-            }
-
-            // Determine left and right edges
-            const csFP32 xMin = (xLeft < xRight) ? xLeft : xRight;
-            const csFP32 xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin.to_float() + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax.to_float() + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-    }
-
-    // Render filled triangle using scanline algorithm with direct X calculation on each scanline (csFP32 version)
-    void fillTriangleScanlineFP32(const csRect& target, 
-                                     csFP32 xTop, csFP32 yTop,   // Top vertex
-                                     csFP32 xMid, csFP32 yMid,   // Middle vertex (by Y)
-                                     csFP32 xBot, csFP32 yBot) const {
-        if (!matrix || target.empty()) {
-            return;
-        }
-
-        // Validate vertex ordering: yTop < yMid < yBot
-        if (yTop >= yMid || yMid >= yBot) {
-            return;
-        }
-
-        const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
-        const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
-
-        static const csFP32 half = csFP32::float_const(0.5f);
-        static const csFP32 zero = csFP32::float_const(0.0f);
-
-        // Top section: from yTop to yMid
-        const tMatrixPixelsCoord yMidCoord = static_cast<tMatrixPixelsCoord>(yMid.to_float() + 0.5f);
-        const tMatrixPixelsCoord yTopStart = static_cast<tMatrixPixelsCoord>(yTop.to_float() + 0.5f);
-        const tMatrixPixelsCoord yTopClipped = (yTopStart < target.y) ? target.y : yTopStart;
-        const tMatrixPixelsCoord yMidClipped = (yMidCoord > targetEndY) ? targetEndY : yMidCoord;
-
-        const csFP32 dy1 = yMid - yTop;
-        const csFP32 dy2 = yBot - yTop;
-
-        for (tMatrixPixelsCoord y = yTopClipped; y < yMidClipped; ++y) {
-            const csFP32 yFloat = csFP32::from_int(y) + half;
-            const csFP32 dyFromTop = yFloat - yTop;
-
-            // Calculate X positions directly using linear equation
-            csFP32 xLeft, xRight;
-            if (dy1.raw != 0) {
-                xLeft = xTop + dyFromTop * (xMid - xTop) / dy1;
-            } else {
-                xLeft = xTop; // Horizontal edge
-            }
-            if (dy2.raw != 0) {
-                xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
-            } else {
-                xRight = xTop; // Horizontal edge
-            }
-
-            // Determine left and right edges
-            const csFP32 xMin = (xLeft < xRight) ? xLeft : xRight;
-            const csFP32 xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin.to_float() + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax.to_float() + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-
-        // Bottom section: from yMid to yBot
-        const tMatrixPixelsCoord yBotCoord = static_cast<tMatrixPixelsCoord>(yBot.to_float() + 0.5f);
-        const tMatrixPixelsCoord yMidStart = (yMidCoord < target.y) ? target.y : yMidCoord;
-        const tMatrixPixelsCoord yBotClipped = (yBotCoord > targetEndY) ? targetEndY : yBotCoord;
-
-        const csFP32 dy3 = yBot - yMid;
-
-        for (tMatrixPixelsCoord y = yMidStart; y < yBotClipped; ++y) {
-            const csFP32 yFloat = csFP32::from_int(y) + half;
-            const csFP32 dyFromMid = yFloat - yMid;
-            const csFP32 dyFromTop = yFloat - yTop;
-
-            // Calculate X positions directly using linear equation
-            csFP32 xLeft, xRight;
-            if (dy3.raw != 0) {
-                xLeft = xMid + dyFromMid * (xBot - xMid) / dy3;
-            } else {
-                xLeft = xMid; // Horizontal edge
-            }
-            if (dy2.raw != 0) {
-                xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
-            } else {
-                xRight = xTop; // Horizontal edge
-            }
-
-            // Determine left and right edges
-            const csFP32 xMin = (xLeft < xRight) ? xLeft : xRight;
-            const csFP32 xMax = (xLeft > xRight) ? xLeft : xRight;
-
-            // Clip to target bounds
-            const tMatrixPixelsCoord xStart = static_cast<tMatrixPixelsCoord>(xMin.to_float() + 0.5f);
-            const tMatrixPixelsCoord xEnd = static_cast<tMatrixPixelsCoord>(xMax.to_float() + 0.5f);
-            const tMatrixPixelsCoord xStartClipped = (xStart < target.x) ? target.x : xStart;
-            const tMatrixPixelsCoord xEndClipped = (xEnd > targetEndX) ? targetEndX : xEnd;
-
-            // Draw horizontal line
-            for (tMatrixPixelsCoord x = xStartClipped; x < xEndClipped; ++x) {
-                matrix->setPixel(x, y, color);
-            }
-        }
-    }
-
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrix) {
             return;
@@ -1677,7 +1171,7 @@ public:
         const float x3 = static_cast<float>(rectDest.x) + static_cast<float>(rectDest.width) * 0.5f;
         const float y3 = static_cast<float>(rectDest.y);
 
-        fillTriangleSlow(target, x1, y1, x2, y2, x3, y3);
+        fillTriangleSlow(target, x1, y1, x2, y2, x3, y3, matrix, color);
     }
 };
 
@@ -1801,7 +1295,7 @@ public:
         }
         // Call base implementation for other properties
         csRenderMatrixBase::propChanged(propNum);
-        
+
         // If matrix destination changed, bind matrix to all nested effects
         if (propNum == csRenderMatrixBase::propMatrixDest) {
             for (uint8_t i = 0; i < maxEffects; ++i) {
@@ -2089,10 +1583,10 @@ public:
         if (speedFP32.raw <= 0) {
             return;
         }
-        const uint32_t timeStepRaw = 
+        const uint32_t timeStepRaw =
             (50U * csFP32::scale) / speedFP32.raw;
 
-        const uint16_t timeStep = 
+        const uint16_t timeStep =
             (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
 
         if (timeStep == 0) {
@@ -2264,7 +1758,7 @@ const csFP32 csRenderBouncingPixel::kMoveStep = csFP32::float_const(0.3f);
 
 // Bouncing pixel with dual-trail rendering: always draws two pixels (old + new) with alpha split
 // based on subpixel progress between cell centers.
-// 
+//
 // Algorithm:
 // 1. Track previous cell (prevCellX, prevCellY) that we were in before current cell
 // 2. Calculate progress t as: how far current position is from old center toward new center
@@ -2325,33 +1819,33 @@ public:
             prevCellY = oldCellY;
         }
     }
-    
+
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrix || rectDest.empty()) {
             return;
         }
-        
+
         const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
         }
-        
+
         // Get current cell coordinates
         const tMatrixPixelsCoord currCellX = static_cast<tMatrixPixelsCoord>(posX.round_int());
         const tMatrixPixelsCoord currCellY = static_cast<tMatrixPixelsCoord>(posY.round_int());
-        
+
         // Check if current cell is in bounds
         if (currCellX < target.x || currCellX >= target.x + to_coord(target.width) ||
             currCellY < target.y || currCellY >= target.y + to_coord(target.height)) {
             return;
         }
-        
+
         // If we're in the same cell as previous, just draw one pixel
         if (prevCellX == currCellX && prevCellY == currCellY) {
             matrix->setPixel(currCellX, currCellY, color);
             return;
         }
-        
+
         // Calculate progress from cell boundary to new cell center
         // Cell centers are at integer coordinates (pixels at 0.0, 1.0, 2.0, etc.)
         // Boundary between cells is at (oldCenter + newCenter) / 2
@@ -2359,33 +1853,33 @@ public:
         const csFP32 oldCenterY = csFP32::from_int(prevCellY);
         const csFP32 newCenterX = csFP32::from_int(currCellX);
         const csFP32 newCenterY = csFP32::from_int(currCellY);
-        
+
         // Calculate cell boundary (midpoint between two cell centers)
         const csFP32 half = csFP32::float_const(0.5f);
         const csFP32 boundaryX = (oldCenterX + newCenterX) * half;
         const csFP32 boundaryY = (oldCenterY + newCenterY) * half;
-        
+
         // Distance from boundary to new center (this is always 0.5 for adjacent cells)
         const csFP32 dx_boundary_to_new = newCenterX - boundaryX;
         const csFP32 dy_boundary_to_new = newCenterY - boundaryY;
-        const csFP32 dist_boundary_to_new_sq = dx_boundary_to_new * dx_boundary_to_new + 
+        const csFP32 dist_boundary_to_new_sq = dx_boundary_to_new * dx_boundary_to_new +
                                                 dy_boundary_to_new * dy_boundary_to_new;
-        
+
         // Calculate progress from boundary to current position
         csFP32 t = csFP32::float_const(0.0f); // Default to start
-        
+
         if (dist_boundary_to_new_sq > csFP32::float_const(0.0001f)) {
             // Vector from boundary to current position
             const csFP32 dx_from_boundary = posX - boundaryX;
             const csFP32 dy_from_boundary = posY - boundaryY;
-            
+
             // Project onto vector from boundary to new center
-            const csFP32 dot = dx_from_boundary * dx_boundary_to_new + 
+            const csFP32 dot = dx_from_boundary * dx_boundary_to_new +
                                dy_from_boundary * dy_boundary_to_new;
-            
+
             // Normalize by distance from boundary to new center
             t = dot / dist_boundary_to_new_sq;
-            
+
             // Clamp to [0, 1]
             if (t < csFP32::float_const(0.0f)) {
                 t = csFP32::float_const(0.0f);
@@ -2393,34 +1887,34 @@ public:
                 t = csFP32::float_const(1.0f);
             }
         }
-        
+
         // Smooth alpha transition between two pixels:
         // t=0: alphaOld=full, alphaNew=zero (just entered, old pixel bright)
         // t=0.5: alphaOld=half, alphaNew=half (both medium brightness)
         // t=1: alphaOld=zero, alphaNew=full (reached center, new pixel bright)
         const uint8_t baseAlpha = color.a;
-        
+
         // Old pixel fades out: alpha = baseAlpha * (1 - t)
         const csFP32 fadeOld = csFP32::float_const(1.0f) - t;
         const csFP32 alphaOldFP = csFP32::from_int(baseAlpha) * fadeOld;
         const uint8_t alphaOld = static_cast<uint8_t>(alphaOldFP.round_int());
-        
+
         // New pixel fades in: alpha = baseAlpha * t
         const csFP32 alphaNewFP = csFP32::from_int(baseAlpha) * t;
         const uint8_t alphaNew = static_cast<uint8_t>(alphaNewFP.round_int());
-        
+
         // Draw both pixels with smooth transition
         if (alphaOld > 0) {
             const csColorRGBA oldColor{alphaOld, color.r, color.g, color.b};
             matrix->setPixel(prevCellX, prevCellY, oldColor);
         }
-        
+
         if (alphaNew > 0) {
             const csColorRGBA newColor{alphaNew, color.r, color.g, color.b};
             matrix->setPixel(currCellX, currCellY, newColor);
         }
     }
-    
+
 private:
     // Previous cell coordinates (integer cell indices)
     tMatrixPixelsCoord prevCellX = 0;
