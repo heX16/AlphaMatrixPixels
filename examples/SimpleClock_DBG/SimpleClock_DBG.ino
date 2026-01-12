@@ -147,14 +147,14 @@ void loop() {
     // TODO: время может отсутствовать - если модуль сбосился и не инициализирован
     DateTime now = rtc.now();
 
-    sfxSystem.matrix->clear();
+    sfxSystem.internalMatrix->clear();
 
     #ifdef HORIZONTAL_LINE_DEBUG_MODE
     // Draw horizontal line in canvas for debugging
     // Calculate line position based on seconds (moves down every second)
-    uint8_t lineY = (now.second() % sfxSystem.matrix->height());
+    uint8_t lineY = (now.second() % sfxSystem.internalMatrix->height());
     amp::csColorRGBA c(0xff0000);
-    sfxSystem.matrix->fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.matrix->width(), 1}, c);
+    sfxSystem.internalMatrix->fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.internalMatrix->width(), 1}, c);
     #endif
 
     #if AMP_ENABLE_CLOCK
@@ -199,7 +199,7 @@ void loop() {
         #endif
         
         // Remap 2D matrix to 1D matrix (after effects render)
-        remapHelper.update(*sfxSystem.matrix, sfxSystem.randGen, currTime);
+        remapHelper.update(*sfxSystem.internalMatrix, sfxSystem.randGen, currTime);
         
         // Check if first button is pressed - fill matrix with white
         /*if (digitalRead(cButton2Pin) == LOW) {
@@ -220,7 +220,7 @@ void loop() {
     
     if (currentTime - lastDebugPrintTime >= 1000) {
         Serial.println("----");
-        amp::printMatrixToSerialDebug(*sfxSystem.matrix);
+        amp::printMatrixToSerialDebug(*sfxSystem.internalMatrix);
         lastDebugPrintTime = currentTime;
     }
     #endif

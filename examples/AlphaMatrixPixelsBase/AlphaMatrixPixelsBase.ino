@@ -93,12 +93,12 @@ void loop() {
         const amp::tTime currTime = static_cast<amp::tTime>(millis());
 
         canvasX2.clear();
-        sfxSystem.matrix->clear();
+        sfxSystem.internalMatrix->clear();
         
         // Update and render all effects
         sfxSystem.recalcAndRender(currTime);
 
-        amp::copyMatrixToFastLED(*sfxSystem.matrix, leds, cNumLeds, amp::csMappingPattern::SerpentineHorizontalInverted);
+        amp::copyMatrixToFastLED(*sfxSystem.internalMatrix, leds, cNumLeds, amp::csMappingPattern::SerpentineHorizontalInverted);
         FastLED.show();
         
         tRender.start();  // Restart timer with default time

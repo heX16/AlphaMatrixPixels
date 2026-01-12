@@ -276,7 +276,7 @@ public:
         
         recreateMatrix(16, 16);
         createEffectBundleDouble(101, 0); // GradientWaves
-        copyLineIndexHelper.configureRemapEffect(sfxSystem.matrix);
+        copyLineIndexHelper.configureRemapEffect(sfxSystem.internalMatrix);
         return true;
     }
 
@@ -290,7 +290,7 @@ public:
                 }
             }
 
-            sfxSystem.matrix->clear();
+            sfxSystem.internalMatrix->clear();
 
             const uint32_t ticks = SDL_GetTicks();
             const amp::tTime currTime = static_cast<amp::tTime>(ticks);
@@ -337,7 +337,7 @@ public:
 
     void renderProc() {
         // Render matrix using driver_sdl2 module
-        amp::renderMatrixToSDL(*sfxSystem.matrix, renderer, screenWidth, screenHeight,
+        amp::renderMatrixToSDL(*sfxSystem.internalMatrix, renderer, screenWidth, screenHeight,
                                 true,  // clearBeforeRender
                                 false  // presentAfterRender - we'll call it after drawing scale
                                );
@@ -367,8 +367,12 @@ public:
         // Delete old matrix
         sfxSystem.deleteMatrix();
         // Create new matrix with new size
-        sfxSystem.setMatrix(sfxSystem.createMatrix(w, h));
-        copyLineIndexHelper.configureRemapEffect(sfxSystem.matrix);
+        sfxSystem.internalMatrix = sfxSystem.createMatrix(w, h);
+        // Update effect manager with new internal matrix
+        if (sfxSystem.effectManager && sfxSystem.internalMatrix) {
+            sfxSystem.effectManager->setMatrix(*sfxSystem.internalMatrix);
+        }
+        copyLineIndexHelper.configureRemapEffect(sfxSystem.internalMatrix);
     }
 
     void done() {

@@ -96,7 +96,7 @@ void loop() {
     // Read time from RTC
     DateTime now = rtc.now();
 
-    sfxSystem.matrix->clear();
+    sfxSystem.internalMatrix->clear();
 
     // Update time for clock effect
     // Search through all effects to find csRenderDigitalClock
@@ -126,15 +126,15 @@ void loop() {
     #ifdef HORIZONTAL_LINE_DEBUG_MODE
     // Draw horizontal line in canvas for debugging
     // Calculate line position based on seconds (moves down every second)
-    uint8_t lineY = (now.second() % sfxSystem.matrix->height());
-    sfxSystem.matrix->fillArea(
+    uint8_t lineY = (now.second() % sfxSystem.internalMatrix->height());
+    sfxSystem.internalMatrix->fillArea(
         amp::csRect{0, 
-        static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.matrix->width(), 1}, 
+        static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.internalMatrix->width(), 1}, 
         amp::csColorRGBA(0x888800));
     #endif
 
     // Remap 2D matrix to 1D matrix (after effects render)
-    remapHelper.update(*sfxSystem.matrix, sfxSystem.randGen, currTime);
+    remapHelper.update(*sfxSystem.internalMatrix, sfxSystem.randGen, currTime);
 
     amp::copyMatrixToFastLED(remapHelper.matrix1D, 
         leds, cRemapDestMatrixLen,
