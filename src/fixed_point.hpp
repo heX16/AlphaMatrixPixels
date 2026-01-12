@@ -271,6 +271,17 @@ public:
 using csFP16 = csFP<int16_t, 4>;
 using csFP32 = csFP<int32_t, 16>;
 
+// Macros for constexpr constants (work even when AMP_CONSTEXPR = inline)
+// Uses aggregate initialization (`{}`) to directly set raw field, bypassing constructor
+#define FP16(x) csFP16{ static_cast<csFP16::fp_type>( \
+        (static_cast<float>(x) * csFP16::scale) + \
+        (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
+    ) }
+#define FP32(x) csFP32{ static_cast<csFP32::fp_type>( \
+        (static_cast<float>(x) * csFP32::scale) + \
+        (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
+    ) }
+
 // Definitions of mathematical constants for csFP16
 template<>
 inline const csFP16 csFP<int16_t, 4>::pi = csFP16(3.141592653589793f);
