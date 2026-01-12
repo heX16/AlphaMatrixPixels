@@ -19,13 +19,18 @@ Note:
  - Replacing constexpr with inline means the function is no longer a compile-time constant expression.
 */
 #ifndef AMP_CONSTEXPR
-#  if defined(ARDUINO)
+// #  if defined(ARDUINO) - disabled
 // Many Arduino toolchains are stuck on older GCC versions where `constexpr` can be buggy/slow
 // (especially with float math and some union/aggregate patterns). Default to `inline` there.
-#    define AMP_CONSTEXPR inline
-#  else
-#    define AMP_CONSTEXPR constexpr
-#  endif
+
+#if __cpp_constexpr >= 201603L
+  // C++ 17+
+  #define AMP_CONSTEXPR constexpr
+#else
+  // C++ 11
+  #define AMP_CONSTEXPR inline
+#endif
+
 #endif
 
 // Arduino PROGMEM support (AVR/ESP8266/ESP32).
@@ -47,3 +52,13 @@ Note:
     #define pgm_read_word(addr) (*(const uint16_t *)(addr))
     #define pgm_read_dword(addr) (*(const uint32_t *)(addr))
 #endif
+
+#ifdef __cpp_static_assert
+    // C++ 17+
+    #define AMP_STATIC_ASSERT static_assert
+#else
+    // C++ 11
+    #include <cassert>
+    #define AMP_STATIC_ASSERT(condition, message) static_assert(condition, message)
+#endif
+
