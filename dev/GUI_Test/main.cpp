@@ -6,9 +6,9 @@
 #include "../../src/matrix_pixels.hpp"
 
 #include "../../src/color_rgba.hpp"
-#include "../../src/matrix_render.hpp"
-#include "../../src/matrix_render_efffects.hpp"
-#include "../../src/matrix_render_pipes.hpp"
+#include "../../src/render_base.hpp"
+#include "../../src/render_efffects.hpp"
+#include "../../src/render_pipes.hpp"
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
 #include "../../src/effect_manager.hpp"

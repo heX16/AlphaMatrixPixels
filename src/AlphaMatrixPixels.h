@@ -17,8 +17,8 @@
 #include "matrix_boolean.hpp"
 
 // Rendering
-#include "matrix_render.hpp"
-#include "matrix_render_efffects.hpp"
+#include "render_base.hpp"
+#include "render_efffects.hpp"
 
 // Fonts
 #include "font_base.hpp"

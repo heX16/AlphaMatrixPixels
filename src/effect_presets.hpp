@@ -6,8 +6,8 @@
 #include "effect_manager.hpp"
 #include "matrix_pixels.hpp"
 #include "color_rgba.hpp"
-#include "matrix_render_efffects.hpp"
-#include "matrix_render_pipes.hpp"
+#include "render_efffects.hpp"
+#include "render_pipes.hpp"
 #include "fixed_point.hpp"
 #include "fonts.h"
 

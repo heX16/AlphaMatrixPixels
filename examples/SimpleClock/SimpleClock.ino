@@ -6,7 +6,7 @@
 #include "effect_manager.hpp"
 #include "effect_presets.hpp"
 #include "effect_presets_local.hpp"
-#include "matrix_render_pipes.hpp"
+#include "render_pipes.hpp"
 #include "amp_macros.hpp"
 #include "driver_serial.hpp"
 #include "rect.hpp"

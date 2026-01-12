@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "matrix_pixels.hpp"
-#include "matrix_render.hpp"
+#include "render_base.hpp"
 #include "rand_gen.hpp"
 
 namespace amp {

@@ -5,8 +5,8 @@
 
 #include "color_rgba.hpp"
 #include "matrix_pixels.hpp"
-#include "matrix_render.hpp"
-#include "matrix_render_efffects.hpp"
+#include "render_base.hpp"
+#include "render_efffects.hpp"
 #include "rand_gen.hpp"
 
 namespace amp {

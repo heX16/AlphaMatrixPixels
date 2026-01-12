@@ -2,8 +2,8 @@
 
 #include <SDL2/SDL.h>
 #include "../../src/matrix_pixels.hpp"
-#include "../../src/matrix_render_pipes.hpp"
-#include "../../src/matrix_render.hpp"
+#include "../../src/render_pipes.hpp"
+#include "../../src/render_base.hpp"
 #include "../../src/driver_sdl2.hpp"
 #include "remap_config.hpp"
 

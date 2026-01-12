@@ -1,6 +1,6 @@
 #pragma once
 
-#include "matrix_render.hpp"
+#include "render_base.hpp"
 #include "matrix_types.hpp"
 #include "amp_macros.hpp"
 // #include <stdint.h>
