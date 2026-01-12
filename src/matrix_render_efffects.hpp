@@ -87,11 +87,10 @@ public:
     // Fixed-point "wave" mapping phase -> [0..255]. Not constexpr because fp32_sin() uses sin() internally.
     static uint8_t wave_fp(csFP32 phase) noexcept {
         using namespace math;
-        static const csFP32 half = csFP32::float_const(0.5f);
         static const csFP32 scale255{255};
 
         const csFP32 s = fp32_sin(phase);
-        const csFP32 norm = s * half + half;      // [-1..1] -> [0..1]
+        const csFP32 norm = s * csFP32::half + csFP32::half;      // [-1..1] -> [0..1]
         const csFP32 scaled = norm * scale255;    // [0..255]
         int v = scaled.round_int();
         if (v < 0) v = 0;
@@ -115,13 +114,11 @@ public:
 
         // Fixed-point constants.
         static const csFP32 k08 = csFP32::float_const(0.7f);
-        static const csFP32 k06 = csFP32::float_const(0.5f);
         static const csFP32 k04 = csFP32::float_const(0.3f);
         static const csFP32 k05 = csFP32::float_const(0.4f);
         // Convert scale from FP16 to FP32 and invert: divide by scale so larger values stretch the waves (bigger scale = more stretched).
         const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
-        static const csFP32 one = csFP32::float_const(1.0f);
-        const csFP32 invScaleFP32 = (scaleFP32.raw > 0) ? (one / scaleFP32) : one;
+        const csFP32 invScaleFP32 = (scaleFP32.raw > 0) ? (csFP32::one / scaleFP32) : csFP32::one;
         const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
@@ -137,7 +134,7 @@ public:
                 const csFP32 xf_scaled = xf * k04 * invScaleFP32;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
-                const uint8_t b = wave_fp(t * k06 + xf_scaled + yf_scaled * k05);
+                const uint8_t b = wave_fp(t * csFP32::half + xf_scaled + yf_scaled * k05);
                 matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
@@ -1654,9 +1651,9 @@ protected:
         }
 
         // posX = rectDest.x + rectDest.width * 0.5
-        posX = csFP32::from_int(rectDest.x) + csFP32::from_int(rectDest.width) * csFP32::float_const(0.5f);
+        posX = csFP32::from_int(rectDest.x) + csFP32::from_int(rectDest.width) * csFP32::half;
         // posY = rectDest.y + rectDest.height * 0.5
-        posY = csFP32::from_int(rectDest.y) + csFP32::from_int(rectDest.height) * csFP32::float_const(0.5f);
+        posY = csFP32::from_int(rectDest.y) + csFP32::from_int(rectDest.height) * csFP32::half;
         const csFP32 angle = randomAngle(rand);
         velX = math::fp32_cos(angle);
         velY = math::fp32_sin(angle);
@@ -1671,9 +1668,9 @@ protected:
         const csFP32 minX = csFP32::from_int(rectDest.x);
         const csFP32 minY = csFP32::from_int(rectDest.y);
         // maxX = minX + rectDest.width - 1
-        const csFP32 maxX = minX + csFP32::from_int(rectDest.width) - csFP32::float_const(1.0f);
+        const csFP32 maxX = minX + csFP32::from_int(rectDest.width) - csFP32::one;
         // maxY = minY + rectDest.height - 1
-        const csFP32 maxY = minY + csFP32::from_int(rectDest.height) - csFP32::float_const(1.0f);
+        const csFP32 maxY = minY + csFP32::from_int(rectDest.height) - csFP32::one;
 
         bool collidedX = false;
         bool collidedY = false;
@@ -1701,10 +1698,10 @@ protected:
 
     void reflect(csRandGen& rand, bool reflectX, bool reflectY) {
         if (reflectX) {
-            velX = csFP32::float_const(0.0f) - velX;
+            velX = csFP32::zero - velX;
         }
         if (reflectY) {
-            velY = csFP32::float_const(0.0f) - velY;
+            velY = csFP32::zero - velY;
         }
         applyRandomSpread(rand);
         normalizeVelocity();
@@ -1728,9 +1725,9 @@ protected:
         // mag = sqrt(velX^2 + velY^2)
         const csFP32 magSq = velX * velX + velY * velY;
         const csFP32 mag = csFP32{sqrtf(magSq.to_float())};
-        if (mag == csFP32::float_const(0.0f)) {
-            velX = csFP32::float_const(1.0f);
-            velY = csFP32::float_const(0.0f);
+        if (mag == csFP32::zero) {
+            velX = csFP32::one;
+            velY = csFP32::zero;
             return;
         }
         velX = velX / mag;
@@ -1855,9 +1852,8 @@ public:
         const csFP32 newCenterY = csFP32::from_int(currCellY);
 
         // Calculate cell boundary (midpoint between two cell centers)
-        const csFP32 half = csFP32::float_const(0.5f);
-        const csFP32 boundaryX = (oldCenterX + newCenterX) * half;
-        const csFP32 boundaryY = (oldCenterY + newCenterY) * half;
+        const csFP32 boundaryX = (oldCenterX + newCenterX) * csFP32::half;
+        const csFP32 boundaryY = (oldCenterY + newCenterY) * csFP32::half;
 
         // Distance from boundary to new center (this is always 0.5 for adjacent cells)
         const csFP32 dx_boundary_to_new = newCenterX - boundaryX;
@@ -1866,7 +1862,7 @@ public:
                                                 dy_boundary_to_new * dy_boundary_to_new;
 
         // Calculate progress from boundary to current position
-        csFP32 t = csFP32::float_const(0.0f); // Default to start
+        csFP32 t = csFP32::zero; // Default to start
 
         if (dist_boundary_to_new_sq > csFP32::float_const(0.0001f)) {
             // Vector from boundary to current position
@@ -1881,10 +1877,10 @@ public:
             t = dot / dist_boundary_to_new_sq;
 
             // Clamp to [0, 1]
-            if (t < csFP32::float_const(0.0f)) {
-                t = csFP32::float_const(0.0f);
-            } else if (t > csFP32::float_const(1.0f)) {
-                t = csFP32::float_const(1.0f);
+            if (t < csFP32::zero) {
+                t = csFP32::zero;
+            } else if (t > csFP32::one) {
+                t = csFP32::one;
             }
         }
 
@@ -1895,7 +1891,7 @@ public:
         const uint8_t baseAlpha = color.a;
 
         // Old pixel fades out: alpha = baseAlpha * (1 - t)
-        const csFP32 fadeOld = csFP32::float_const(1.0f) - t;
+        const csFP32 fadeOld = csFP32::one - t;
         const csFP32 alphaOldFP = csFP32::from_int(baseAlpha) * fadeOld;
         const uint8_t alphaOld = static_cast<uint8_t>(alphaOldFP.round_int());
 

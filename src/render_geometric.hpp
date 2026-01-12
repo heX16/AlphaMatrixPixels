@@ -278,8 +278,6 @@ void fillTriangleSlowFP32(const csRect& target, csFP32 x1, csFP32 y1, csFP32 x2,
     const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
     const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
 
-    static const csFP32 zero = csFP32::float_const(0.0f);
-
     for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
         const csFP32 py = csFP32::from_int(y) + csFP32::half;
         for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
@@ -294,8 +292,8 @@ void fillTriangleSlowFP32(const csRect& target, csFP32 x1, csFP32 y1, csFP32 x2,
             const csFP32 edge3 = (px - x3) * dy31 - (py - y3) * dx31;
 
             // Point is inside triangle if all edge functions have the same sign
-            const bool inside = (edge1 >= zero && edge2 >= zero && edge3 >= zero) ||
-                               (edge1 <= zero && edge2 <= zero && edge3 <= zero);
+            const bool inside = (edge1 >= csFP32::zero && edge2 >= csFP32::zero && edge3 >= csFP32::zero) ||
+                               (edge1 <= csFP32::zero && edge2 <= csFP32::zero && edge3 <= csFP32::zero);
 
             if (inside) {
                 matrix->setPixel(x, y, color);
@@ -314,7 +312,6 @@ void fillTriangleScanlineFastFP32(const csRect& target,
     }
 
     // Validate vertex ordering: yTop < yMid < yBot
-    static const csFP32 zero = csFP32::float_const(0.0f);
     if (yTop >= yMid || yMid >= yBot) {
         return;
     }
@@ -325,9 +322,9 @@ void fillTriangleScanlineFastFP32(const csRect& target,
     const csFP32 dy3 = yBot - yMid;
 
     // Handle division by zero for horizontal edges
-    const csFP32 slope1 = (dy1.raw != 0) ? ((xMid - xTop) / dy1) : zero;
-    const csFP32 slope2 = (dy2.raw != 0) ? ((xBot - xTop) / dy2) : zero;
-    const csFP32 slope3 = (dy3.raw != 0) ? ((xBot - xMid) / dy3) : zero;
+    const csFP32 slope1 = (dy1.raw != 0) ? ((xMid - xTop) / dy1) : csFP32::zero;
+    const csFP32 slope2 = (dy2.raw != 0) ? ((xBot - xTop) / dy2) : csFP32::zero;
+    const csFP32 slope3 = (dy3.raw != 0) ? ((xBot - xMid) / dy3) : csFP32::zero;
 
     const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
     const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
