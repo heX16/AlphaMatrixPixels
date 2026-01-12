@@ -1712,8 +1712,8 @@ protected:
 
     void applyRandomSpread(csRandGen& rand) {
         const csFP32 spreadDeg = math::fp16_to_fp32(randomSpread(rand));
-        // angleRad = spreadDeg * kDegToRad
-        const csFP32 angleRad = spreadDeg * csFP32::kDegToRad;
+        // angleRad = spreadDeg * degToRad
+        const csFP32 angleRad = spreadDeg * csFP32::degToRad;
         const csFP32 cosA = math::fp32_cos(angleRad);
         const csFP32 sinA = math::fp32_sin(angleRad);
         // newX = velX * cosA - velY * sinA
@@ -1741,8 +1741,8 @@ protected:
         const uint8_t raw = rand.rand();
         // fraction = raw / 256
         const csFP32 fraction = csFP32::from_ratio(raw, 256);
-        // angle = fraction * kTwoPi
-        return fraction * csFP32::kTwoPi;
+        // angle = fraction * pi2
+        return fraction * csFP32::pi2;
     }
 
     static csFP16 randomSpread(csRandGen& rand) {

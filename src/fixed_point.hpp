@@ -63,10 +63,11 @@ public:
     static constexpr fp_type minimal_value_raw = static_cast<fp_type>(1); // Minimal positive raw value (1/scale)
 
     // Basic mathematical constants (defined below for csFP16 and csFP32)
-    static const csFP kPi;
-    static const csFP kPiHalf;
-    static const csFP kTwoPi;
-    static const csFP kDegToRad;
+    static const csFP pi;
+    static const csFP piHalf;
+    static const csFP pi2;
+    static const csFP degToRad;
+    static const csFP half;
 
 private:
     // Clamp helpers for intermediate math.
@@ -271,23 +272,27 @@ using csFP32 = csFP<int32_t, 16>;
 
 // Definitions of mathematical constants for csFP16
 template<>
-inline const csFP16 csFP<int16_t, 4>::kPi = csFP16::float_const(3.141592653589793f);
+inline const csFP16 csFP<int16_t, 4>::pi = csFP16::float_const(3.141592653589793f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::kPiHalf = csFP16::float_const(1.570796326794897f);
+inline const csFP16 csFP<int16_t, 4>::piHalf = csFP16::float_const(1.570796326794897f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::kTwoPi = csFP16::float_const(6.283185307179586f);
+inline const csFP16 csFP<int16_t, 4>::pi2 = csFP16::float_const(6.283185307179586f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::kDegToRad = csFP16::float_const(0.017453292519943295f);
+inline const csFP16 csFP<int16_t, 4>::degToRad = csFP16::float_const(0.017453292519943295f);
+template<>
+inline const csFP16 csFP<int16_t, 4>::half = csFP16::float_const(0.5f);
 
 // Definitions of mathematical constants for csFP32
 template<>
-inline const csFP32 csFP<int32_t, 16>::kPi = csFP32::float_const(3.141592653589793f);
+inline const csFP32 csFP<int32_t, 16>::pi = csFP32::float_const(3.141592653589793f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::kPiHalf = csFP32::float_const(1.570796326794897f);
+inline const csFP32 csFP<int32_t, 16>::piHalf = csFP32::float_const(1.570796326794897f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::kTwoPi = csFP32::float_const(6.283185307179586f);
+inline const csFP32 csFP<int32_t, 16>::pi2 = csFP32::float_const(6.283185307179586f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::kDegToRad = csFP32::float_const(0.017453292519943295f);
+inline const csFP32 csFP<int32_t, 16>::degToRad = csFP32::float_const(0.017453292519943295f);
+template<>
+inline const csFP32 csFP<int32_t, 16>::half = csFP32::float_const(0.5f);
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
