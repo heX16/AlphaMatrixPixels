@@ -52,7 +52,12 @@ public:
     // Helper type for intermediate calculations (wider than fp_type).
     using fp_type2 = typename traits::fp_type2;
 
-    fp_type raw{0};
+    // Aggregate structure for constexpr aggregate initialization in C++11
+    struct RawValue {
+        fp_type value;
+    };
+
+    RawValue raw{0};
 
     static constexpr int frac_bits = FracBits;
     static constexpr fp_type scale = static_cast<fp_type>(1UL << frac_bits);
@@ -145,10 +150,12 @@ public:
     
     csFP() = default;
 
-    constexpr explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
+    constexpr explicit csFP(float v) : raw{float_to_raw_constexpr(v)} {}
+
+    constexpr explicit csFP(RawValue rv) : raw{rv} {}
 
     static AMP_CONSTEXPR csFP from_raw(fp_type r) noexcept {
-        return {r};
+        return csFP(RawValue{r});
     }
     
     // from_int: for int16_t uses fp_type2, for int32_t uses fp_type
@@ -177,20 +184,20 @@ public:
     }
 
     [[nodiscard]] AMP_CONSTEXPR 
-    fp_type raw_value() const noexcept { return raw; }
+    fp_type raw_value() const noexcept { return raw.value; }
 
     [[nodiscard]] 
-    float to_float() const noexcept { return raw_to_float(raw); }
+    float to_float() const noexcept { return raw_to_float(raw.value); }
     
     // Truncates towards zero. Returns integer part only.
     // Example: `csFP16(3.75f).int_trunc() == 3, csFP16(-3.75f).int_trunc() == -3`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] AMP_CONSTEXPR 
-    auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+    auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw.value) >> frac_bits) {
         if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
-            return static_cast<fp_type2>(raw) >> frac_bits;
+            return static_cast<fp_type2>(raw.value) >> frac_bits;
         } else {
-            return static_cast<fp_type>(raw >> frac_bits);
+            return static_cast<fp_type>(raw.value >> frac_bits);
         }
     }
     
@@ -201,7 +208,7 @@ public:
     //   `csFP16(-3.75f).frac_abs_raw() == 12` (correct, not 4)
     [[nodiscard]] AMP_CONSTEXPR 
     fp_type frac_abs_raw() const noexcept {
-        return absVal().raw & (scale - 1);
+        return absVal().raw.value & (scale - 1);
     }
 
     // Returns signed fractional part in raw format (-(scale-1) to (scale-1)).
@@ -212,7 +219,7 @@ public:
     //   `csFP16(-3.25f).frac_raw_signed() == -4`
     [[nodiscard]] AMP_CONSTEXPR 
     fp_type frac_raw_signed() const noexcept {
-        return (raw < 0) ? -frac_abs_raw() : frac_abs_raw();
+        return (raw.value < 0) ? -frac_abs_raw() : frac_abs_raw();
     }
     
     
@@ -221,62 +228,62 @@ public:
     // Example: `csFP16(3.5f).round_int() == 4, csFP16(3.4f).round_int() == 3`
     // Returns: fp_type (int16_t for csFP16, int32_t for csFP32)
     [[nodiscard]] inline fp_type round_int() const noexcept {
-        return round_raw_to_int(raw);
+        return round_raw_to_int(raw.value);
     }
 
     // Floors towards negative infinity.
     // Example: `csFP16(3.75f).floor_int() == 3, csFP16(-3.25f).floor_int() == -4`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
-    [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+    [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw.value) >> frac_bits) {
         if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
-            return static_cast<fp_type2>(raw) >> frac_bits;
+            return static_cast<fp_type2>(raw.value) >> frac_bits;
         } else {
-            return raw >> frac_bits;
+            return raw.value >> frac_bits;
         }
     }
 
     // Ceils towards positive infinity.
     // Example: `csFP16(3.25f).ceil_int() == 4, csFP16(-3.75f).ceil_int() == -3`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
-    [[nodiscard]] inline auto ceil_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+    [[nodiscard]] inline auto ceil_int() const noexcept -> decltype(static_cast<fp_type2>(raw.value) >> frac_bits) {
         if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
-            if (raw >= 0) {
+            if (raw.value >= 0) {
                 const fp_type2 mask = static_cast<fp_type2>(scale - 1);
-                const fp_type2 r = static_cast<fp_type2>(raw);
+                const fp_type2 r = static_cast<fp_type2>(raw.value);
                 return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
             }
-            return static_cast<fp_type2>(raw) >> frac_bits;
+            return static_cast<fp_type2>(raw.value) >> frac_bits;
         } else {
-            if (raw >= 0) {
+            if (raw.value >= 0) {
                 const fp_type mask = static_cast<fp_type>(scale - 1);
-                const fp_type r = raw;
+                const fp_type r = raw.value;
                 return (r & mask) ? ((r >> frac_bits) + 1) : (r >> frac_bits);
             }
-            return static_cast<fp_type>(raw >> frac_bits);
+            return static_cast<fp_type>(raw.value >> frac_bits);
         }
     }
 
     // Returns absolute value. Handles min_raw edge case.
     // Example: `csFP16(-3.5f).absVal() == csFP16(3.5f)`
     [[nodiscard]] inline csFP absVal() const noexcept {
-        return (raw >= 0) ? *this : from_raw(static_cast<fp_type>(raw == min_raw ? max_raw : -raw));
+        return (raw.value >= 0) ? *this : from_raw(static_cast<fp_type>(raw.value == min_raw ? max_raw : -raw.value));
     }
 
     // Arithmetic
     [[nodiscard]] inline csFP operator+(csFP rhs) const noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(raw) + static_cast<fp_type2>(rhs.raw)));
+        return from_raw(clamp_raw(static_cast<fp_type2>(raw.value) + static_cast<fp_type2>(rhs.raw.value)));
     }
     [[nodiscard]] inline csFP operator-(csFP rhs) const noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(raw) - static_cast<fp_type2>(rhs.raw)));
+        return from_raw(clamp_raw(static_cast<fp_type2>(raw.value) - static_cast<fp_type2>(rhs.raw.value)));
     }
     [[nodiscard]] inline csFP operator*(csFP rhs) const noexcept {
-        return from_raw(clamp_raw(mul_raw(raw, rhs.raw)));
+        return from_raw(clamp_raw(mul_raw(raw.value, rhs.raw.value)));
     }
     [[nodiscard]] inline csFP operator/(csFP rhs) const noexcept {
-        if (rhs.raw == 0) {
+        if (rhs.raw.value == 0) {
             return from_raw(static_cast<fp_type>(0));
         }
-        return from_raw(clamp_raw(div_raw(raw, rhs.raw)));
+        return from_raw(clamp_raw(div_raw(raw.value, rhs.raw.value)));
     }
 
     csFP& operator+=(csFP rhs) noexcept { return *this = *this + rhs; }
@@ -285,12 +292,12 @@ public:
     csFP& operator/=(csFP rhs) noexcept { return *this = *this / rhs; }
 
     // Comparisons
-    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP rhs) const noexcept { return raw == rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP rhs) const noexcept { return raw != rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP rhs) const noexcept { return raw < rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP rhs) const noexcept { return raw <= rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP rhs) const noexcept { return raw > rhs.raw; }
-    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP rhs) const noexcept { return raw >= rhs.raw; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator==(csFP rhs) const noexcept { return raw.value == rhs.raw.value; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator!=(csFP rhs) const noexcept { return raw.value != rhs.raw.value; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<(csFP rhs) const noexcept { return raw.value < rhs.raw.value; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator<=(csFP rhs) const noexcept { return raw.value <= rhs.raw.value; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>(csFP rhs) const noexcept { return raw.value > rhs.raw.value; }
+    [[nodiscard]] AMP_CONSTEXPR bool operator>=(csFP rhs) const noexcept { return raw.value >= rhs.raw.value; }
 
     explicit operator float() const noexcept { return to_float(); }
 };
@@ -299,10 +306,10 @@ public:
 // Uses aggregate initialization (`{}`) to directly set raw field, bypassing constructor
 // Math: `(x * scale) + (x >= 0.0f ? 0.5f : -0.5f)`
 #define FP_CONSTEXPR_MACRO(csFP_type, x) \
-    csFP_type{ static_cast<csFP_type::fp_type>( \
+    csFP_type{ csFP_type::RawValue{ static_cast<csFP_type::fp_type>( \
         (static_cast<float>(x) * csFP_type::scale) + \
         (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
-    ) }
+    ) } }
 
 //// ////
 

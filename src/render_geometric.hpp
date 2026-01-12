@@ -322,9 +322,9 @@ void fillTriangleScanlineFastFP32(const csRect& target,
     const csFP32 dy3 = yBot - yMid;
 
     // Handle division by zero for horizontal edges
-    const csFP32 slope1 = (dy1.raw != 0) ? ((xMid - xTop) / dy1) : csFP32::zero;
-    const csFP32 slope2 = (dy2.raw != 0) ? ((xBot - xTop) / dy2) : csFP32::zero;
-    const csFP32 slope3 = (dy3.raw != 0) ? ((xBot - xMid) / dy3) : csFP32::zero;
+    const csFP32 slope1 = (dy1 != csFP32::zero) ? ((xMid - xTop) / dy1) : csFP32::zero;
+    const csFP32 slope2 = (dy2 != csFP32::zero) ? ((xBot - xTop) / dy2) : csFP32::zero;
+    const csFP32 slope3 = (dy3 != csFP32::zero) ? ((xBot - xMid) / dy3) : csFP32::zero;
 
     const tMatrixPixelsCoord targetEndY = target.y + to_coord(target.height);
     const tMatrixPixelsCoord targetEndX = target.x + to_coord(target.width);
@@ -441,12 +441,12 @@ void fillTriangleScanlineFP32(const csRect& target,
 
         // Calculate X positions directly using linear equation
         csFP32 xLeft, xRight;
-        if (dy1.raw != 0) {
+        if (dy1 != csFP32::zero) {
             xLeft = xTop + dyFromTop * (xMid - xTop) / dy1;
         } else {
             xLeft = xTop; // Horizontal edge
         }
-        if (dy2.raw != 0) {
+        if (dy2 != csFP32::zero) {
             xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
         } else {
             xRight = xTop; // Horizontal edge
@@ -482,12 +482,12 @@ void fillTriangleScanlineFP32(const csRect& target,
 
         // Calculate X positions directly using linear equation
         csFP32 xLeft, xRight;
-        if (dy3.raw != 0) {
+        if (dy3 != csFP32::zero) {
             xLeft = xMid + dyFromMid * (xBot - xMid) / dy3;
         } else {
             xLeft = xMid; // Horizontal edge
         }
-        if (dy2.raw != 0) {
+        if (dy2 != csFP32::zero) {
             xRight = xTop + dyFromTop * (xBot - xTop) / dy2;
         } else {
             xRight = xTop; // Horizontal edge

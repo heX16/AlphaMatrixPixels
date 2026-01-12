@@ -118,7 +118,7 @@ public:
         static constexpr csFP32 k05 = FP32(0.4f);
         // Convert scale from FP16 to FP32 and invert: divide by scale so larger values stretch the waves (bigger scale = more stretched).
         const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
-        const csFP32 invScaleFP32 = (scaleFP32.raw > 0) ? (csFP32::one / scaleFP32) : csFP32::one;
+        const csFP32 invScaleFP32 = (scaleFP32 > csFP32::zero) ? (csFP32::one / scaleFP32) : csFP32::one;
         const csRect target = rectDest.intersect(matrix->getRect());
         if (target.empty()) {
             return;
@@ -1575,16 +1575,16 @@ public:
         }
 
         // Calculate time step based on speed: higher speed = smaller timeStep (faster updates)
-        // Integer arithmetic: timeStep = (50 * csFP32::scale) / speedFP32.raw
-        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
-        if (speedFP32.raw <= 0) {
+        // Use fixed-point division to preserve precision for small numbers
+        if (speed < csFP16::zero) {
             return;
         }
-        const uint32_t timeStepRaw =
-            (50U * csFP32::scale) / speedFP32.raw;
-
-        const uint16_t timeStep =
-            (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
+        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
+        const csFP32 timeStepFP32 = csFP32::from_int(50) / speedFP32;
+        // Convert to milliseconds: timeStepFP32 represents (50/speed) in fixed-point
+        // We need the integer part in milliseconds, so use round_int()
+        const int32_t timeStepInt = timeStepFP32.round_int();
+        const uint16_t timeStep = (timeStepInt > 65535) ? 65535U : static_cast<uint16_t>(timeStepInt);
 
         if (timeStep == 0) {
             return;
@@ -1777,12 +1777,16 @@ public:
         }
 
         // Calculate time step based on speed
-        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
-        if (speedFP32.raw <= 0) {
+        // Use fixed-point division to preserve precision for small numbers
+        if (speed < csFP16::zero) {
             return;
         }
-        const uint32_t timeStepRaw = (50U * csFP32::scale) / speedFP32.raw;
-        const uint16_t timeStep = (timeStepRaw > 65535U) ? 65535U : timeStepRaw;
+        const csFP32 speedFP32 = math::fp16_to_fp32(speed);
+        const csFP32 timeStepFP32 = csFP32::from_int(50) / speedFP32;
+        // Convert to milliseconds: timeStepFP32 represents (50/speed) in fixed-point
+        // We need the integer part in milliseconds, so use round_int()
+        const int32_t timeStepInt = timeStepFP32.round_int();
+        const uint16_t timeStep = (timeStepInt > 65535) ? 65535U : static_cast<uint16_t>(timeStepInt);
 
         if (timeStep == 0) {
             return;
