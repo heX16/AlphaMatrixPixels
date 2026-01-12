@@ -1,0 +1,5 @@
+- [Q (number format) - Wikipedia](https://en.wikipedia.org/wiki/Q_(number_format))
+- [coder-mike/FixedPoint: Library for fixed point arithmetic in C++](https://github.com/coder-mike/FixedPoint)
+- [MikeLankamp/fpm: C++ header-only fixed-point math library](https://github.com/MikeLankamp/fpm)
+- [PetteriAimonen/libfixmath: Cross Platform Fixed Point Maths Library](https://github.com/PetteriAimonen/libfixmath)
+- [Pharap/FixedPointsArduino: A fixed point arithmetic library for Arduino](https://github.com/Pharap/FixedPointsArduino/tree/master)
