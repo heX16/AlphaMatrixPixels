@@ -127,10 +127,10 @@ public:
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-            const csFP32 yf = csFP32::from_int(y);
+            const csFP32 yf = csFP32(y);
             const csFP32 yf_scaled = yf * k04 * invScaleFP32;
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                const csFP32 xf = csFP32::from_int(x);
+                const csFP32 xf = csFP32(x);
                 const csFP32 xf_scaled = xf * k04 * invScaleFP32;
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
@@ -776,9 +776,9 @@ public:
         }
 
         // Random X position in top row (local coordinates: 0..width-1)
-        snowflake.x = csFP16::from_int(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
+        snowflake.x = csFP16(to_coord(rand.rand(static_cast<uint8_t>(rectDest.width))));
         // Random negative y value for spawn delay (between cSpawnDelayMin and cSpawnDelayMax)
-        snowflake.y = csFP16::from_int(to_coord(cSpawnDelayMin +
+        snowflake.y = csFP16(to_coord(cSpawnDelayMin +
             rand.randRange(0, cSpawnDelayMax - cSpawnDelayMin)));
     }
 
@@ -821,11 +821,11 @@ public:
         for (uint16_t i = 0; i < count; ++i) {
             auto& snowflake = snowflakes[i];
             // Handle spawn delay phase: snowflake is moving toward visible area
-            if (snowflake.y < csFP16::from_int(0)) {
-                snowflake.y = snowflake.y + csFP16::from_int(1);
+            if (snowflake.y < csFP16(0)) {
+                snowflake.y = snowflake.y + csFP16(1);
                 continue;
             }
-            if (snowflake.x == csFP16::from_int(cSpawnFlagForceInit)) {
+            if (snowflake.x == csFP16(cSpawnFlagForceInit)) {
                 randOneSnowflake(snowflake, rand);
                 continue;
             }
@@ -917,13 +917,13 @@ public:
         for (uint16_t i = 0; i < count; ++i) {
             const auto& snowflake = snowflakes[i];
             // Skip snowflakes in spawn delay phase (negative y)
-            if (snowflake.y < csFP16::from_int(0)) {
+            if (snowflake.y < csFP16(0)) {
                 continue;
             }
 
             // Convert to global fixed-point coordinates
-            const csFP16 globalX = csFP16::from_int(rectDest.x) + snowflake.x;
-            const csFP16 globalY = csFP16::from_int(rectDest.y) + snowflake.y;
+            const csFP16 globalX = csFP16(rectDest.x) + snowflake.x;
+            const csFP16 globalY = csFP16(rectDest.y) + snowflake.y;
             // Check if snowflake is within target area (intersection of rect and matrix)
             // Convert to integer for bounds check
             const tMatrixPixelsCoord globalXInt = static_cast<tMatrixPixelsCoord>(globalX.round_int());
@@ -989,7 +989,7 @@ private:
             return;
         }
         for (uint16_t i = 0; i < count; ++i) {
-            snowflakes[i].x = csFP16::from_int(cSpawnFlagForceInit);
+            snowflakes[i].x = csFP16(cSpawnFlagForceInit);
         }
     }
 
@@ -1580,7 +1580,7 @@ public:
             return;
         }
         const csFP32 speedFP32 = math::fp16_to_fp32(speed);
-        const csFP32 timeStepFP32 = csFP32::from_int(50) / speedFP32;
+        const csFP32 timeStepFP32 = csFP32(50) / speedFP32;
         // Convert to milliseconds: timeStepFP32 represents (50/speed) in fixed-point
         // We need the integer part in milliseconds, so use round_int()
         const int32_t timeStepInt = timeStepFP32.round_int();
@@ -1651,9 +1651,9 @@ protected:
         }
 
         // posX = rectDest.x + rectDest.width * 0.5
-        posX = csFP32::from_int(rectDest.x) + csFP32::from_int(rectDest.width) * csFP32::half;
+        posX = csFP32(rectDest.x) + csFP32(rectDest.width) * csFP32::half;
         // posY = rectDest.y + rectDest.height * 0.5
-        posY = csFP32::from_int(rectDest.y) + csFP32::from_int(rectDest.height) * csFP32::half;
+        posY = csFP32(rectDest.y) + csFP32(rectDest.height) * csFP32::half;
         const csFP32 angle = randomAngle(rand);
         velX = math::fp32_cos(angle);
         velY = math::fp32_sin(angle);
@@ -1665,12 +1665,12 @@ protected:
     }
 
     void handleBoundaryCollisions(csRandGen& rand) {
-        const csFP32 minX = csFP32::from_int(rectDest.x);
-        const csFP32 minY = csFP32::from_int(rectDest.y);
+        const csFP32 minX = csFP32(rectDest.x);
+        const csFP32 minY = csFP32(rectDest.y);
         // maxX = minX + rectDest.width - 1
-        const csFP32 maxX = minX + csFP32::from_int(rectDest.width) - csFP32::one;
+        const csFP32 maxX = minX + csFP32(rectDest.width) - csFP32::one;
         // maxY = minY + rectDest.height - 1
-        const csFP32 maxY = minY + csFP32::from_int(rectDest.height) - csFP32::one;
+        const csFP32 maxY = minY + csFP32(rectDest.height) - csFP32::one;
 
         bool collidedX = false;
         bool collidedY = false;
@@ -1746,7 +1746,7 @@ protected:
         const uint8_t spread = rand.randRange(15, 30);
         const int8_t sign = (rand.rand() & 0x1) ? 1 : -1;
         // spreadDeg = spread * sign
-        return csFP16::from_int(static_cast<int16_t>(spread) * sign);
+        return csFP16(static_cast<int16_t>(spread) * sign);
     }
 };
 
@@ -1782,7 +1782,7 @@ public:
             return;
         }
         const csFP32 speedFP32 = math::fp16_to_fp32(speed);
-        const csFP32 timeStepFP32 = csFP32::from_int(50) / speedFP32;
+        const csFP32 timeStepFP32 = csFP32(50) / speedFP32;
         // Convert to milliseconds: timeStepFP32 represents (50/speed) in fixed-point
         // We need the integer part in milliseconds, so use round_int()
         const int32_t timeStepInt = timeStepFP32.round_int();
@@ -1850,10 +1850,10 @@ public:
         // Calculate progress from cell boundary to new cell center
         // Cell centers are at integer coordinates (pixels at 0.0, 1.0, 2.0, etc.)
         // Boundary between cells is at (oldCenter + newCenter) / 2
-        const csFP32 oldCenterX = csFP32::from_int(prevCellX);
-        const csFP32 oldCenterY = csFP32::from_int(prevCellY);
-        const csFP32 newCenterX = csFP32::from_int(currCellX);
-        const csFP32 newCenterY = csFP32::from_int(currCellY);
+        const csFP32 oldCenterX = csFP32(prevCellX);
+        const csFP32 oldCenterY = csFP32(prevCellY);
+        const csFP32 newCenterX = csFP32(currCellX);
+        const csFP32 newCenterY = csFP32(currCellY);
 
         // Calculate cell boundary (midpoint between two cell centers)
         const csFP32 boundaryX = (oldCenterX + newCenterX) * csFP32::half;
@@ -1896,11 +1896,11 @@ public:
 
         // Old pixel fades out: alpha = baseAlpha * (1 - t)
         const csFP32 fadeOld = csFP32::one - t;
-        const csFP32 alphaOldFP = csFP32::from_int(baseAlpha) * fadeOld;
+        const csFP32 alphaOldFP = csFP32(baseAlpha) * fadeOld;
         const uint8_t alphaOld = static_cast<uint8_t>(alphaOldFP.round_int());
 
         // New pixel fades in: alpha = baseAlpha * t
-        const csFP32 alphaNewFP = csFP32::from_int(baseAlpha) * t;
+        const csFP32 alphaNewFP = csFP32(baseAlpha) * t;
         const uint8_t alphaNew = static_cast<uint8_t>(alphaNewFP.round_int());
 
         // Draw both pixels with smooth transition

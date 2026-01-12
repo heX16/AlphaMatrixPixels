@@ -52,7 +52,12 @@ public:
     // Helper type for intermediate calculations (wider than fp_type).
     using fp_type2 = typename traits::fp_type2;
 
-    // Aggregate structure for constexpr aggregate initialization in C++11
+    // Aggregate structure for constexpr aggregate initialization in C++11.
+    // This wrapper enables from_raw() to be constexpr-compatible in C++11 by allowing
+    // aggregate initialization of the nested structure even when the outer class has
+    // user-defined constructors. In C++11/14, aggregate initialization is disabled
+    // for classes with user-defined constructors, but nested aggregate structures
+    // can still be initialized via aggregate initialization, bypassing this limitation.
     struct RawValue {
         fp_type value;
     };
@@ -150,27 +155,24 @@ public:
     
     csFP() = default;
 
+    // Explicit to avoid ambiguity with integer constructors when using literals like 50
+    // (could be interpreted as int or float). Integer constructors are implicit for convenience.
     constexpr explicit csFP(float v) : raw{float_to_raw_constexpr(v)} {}
 
     constexpr explicit csFP(RawValue rv) : raw{rv} {}
+    
+    // Integer constructors for all standard integer types
+    constexpr csFP(int8_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(uint8_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(int16_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(uint16_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(int32_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(uint32_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(int64_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
+    constexpr csFP(uint64_t v) noexcept : raw{RawValue{clamp_raw(static_cast<fp_type2>(v) << frac_bits)}} {}
 
     static AMP_CONSTEXPR csFP from_raw(fp_type r) noexcept {
         return csFP(RawValue{r});
-    }
-    
-    // from_int: for int16_t uses fp_type2, for int32_t uses fp_type
-    // Use overloads instead of std::conditional for Arduino compatibility
-    static AMP_CONSTEXPR csFP from_int(fp_type2 v) noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
-    }
-    static AMP_CONSTEXPR csFP from_int(fp_type v) noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
-    }
-    static AMP_CONSTEXPR csFP from_int(uint8_t v) noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
-    }
-    static AMP_CONSTEXPR csFP from_int(uint16_t v) noexcept {
-        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
     }
     
     static csFP from_float(float v) noexcept { return csFP(v); }

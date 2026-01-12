@@ -279,9 +279,9 @@ void fillTriangleSlowFP32(const csRect& target, csFP32 x1, csFP32 y1, csFP32 x2,
     const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
 
     for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
-        const csFP32 py = csFP32::from_int(y) + csFP32::half;
+        const csFP32 py = csFP32(y) + csFP32::half;
         for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-            const csFP32 px = csFP32::from_int(x) + csFP32::half;
+            const csFP32 px = csFP32(x) + csFP32::half;
 
             // Edge function for each edge (cross product)
             // Edge 1: from vertex 1 to vertex 2
@@ -340,7 +340,7 @@ void fillTriangleScanlineFastFP32(const csRect& target,
     csFP32 xRight = xTop;
     if (yTopClipped > yTopStart) {
         // Adjust initial positions if we start below yTop due to clipping
-        const csFP32 dyOffset = csFP32::from_int(yTopClipped) + csFP32::half - yTop;
+        const csFP32 dyOffset = csFP32(yTopClipped) + csFP32::half - yTop;
         xLeft += slope1 * dyOffset;
         xRight += slope2 * dyOffset;
     }
@@ -380,7 +380,7 @@ void fillTriangleScanlineFastFP32(const csRect& target,
     xRight = xTop + slope2 * dyFromTopToMid;
     if (yMidStart > yMidCoord) {
         // Adjust initial positions if we start below yMid due to clipping
-        const csFP32 dyOffset = csFP32::from_int(yMidStart) + csFP32::half - yMid;
+        const csFP32 dyOffset = csFP32(yMidStart) + csFP32::half - yMid;
         xLeft += slope3 * dyOffset;
         xRight += slope2 * dyOffset;
     }
@@ -436,7 +436,7 @@ void fillTriangleScanlineFP32(const csRect& target,
     const csFP32 dy2 = yBot - yTop;
 
     for (tMatrixPixelsCoord y = yTopClipped; y < yMidClipped; ++y) {
-        const csFP32 yFloat = csFP32::from_int(y) + csFP32::half;
+        const csFP32 yFloat = csFP32(y) + csFP32::half;
         const csFP32 dyFromTop = yFloat - yTop;
 
         // Calculate X positions directly using linear equation
@@ -476,7 +476,7 @@ void fillTriangleScanlineFP32(const csRect& target,
     const csFP32 dy3 = yBot - yMid;
 
     for (tMatrixPixelsCoord y = yMidStart; y < yBotClipped; ++y) {
-        const csFP32 yFloat = csFP32::from_int(y) + csFP32::half;
+        const csFP32 yFloat = csFP32(y) + csFP32::half;
         const csFP32 dyFromMid = yFloat - yMid;
         const csFP32 dyFromTop = yFloat - yTop;
 

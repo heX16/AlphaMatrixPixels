@@ -119,10 +119,10 @@ public:
 
         // Calculate offset from rounded center to determine direction.
         // Compute offsets from the center pixel. These tell us how far the point is from the center
-        // Note: cx/cy are integer pixel coords; we convert them to csFP16 via from_int()
+        // Note: cx/cy are integer pixel coords; we convert them to csFP16 via constructor
         // (exact, no float) so dx/dy are computed in fixed-point units.
-        const csFP16 cx_fp = csFP16::from_int(cx);
-        const csFP16 cy_fp = csFP16::from_int(cy);
+        const csFP16 cx_fp = csFP16(cx);
+        const csFP16 cy_fp = csFP16(cy);
 
         // dx/dy: signed sub-pixel offset from the rounded-center pixel (typically in [-0.5, +0.5]).
         // Used to pick the sign (+1/-1) for the secondary pixel direction and to compute alpha weights.
@@ -185,8 +185,8 @@ public:
         const tMatrixPixelsCoord x0 = static_cast<tMatrixPixelsCoord>(x.floor_int());
         const tMatrixPixelsCoord y0 = static_cast<tMatrixPixelsCoord>(y.floor_int());
 
-        const csFP16 fx = x - csFP16::from_int(x0);
-        const csFP16 fy = y - csFP16::from_int(y0);
+        const csFP16 fx = x - csFP16(x0);
+        const csFP16 fy = y - csFP16(y0);
 
         // csFP16 is 12.4, so the fractional part is 0..15 (scale=16).
         const uint16_t fx_raw = static_cast<uint16_t>(fx.frac_abs_raw());
