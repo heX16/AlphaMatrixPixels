@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include "AlphaMatrixPixels.h"
 #include "effect_manager.hpp"
+#include "matrix_sfx_system.hpp"
 #include "effect_presets.hpp"
 #include "effect_presets_local.hpp"
 #include "led_config.hpp"

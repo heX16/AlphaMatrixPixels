@@ -4,6 +4,7 @@
 #include "AlphaMatrixPixels.h"
 #include "color_rgba.hpp"
 #include "effect_manager.hpp"
+#include "matrix_sfx_system.hpp"
 #include "effect_presets.hpp"
 #define LED_CFG 6
 #include "led_config.hpp"

@@ -12,6 +12,7 @@
 #include "../../src/driver_sdl2.hpp"
 #include "../../src/fixed_point.hpp"
 #include "../../src/effect_manager.hpp"
+#include "../../src/matrix_sfx_system.hpp"
 #include "copy_line_index_helper.hpp"
 #include "../../src/effect_presets.hpp"
 
