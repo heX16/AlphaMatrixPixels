@@ -7,3 +7,6 @@
 .~lock.*.ods#
 .cursor/*.log
 .cursor/plans/*.plan.md
+libs/*
+libs/**
+

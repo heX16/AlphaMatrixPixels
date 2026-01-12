@@ -1,5 +1,9 @@
 #pragma once
 
+
+
+///////////////////////////////////////////////////////
+
 /*
 Compile-time keyword hook for FUNCTIONS.
 
@@ -19,19 +23,27 @@ Note:
  - Replacing constexpr with inline means the function is no longer a compile-time constant expression.
 */
 #ifndef AMP_CONSTEXPR
-// #  if defined(ARDUINO) - disabled
+
 // Many Arduino toolchains are stuck on older GCC versions where `constexpr` can be buggy/slow
 // (especially with float math and some union/aggregate patterns). Default to `inline` there.
-
-#if __cpp_constexpr >= 201603L
-  // C++ 17+
-  #define AMP_CONSTEXPR constexpr
-#else
+#if defined(ARDUINO)
   // C++ 11
   #define AMP_CONSTEXPR inline
+  // Keyword for constexpr - empty
+  #define AMP_CONSTEXPR_KW
+  #warning AMP_CONSTEXPR: inline
+#else
+  // C++ 17+
+  #define AMP_CONSTEXPR constexpr
+  // Keyword for constexpr
+  #define AMP_CONSTEXPR_KW constexpr
 #endif
 
 #endif
+
+//TODO: WIP
+//#if __cpp_constexpr >= 201603L
+
 
 // Arduino PROGMEM support (AVR/ESP8266/ESP32).
 // Platform-specific header inclusion for PROGMEM support.

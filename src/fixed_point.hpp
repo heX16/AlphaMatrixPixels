@@ -73,40 +73,55 @@ public:
 
 private:
     // Clamp helpers for intermediate math.
-    static AMP_CONSTEXPR fp_type clamp_raw(fp_type2 v) noexcept {
+    static constexpr fp_type clamp_raw(fp_type2 v) noexcept {
         return v > static_cast<fp_type2>(max_raw) ? max_raw
              : v < static_cast<fp_type2>(min_raw) ? min_raw
              : static_cast<fp_type>(v);
     }
 
-    static AMP_CONSTEXPR fp_type mul_raw(fp_type a, fp_type b) noexcept {
+    static constexpr fp_type mul_raw(fp_type a, fp_type b) noexcept {
         return static_cast<fp_type>((static_cast<fp_type2>(a) * static_cast<fp_type2>(b)) >> frac_bits);
     }
 
-    static AMP_CONSTEXPR fp_type div_raw(fp_type num, fp_type den) noexcept {
+    static constexpr fp_type div_raw(fp_type num, fp_type den) noexcept {
         return den == 0 ? static_cast<fp_type>(0)
                         : static_cast<fp_type>((static_cast<fp_type2>(num) << frac_bits) / den);
     }
 
-    static AMP_CONSTEXPR fp_type saturate_raw(fp_type2 v) noexcept {
+    static constexpr fp_type saturate_raw(fp_type2 v) noexcept {
         return v > static_cast<fp_type2>(max_raw) ? max_raw
              : v < static_cast<fp_type2>(min_raw) ? min_raw
              : static_cast<fp_type>(v);
     }
 
-    static AMP_CONSTEXPR fp_type float_to_raw_constexpr(float v) noexcept {
-        // For smaller types (int8_t, int16_t), use simpler calculation
-        if constexpr (sizeof(fp_type) <= 2) {
+    static constexpr fp_type float_to_raw_constexpr(float v) noexcept {
+        /*
+        Note: Uses ternary operator instead of if-else for C++11 constexpr compatibility
+        (Arduino and older compilers require constexpr functions to be single-expression).
+        Alternative with if-else (requires C++14+):
+        ```
+        if (sizeof(fp_type) <= 2) {
             return saturate_raw(static_cast<fp_type2>(
                 (v * static_cast<float>(scale)) +
-                ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
+                ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f)));
         } else {
-            // For int32_t, use the more precise calculation
             const float scaled = v * static_cast<float>(scale);
-            const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f; // round to nearest, ties up
+            const float adj = (scaled >= 0.0f) ? 0.5f : -0.5f;
             const fp_type2 raw = static_cast<fp_type2>(scaled + adj);
             return saturate_raw(raw);
         }
+        ```
+        */
+
+        // For smaller types (int8_t, int16_t), use simpler calculation
+        // For int32_t, use the more precise calculation
+        return (sizeof(fp_type) <= 2)
+            ? saturate_raw(static_cast<fp_type2>(
+                (v * static_cast<float>(scale)) +
+                ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))) // round to nearest, ties up
+            : saturate_raw(static_cast<fp_type2>(
+                (v * static_cast<float>(scale)) +
+                ((v * static_cast<float>(scale)) >= 0.0f ? 0.5f : -0.5f))); // round to nearest, ties up
     }
 
     static float raw_to_float(fp_type v) noexcept {
@@ -114,8 +129,8 @@ private:
     }
 
     // round_raw_to_int: returns fp_type (integer part after rounding)
-    static inline fp_type round_raw_to_int(fp_type v) noexcept {
-        if constexpr (sizeof(fp_type) == 2) {
+    static AMP_CONSTEXPR fp_type round_raw_to_int(fp_type v) noexcept {
+        if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
             const fp_type2 half = static_cast<fp_type2>(scale) / 2;
             const fp_type2 bias = (v >= 0) ? half : -half;
             return static_cast<fp_type>(static_cast<fp_type2>(v + bias) >> frac_bits);
@@ -127,26 +142,33 @@ private:
     }
 
 public:
+    
     csFP() = default;
-    AMP_CONSTEXPR explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
 
-    static inline csFP from_raw(fp_type r) noexcept {
-        csFP out{};
-        out.raw = r;
-        return out;
+    constexpr explicit csFP(float v) : raw(float_to_raw_constexpr(v)) {}
+
+    static AMP_CONSTEXPR csFP from_raw(fp_type r) noexcept {
+        return {r};
     }
     
     // from_int: for int16_t uses fp_type2, for int32_t uses fp_type
     // Use overloads instead of std::conditional for Arduino compatibility
-    static inline csFP from_int(fp_type2 v) noexcept {
+    static AMP_CONSTEXPR csFP from_int(fp_type2 v) noexcept {
         return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
     }
-    static inline csFP from_int(fp_type v) noexcept {
+    static AMP_CONSTEXPR csFP from_int(fp_type v) noexcept {
+        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
+    }
+    static AMP_CONSTEXPR csFP from_int(uint8_t v) noexcept {
+        return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
+    }
+    static AMP_CONSTEXPR csFP from_int(uint16_t v) noexcept {
         return from_raw(clamp_raw(static_cast<fp_type2>(v) << frac_bits));
     }
     
     static csFP from_float(float v) noexcept { return csFP(v); }
-    static inline csFP from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
+
+    static AMP_CONSTEXPR csFP from_ratio(fp_type2 numer, fp_type2 denom) noexcept {
         // round-to-nearest, ties up
         // Note: intermediate math uses fp_type2. Large numer/denom may overflow.
         const fp_type2 scaled = static_cast<fp_type2>(scale) * static_cast<fp_type2>(numer);
@@ -154,14 +176,18 @@ public:
         return from_raw(clamp_raw((scaled + bias) / denom));
     }
 
-    [[nodiscard]] AMP_CONSTEXPR fp_type raw_value() const noexcept { return raw; }
-    [[nodiscard]] float to_float() const noexcept { return raw_to_float(raw); }
+    [[nodiscard]] AMP_CONSTEXPR 
+    fp_type raw_value() const noexcept { return raw; }
+
+    [[nodiscard]] 
+    float to_float() const noexcept { return raw_to_float(raw); }
     
     // Truncates towards zero. Returns integer part only.
     // Example: `csFP16(3.75f).int_trunc() == 3, csFP16(-3.75f).int_trunc() == -3`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
-    [[nodiscard]] AMP_CONSTEXPR auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
-        if constexpr (sizeof(fp_type) == 2) {
+    [[nodiscard]] AMP_CONSTEXPR 
+    auto int_trunc() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
+        if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
             return static_cast<fp_type2>(raw) >> frac_bits;
         } else {
             return static_cast<fp_type>(raw >> frac_bits);
@@ -173,7 +199,8 @@ public:
     // Example: 
     //   `csFP16(3.75f).frac_abs_raw() == 12 (0.75 * 16)`
     //   `csFP16(-3.75f).frac_abs_raw() == 12` (correct, not 4)
-    [[nodiscard]] AMP_CONSTEXPR fp_type frac_abs_raw() const noexcept {
+    [[nodiscard]] AMP_CONSTEXPR 
+    fp_type frac_abs_raw() const noexcept {
         return absVal().raw & (scale - 1);
     }
 
@@ -183,7 +210,8 @@ public:
     //   `csFP16(3.75f).frac_raw_signed() == 12`
     //   `csFP16(-3.75f).frac_raw_signed() == -12`
     //   `csFP16(-3.25f).frac_raw_signed() == -4`
-    [[nodiscard]] AMP_CONSTEXPR fp_type frac_raw_signed() const noexcept {
+    [[nodiscard]] AMP_CONSTEXPR 
+    fp_type frac_raw_signed() const noexcept {
         return (raw < 0) ? -frac_abs_raw() : frac_abs_raw();
     }
     
@@ -200,7 +228,7 @@ public:
     // Example: `csFP16(3.75f).floor_int() == 3, csFP16(-3.25f).floor_int() == -4`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto floor_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
-        if constexpr (sizeof(fp_type) == 2) {
+        if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
             return static_cast<fp_type2>(raw) >> frac_bits;
         } else {
             return raw >> frac_bits;
@@ -211,7 +239,7 @@ public:
     // Example: `csFP16(3.25f).ceil_int() == 4, csFP16(-3.75f).ceil_int() == -3`
     // Returns: fp_type2 for int16_t, fp_type for int32_t
     [[nodiscard]] inline auto ceil_int() const noexcept -> decltype(static_cast<fp_type2>(raw) >> frac_bits) {
-        if constexpr (sizeof(fp_type) == 2) {
+        if AMP_CONSTEXPR_KW (sizeof(fp_type) == 2) {
             if (raw >= 0) {
                 const fp_type2 mask = static_cast<fp_type2>(scale - 1);
                 const fp_type2 r = static_cast<fp_type2>(raw);
@@ -288,35 +316,35 @@ using csFP32 = csFP<int32_t, 16>;
 
 // Definitions of mathematical constants for csFP16
 template<>
-inline const csFP16 csFP<int16_t, 4>::pi = csFP16(3.141592653589793f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::pi = csFP16(3.141592653589793f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::piHalf = csFP16(1.570796326794897f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::piHalf = csFP16(1.570796326794897f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::pi2 = csFP16(6.283185307179586f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::pi2 = csFP16(6.283185307179586f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::degToRad = csFP16(0.017453292519943295f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::degToRad = csFP16(0.017453292519943295f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::half = csFP16(0.5f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::half = csFP16(0.5f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::zero = csFP16(0.0f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::zero = csFP16(0.0f);
 template<>
-inline const csFP16 csFP<int16_t, 4>::one = csFP16(1.0f);
+AMP_CONSTEXPR_KW const csFP16 csFP<int16_t, 4>::one = csFP16(1.0f);
 
 // Definitions of mathematical constants for csFP32
 template<>
-inline const csFP32 csFP<int32_t, 16>::pi = csFP32(3.141592653589793f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::pi = csFP32(3.141592653589793f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::piHalf = csFP32(1.570796326794897f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::piHalf = csFP32(1.570796326794897f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::pi2 = csFP32(6.283185307179586f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::pi2 = csFP32(6.283185307179586f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::degToRad = csFP32(0.017453292519943295f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::degToRad = csFP32(0.017453292519943295f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::half = csFP32(0.5f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::half = csFP32(0.5f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::zero = csFP32(0.0f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::zero = csFP32(0.0f);
 template<>
-inline const csFP32 csFP<int32_t, 16>::one = csFP32(1.0f);
+AMP_CONSTEXPR_KW const csFP32 csFP<int32_t, 16>::one = csFP32(1.0f);
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {

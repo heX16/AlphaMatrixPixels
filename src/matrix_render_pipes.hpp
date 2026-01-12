@@ -3,6 +3,7 @@
 #include "matrix_render.hpp"
 #include "matrix_types.hpp"
 #include "amp_macros.hpp"
+// #include <stdint.h>
 
 namespace amp {
 
@@ -622,7 +623,7 @@ private:
     // Mapping:
     // - fadeAlpha = 255 -> fadeMul = 255 (no fading)
     // - fadeAlpha = 0   -> fadeMul = 0   (instant clear)
-    static constexpr uint8_t getFadeMul(uint8_t fadeAlpha) noexcept {
+    static inline uint8_t getFadeMul(uint8_t fadeAlpha) noexcept {
         const uint8_t decay = static_cast<uint8_t>(255u - fadeAlpha);
         const uint8_t decay2 = mul8(decay, decay); // non-linear: square (0..255)
         return static_cast<uint8_t>(255u - decay2);
