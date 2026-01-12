@@ -68,6 +68,7 @@ public:
     static const csFP pi2;
     static const csFP degToRad;
     static const csFP half;
+    static const csFP zero;
 
 private:
     // Clamp helpers for intermediate math.
@@ -281,6 +282,8 @@ template<>
 inline const csFP16 csFP<int16_t, 4>::degToRad = csFP16::float_const(0.017453292519943295f);
 template<>
 inline const csFP16 csFP<int16_t, 4>::half = csFP16::float_const(0.5f);
+template<>
+inline const csFP16 csFP<int16_t, 4>::zero = csFP16::float_const(0.0f);
 
 // Definitions of mathematical constants for csFP32
 template<>
@@ -293,6 +296,8 @@ template<>
 inline const csFP32 csFP<int32_t, 16>::degToRad = csFP32::float_const(0.017453292519943295f);
 template<>
 inline const csFP32 csFP<int32_t, 16>::half = csFP32::float_const(0.5f);
+template<>
+inline const csFP32 csFP<int32_t, 16>::zero = csFP32::float_const(0.0f);
 
 // Conversion between fixed-point types.
 inline csFP32 fp16_to_fp32(csFP16 fp16) noexcept {
