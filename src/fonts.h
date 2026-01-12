@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "font_base.hpp"
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 
 namespace amp {
 

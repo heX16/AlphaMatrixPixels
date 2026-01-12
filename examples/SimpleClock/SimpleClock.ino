@@ -7,7 +7,7 @@
 #include "effect_presets.hpp"
 #include "effect_presets_local.hpp"
 #include "matrix_render_pipes.hpp"
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 #include "driver_serial.hpp"
 #include "rect.hpp"
 #include "remap_config.hpp"

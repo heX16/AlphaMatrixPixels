@@ -10,7 +10,7 @@
 #include "rect.hpp"
 #include "math.hpp"
 #include "fixed_point.hpp"
-#include "amp_constexpr.hpp"
+#include "amp_macros.hpp"
 
 // Matrix classes
 #include "matrix_pixels.hpp"

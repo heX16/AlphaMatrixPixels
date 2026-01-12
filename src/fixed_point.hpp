@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <math.h>
-#include "amp_constexpr.hpp"
+#include "amp_macros.hpp"
 
 // Fixed-point helpers are kept in a separate header to reduce compile time and keep math.hpp focused.
 namespace amp {
@@ -267,20 +267,24 @@ public:
     explicit operator float() const noexcept { return to_float(); }
 };
 
+// Macros for constexpr constants (work even when AMP_CONSTEXPR = inline)
+// Uses aggregate initialization (`{}`) to directly set raw field, bypassing constructor
+// Math: `(x * scale) + (x >= 0.0f ? 0.5f : -0.5f)`
+#define FP_CONSTEXPR_MACRO(csFP_type, x) \
+    csFP_type{ static_cast<csFP_type::fp_type>( \
+        (static_cast<float>(x) * csFP_type::scale) + \
+        (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
+    ) }
+
+//// ////
+
 // Type aliases for backward compatibility
 using csFP16 = csFP<int16_t, 4>;
 using csFP32 = csFP<int32_t, 16>;
 
 // Macros for constexpr constants (work even when AMP_CONSTEXPR = inline)
-// Uses aggregate initialization (`{}`) to directly set raw field, bypassing constructor
-#define FP16(x) csFP16{ static_cast<csFP16::fp_type>( \
-        (static_cast<float>(x) * csFP16::scale) + \
-        (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
-    ) }
-#define FP32(x) csFP32{ static_cast<csFP32::fp_type>( \
-        (static_cast<float>(x) * csFP32::scale) + \
-        (static_cast<float>(x) >= 0.0f ? 0.5f : -0.5f) \
-    ) }
+#define FP16(x) FP_CONSTEXPR_MACRO(csFP16, x)
+#define FP32(x) FP_CONSTEXPR_MACRO(csFP32, x)
 
 // Definitions of mathematical constants for csFP16
 template<>

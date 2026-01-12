@@ -1,7 +1,7 @@
 #pragma once
 
 #include "matrix_types.hpp"
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 
 using amp::tMatrixPixelsSize;
 using amp::tMatrixPixelsCoord;

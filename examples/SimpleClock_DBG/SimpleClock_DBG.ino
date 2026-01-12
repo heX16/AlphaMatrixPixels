@@ -8,7 +8,7 @@
 #define LED_CFG 6
 #include "led_config.hpp"
 #include "matrix_render_pipes.hpp"
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 #include "driver_serial.hpp"
 #include "remap_config.hpp"
 

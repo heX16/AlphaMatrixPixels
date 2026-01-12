@@ -2,7 +2,7 @@
 
 #include "matrix_render.hpp"
 #include "matrix_types.hpp"
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 
 namespace amp {
 

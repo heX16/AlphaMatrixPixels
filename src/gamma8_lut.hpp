@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "amp_progmem.hpp"
+#include "amp_macros.hpp"
 
 // Gamma correction lookup table (256 entries) stored in flash memory.
 // This table matches the style commonly used in FastLED examples.
