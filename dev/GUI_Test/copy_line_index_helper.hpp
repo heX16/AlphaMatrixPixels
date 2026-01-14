@@ -101,7 +101,7 @@ public:
         if (!remapEffect) {
             return;
         }
-        remapEffect->matrix = &matrix1D;
+        remapEffect->matrixDest = &matrix1D;
         remapEffect->renderRectAutosize = false;
         remapEffect->remapArray = cRemapSrcArray;
         remapEffect->remapWidth = cSrcWidth;
