@@ -115,17 +115,17 @@ public:
 };
 
 // Effect: average area by computing average color of source area and filling destination area with it.
-// Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrix`).
+// Can average area of the destination matrix itself by setting matrixSource to the same matrix (`matrixSource = matrixDest`).
 class csRenderAverageArea : public csRenderMatrixPipeBase {
 public:
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !matrixSource) {
+        if (disabled || !matrixDest || !matrixSource) {
             return;
         }
 
         // Get average color of source area and fill destination area with it
         const csColorRGBA areaColor = matrixSource->getAreaColor(rectSource);
-        matrix->fillArea(rectDest, areaColor);
+        matrixDest->fillArea(rectDest, areaColor);
     }
 };
 
@@ -134,7 +134,7 @@ class csRenderMatrixCopy : public csRenderMatrixPipeBase {
 public:
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !matrixSource) {
+        if (disabled || !matrixDest || !matrixSource) {
             return;
         }
 
@@ -144,10 +144,10 @@ public:
 
         // If sizes match, use simple drawMatrix (faster)
         if (rectDest.width == rectSource.width && rectDest.height == rectSource.height) {
-            matrix->drawMatrixArea(rectSource, rectDest.x, rectDest.y, *matrixSource);
+            matrixDest->drawMatrixArea(rectSource, rectDest.x, rectDest.y, *matrixSource);
         } else {
             // Use drawMatrixScale for different sizes
-            matrix->drawMatrixScale(rectSource, rectDest, *matrixSource);
+            matrixDest->drawMatrixScale(rectSource, rectDest, *matrixSource);
         }
     }
 };
@@ -187,7 +187,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !matrixSource) {
+        if (disabled || !matrixDest || !matrixSource) {
             return;
         }
 
@@ -212,9 +212,9 @@ public:
                 // Get source pixel and write to destination with blending
                 const csColorRGBA sourcePixel = matrixSource->getPixel(src_x, src_y);
                 if (rewrite)
-                    matrix->setPixelRewrite(rectDest.x + dst_x, rectDest.x + dst_y, sourcePixel);
+                    matrixDest->setPixelRewrite(rectDest.x + dst_x, rectDest.x + dst_y, sourcePixel);
                 else
-                    matrix->setPixel(rectDest.x + dst_x, rectDest.x + dst_y, sourcePixel);
+                    matrixDest->setPixel(rectDest.x + dst_x, rectDest.x + dst_y, sourcePixel);
             }
         }
     }
@@ -247,11 +247,11 @@ public:
         // Validate matrix size when matrix or matrixSource changes
         if (propNum == csRenderMatrixBase::propMatrixDest ||
             propNum == csRenderMatrixPipeBase::propMatrixSource) {
-            if (matrix != nullptr && matrixSource != nullptr) {
+            if (matrixDest != nullptr && matrixSource != nullptr) {
                 // If size is incorrect, disable effect by setting matrix to nullptr
-                if ((matrix->height() != 1) ||
-                    (matrix->width() != matrixSource->height() * matrixSource->width())) {
-                    matrix = nullptr;
+                if ((matrixDest->height() != 1) ||
+                    (matrixDest->width() != matrixSource->height() * matrixSource->width())) {
+                    matrixDest = nullptr;
                 }
             }
         }
@@ -427,10 +427,10 @@ public:
         // Validate matrix size when matrix or matrixSource changes
         if (propNum == csRenderMatrixBase::propMatrixDest ||
             propNum == csRenderMatrixPipeBase::propMatrixSource) {
-            if (matrix != nullptr) {
+            if (matrixDest != nullptr) {
                 // Matrix must have height == 1 for 1D remapping
-                if (matrix->height() != 1) {
-                    matrix = nullptr;
+                if (matrixDest->height() != 1) {
+                    matrixDest = nullptr;
                 }
             }
         }

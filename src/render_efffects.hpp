@@ -49,7 +49,7 @@ public:
 class csRenderGradientWaves : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, tTime currTime) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         const float t = static_cast<float>(currTime) * 0.001f * speed.to_float();
@@ -58,7 +58,7 @@ public:
             return static_cast<uint8_t>((sin(v) * 0.5f + 0.5f) * 255.0f);
         };
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -75,7 +75,7 @@ public:
                 const uint8_t r = wave(t * 0.8f + xf);
                 const uint8_t g = wave(t * 1.0f + yf);
                 const uint8_t b = wave(t * 0.6f + xf + yf * 0.5f);
-                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrixDest->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }
@@ -99,7 +99,7 @@ public:
     }
 
     void render(csRandGen& /*rand*/, tTime currTime) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         using namespace math;
@@ -119,7 +119,7 @@ public:
         // Convert scale from FP16 to FP32 and invert: divide by scale so larger values stretch the waves (bigger scale = more stretched).
         const csFP32 scaleFP32 = math::fp16_to_fp32(scale);
         const csFP32 invScaleFP32 = (scaleFP32 > csFP32::zero) ? (csFP32::one / scaleFP32) : csFP32::one;
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -135,7 +135,7 @@ public:
                 const uint8_t r = wave_fp(t * k08 + xf_scaled);
                 const uint8_t g = wave_fp(t + yf_scaled);
                 const uint8_t b = wave_fp(t * csFP32::half + xf_scaled + yf_scaled * k05);
-                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrixDest->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }
@@ -145,11 +145,11 @@ public:
 class csRenderPlasma : public csRenderDynamic {
 public:
     void render(csRandGen& /*rand*/, tTime currTime) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         const float t = static_cast<float>(currTime) * 0.0025f * speed.to_float();
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -168,7 +168,7 @@ public:
                 const uint8_t r = static_cast<uint8_t>(norm * 255.0f);
                 const uint8_t g = static_cast<uint8_t>((1.0f - norm) * 255.0f);
                 const uint8_t b = static_cast<uint8_t>((0.5f + 0.5f * sin(t + xf * 0.1f)) * 255.0f);
-                matrix->setPixel(x, y, csColorRGBA{255, r, g, b});
+                matrixDest->setPixel(x, y, csColorRGBA{255, r, g, b});
             }
         }
     }
@@ -294,11 +294,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix || !font) {
+        if (disabled || !matrixDest || !font) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -307,7 +307,7 @@ public:
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                matrix->setPixel(x, y, backgroundColor);
+                matrixDest->setPixel(x, y, backgroundColor);
             }
         }
 
@@ -330,7 +330,7 @@ public:
                 if (csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
                     const tMatrixPixelsCoord px = offsetX + to_coord(col);
                     const tMatrixPixelsCoord py = offsetY + to_coord(row);
-                    matrix->setPixel(px, py, color);
+                    matrixDest->setPixel(px, py, color);
                 }
             }
         }
@@ -345,11 +345,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix || !font) {
+        if (disabled || !matrixDest || !font) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -378,14 +378,14 @@ public:
 
                 //TODO:!!!
                 /*if (csFontBase::getColBit(glyphRowAllSeg, static_cast<uint16_t>(col))) {
-                    matrix->setPixel(px, py, csColorRGBA(255, 0,0));
+                    matrixDest->setPixel(px, py, csColorRGBA(255, 0,0));
                 }*/
 
                 if (csFontBase::getColBit(glyphRow, static_cast<uint16_t>(col))) {
-                    matrix->setPixel(px, py, color);
+                    matrixDest->setPixel(px, py, color);
                 } else {
                     if (csFontBase::getColBit(glyphRowAllSeg, static_cast<uint16_t>(col))) {
-                        matrix->setPixel(px, py, backgroundColor);
+                        matrixDest->setPixel(px, py, backgroundColor);
                     }
                 }
             }
@@ -436,11 +436,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -464,7 +464,7 @@ public:
                 const float distSq = dx * dx + dySq;
                 if (!smoothEdges) {
                     const csColorRGBA c = (distSq <= radiusSq) ? color : backgroundColor;
-                    matrix->setPixel(x, y, c);
+                    matrixDest->setPixel(x, y, c);
                     continue;
                 }
 
@@ -478,10 +478,10 @@ public:
                 }
 
                 // First lay down background (blended over existing content), then blend circle with coverage-scaled alpha.
-                matrix->setPixel(x, y, backgroundColor);
+                matrixDest->setPixel(x, y, backgroundColor);
                 if (coverage > 0.0f) {
                     const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                    matrix->setPixel(x, y, color, coverageAlpha);
+                    matrixDest->setPixel(x, y, color, coverageAlpha);
                 }
             }
         }
@@ -492,11 +492,11 @@ public:
 class csRenderCircleFast : public csRenderCircle {
 public:
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -521,7 +521,7 @@ public:
             // If the entire scanline is outside the AA band, fill with background and continue.
             if (dySq > radiusSq + aaWidth * aaWidth) {
                 for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                    matrix->setPixel(x, y, backgroundColor);
+                    matrixDest->setPixel(x, y, backgroundColor);
                 }
                 continue;
             }
@@ -539,7 +539,7 @@ public:
 
             // Lay down background first (alpha-aware).
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
-                matrix->setPixel(x, y, backgroundColor);
+                matrixDest->setPixel(x, y, backgroundColor);
             }
 
             // Solid interior (no AA).
@@ -547,16 +547,16 @@ public:
                 if (x < target.x || x >= endX) {
                     continue;
                 }
-                matrix->setPixel(x, y, color);
+                matrixDest->setPixel(x, y, color);
             }
 
             if (!smoothEdges) {
                 // Hard edges: fill boundary pixels if inside bounds.
                 if (xLeft >= target.x && xLeft < endX) {
-                    matrix->setPixel(xLeft, y, color);
+                    matrixDest->setPixel(xLeft, y, color);
                 }
                 if (xRight >= target.x && xRight < endX && xRight != xLeft) {
-                    matrix->setPixel(xRight, y, color);
+                    matrixDest->setPixel(xRight, y, color);
                 }
                 continue;
             }
@@ -574,7 +574,7 @@ public:
                     coverage = 1.0f;
                 }
                 const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                matrix->setPixel(x, y, color, coverageAlpha);
+                matrixDest->setPixel(x, y, color, coverageAlpha);
             };
 
             const float leftPixelCenter = static_cast<float>(xLeft) + 0.5f;
@@ -613,11 +613,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -647,7 +647,7 @@ public:
 
                 // Outside circle: just background.
                 if (distSq > radiusSq) {
-                    matrix->setPixel(x, y, backgroundColor);
+                    matrixDest->setPixel(x, y, backgroundColor);
                     continue;
                 }
 
@@ -664,7 +664,7 @@ public:
                 const uint8_t t8 = static_cast<uint8_t>(t * 255.0f + 0.5f);
                 const csColorRGBA gradColor = lerp(color, backgroundColor, t8);
 
-                matrix->setPixel(x, y, gradColor);
+                matrixDest->setPixel(x, y, gradColor);
             }
         }
     }
@@ -886,11 +886,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix || !bitmap) {
+        if (disabled || !matrixDest || !bitmap) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -904,7 +904,7 @@ public:
                 const tMatrixPixelsCoord localX = x - rectDest.x;
                 const tMatrixPixelsCoord localY = y - rectDest.y;
                 if (bitmap->getPixel(to_size(localX), to_size(localY))) {
-                    matrix->setPixel(x, y, color);
+                    matrixDest->setPixel(x, y, color);
                 }
             }
         }
@@ -931,9 +931,9 @@ public:
             if (globalXInt >= target.x && globalXInt < endX &&
                 globalYInt >= target.y && globalYInt < endY) {
                 if (smoothMovement) {
-                    matrix->setPixelFloat2(globalX, globalY, color);
+                    matrixDest->setPixelFloat2(globalX, globalY, color);
                 } else {
-                    matrix->setPixel(globalXInt, globalYInt, color);
+                    matrixDest->setPixel(globalXInt, globalYInt, color);
                 }
             }
         }
@@ -1091,10 +1091,10 @@ private:
 class csRenderClear : public csRenderMatrixBase {
 public:
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
-        matrix->clear();
+        matrixDest->clear();
     }
 };
 
@@ -1117,10 +1117,10 @@ public:
     }
 
     void render(csRandGen& /*rand*/, uint16_t /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
-        matrix->fillArea(rectDest, color);
+        matrixDest->fillArea(rectDest, color);
     }
 };
 
@@ -1151,11 +1151,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -1168,7 +1168,7 @@ public:
         const float x3 = static_cast<float>(rectDest.x) + static_cast<float>(rectDest.width) * 0.5f;
         const float y3 = static_cast<float>(rectDest.y);
 
-        fillTriangleSlow(target, x1, y1, x2, y2, x3, y3, matrix, color);
+        fillTriangleSlow(target, x1, y1, x2, y2, x3, y3, matrixDest, color);
     }
 };
 
@@ -1300,7 +1300,7 @@ public:
                     if (auto* m = static_cast<csRenderMatrixBase*>(
                         effects[i]->queryClassFamily(PropType::EffectMatrixDest)
                     )) {
-                        m->setMatrix(matrix);
+                        m->setMatrix(matrixDest);
                     }
                 }
             }
@@ -1409,8 +1409,8 @@ public:
                 );
                 if (validRenderDigit) {
                     // Update renderDigit matrix when renderDigit is set
-                    if (matrix) {
-                        validRenderDigit->setMatrix(matrix);
+                    if (matrixDest) {
+                        validRenderDigit->setMatrix(matrixDest);
                     }
                 } else {
                     // Invalid type - ignore
@@ -1419,8 +1419,8 @@ public:
             }
         } else if (propNum == propMatrixDest) {
             // Update renderDigit matrix when matrix destination changes
-            if (matrix && renderDigit) {
-                renderDigit->setMatrix(matrix);
+            if (matrixDest && renderDigit) {
+                renderDigit->setMatrix(matrixDest);
             }
         }
     }
@@ -1467,7 +1467,7 @@ public:
     }
 
     void render(csRandGen& rand, tTime currTime) const override {
-        if (disabled || !matrix || !renderDigit) {
+        if (disabled || !matrixDest || !renderDigit) {
             return;
         }
 
@@ -1564,7 +1564,7 @@ public:
     }
 
     void recalc(csRandGen& rand, tTime currTime) override {
-        if (disabled || !matrix || rectDest.empty()) {
+        if (disabled || !matrixDest || rectDest.empty()) {
             return;
         }
 
@@ -1606,11 +1606,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || rectDest.empty()) {
+        if (disabled || !matrixDest || rectDest.empty()) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -1624,13 +1624,13 @@ public:
         }
 
         if (smoothMovement) {
-            matrix->setPixelFloat4(
+            matrixDest->setPixelFloat4(
                 math::fp32_to_fp16(posX),
                 math::fp32_to_fp16(posY),
                 color
             );
         } else {
-            matrix->setPixel(px, py, color);
+            matrixDest->setPixel(px, py, color);
         }
     }
 
@@ -1763,7 +1763,7 @@ const csFP32 csRenderBouncingPixel::kMoveStep = FP32(0.3f);
 class csRenderBouncingPixelDualTrail : public csRenderBouncingPixel {
 public:
     void recalc(csRandGen& rand, tTime currTime) override {
-        if (disabled || !matrix || rectDest.empty()) {
+        if (disabled || !matrixDest || rectDest.empty()) {
             return;
         }
 
@@ -1822,11 +1822,11 @@ public:
     }
 
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || rectDest.empty()) {
+        if (disabled || !matrixDest || rectDest.empty()) {
             return;
         }
 
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -1843,7 +1843,7 @@ public:
 
         // If we're in the same cell as previous, just draw one pixel
         if (prevCellX == currCellX && prevCellY == currCellY) {
-            matrix->setPixel(currCellX, currCellY, color);
+            matrixDest->setPixel(currCellX, currCellY, color);
             return;
         }
 
@@ -1906,12 +1906,12 @@ public:
         // Draw both pixels with smooth transition
         if (alphaOld > 0) {
             const csColorRGBA oldColor{alphaOld, color.r, color.g, color.b};
-            matrix->setPixel(prevCellX, prevCellY, oldColor);
+            matrixDest->setPixel(prevCellX, prevCellY, oldColor);
         }
 
         if (alphaNew > 0) {
             const csColorRGBA newColor{alphaNew, color.r, color.g, color.b};
-            matrix->setPixel(currCellX, currCellY, newColor);
+            matrixDest->setPixel(currCellX, currCellY, newColor);
         }
     }
 

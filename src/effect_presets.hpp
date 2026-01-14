@@ -195,7 +195,7 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 break;
             }
             auto* averageArea = new csRenderAverageArea();
-            averageArea->matrix = effectManager.getMatrix();
+            averageArea->matrixDest = effectManager.getMatrix();
             averageArea->matrixSource = effectManager.getMatrix();
             averageArea->renderRectAutosize = false;
             averageArea->rectSource = amp::csRect{1, 1, 4, 4};

@@ -89,11 +89,11 @@ public:
         int_rand.addEntropy(rand.rand());
         int_rand.addEntropy(rand.rand());
         
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t count = getMatrixPixelCount(matrix);
+        const uint32_t count = getMatrixPixelCount(matrixDest);
         if (count != pixelCount) {
             delete[] pixels;
             pixels = new csColorRGBA[count];
@@ -150,11 +150,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !pixels) {
+        if (disabled || !matrixDest || !pixels) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -166,7 +166,7 @@ public:
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 if (pixelIdx < pixelCount && pixels[pixelIdx].value != 0) {
-                    matrix->setPixel(x, y, pixels[pixelIdx]);
+                    matrixDest->setPixel(x, y, pixels[pixelIdx]);
                 }
                 ++pixelIdx;
             }
@@ -209,11 +209,11 @@ public:
         int_rand.addEntropy(rand.rand());
         int_rand.addEntropy(rand.rand());
         
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t count = getMatrixPixelCount(matrix);
+        const uint32_t count = getMatrixPixelCount(matrixDest);
         if (count != pixelCount) {
             delete[] pixels;
             pixels = new csColorRGBA[count];
@@ -270,11 +270,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix || !pixels) {
+        if (disabled || !matrixDest || !pixels) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -289,7 +289,7 @@ public:
                     const csColorRGBA& px = pixels[pixelIdx];
                     // Only draw if not transparent black
                     if (px.value != 0) {
-                        matrix->setPixel(x, y, px);
+                        matrixDest->setPixel(x, y, px);
                     }
                 }
                 ++pixelIdx;
@@ -317,11 +317,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -403,11 +403,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -432,11 +432,11 @@ public:
 class csRenderRandColors : public csRenderDynamic {
 public:
     void render(csRandGen& rand, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -493,11 +493,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -509,7 +509,7 @@ public:
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 if (local_rand.rand() <= percent) {
-                    matrix->setPixel(x, y, csColorRGBA{255, level, level, level});
+                    matrixDest->setPixel(x, y, csColorRGBA{255, level, level, level});
                 }
             }
         }
@@ -564,11 +564,11 @@ public:
     }
     
     void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         if (totalPixels == 0) {
             return;
         }
@@ -595,18 +595,18 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
-        const tMatrixPixelsSize matrixWidth = matrix->width();
+        const tMatrixPixelsSize matrixWidth = matrixDest->width();
         tMatrixPixelsCoord x, y;
-        indexTo2D(static_cast<uint32_t>(pos), matrixWidth, matrix->height(), x, y);
+        indexTo2D(static_cast<uint32_t>(pos), matrixWidth, matrixDest->height(), x, y);
         
         if (x >= target.x && x < target.x + to_coord(target.width) &&
             y >= target.y && y < target.y + to_coord(target.height)) {
@@ -683,11 +683,11 @@ public:
     }
     
     void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         if (totalPixels == 0) {
             return;
         }
@@ -725,16 +725,16 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
-        const tMatrixPixelsSize matrixWidth = matrix->width();
+        const tMatrixPixelsSize matrixWidth = matrixDest->width();
         
         for (uint8_t i = trim_tail; i < len; ++i) {
             const int32_t linePos = pos - (static_cast<int32_t>(i) * dir);
@@ -743,7 +743,7 @@ public:
             }
             
             tMatrixPixelsCoord x, y;
-            indexTo2D(static_cast<uint32_t>(linePos), matrixWidth, matrix->height(), x, y);
+            indexTo2D(static_cast<uint32_t>(linePos), matrixWidth, matrixDest->height(), x, y);
             
             if (x >= target.x && x < target.x + to_coord(target.width) &&
                 y >= target.y && y < target.y + to_coord(target.height)) {
@@ -781,11 +781,11 @@ public:
     }
     
     void render(csRandGen& rand, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -806,18 +806,18 @@ public:
 class csRenderGradient : public csRenderMatrixBase {
 public:
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         
         if (totalPixels == 0) {
             return;
@@ -832,7 +832,7 @@ public:
                 if (pixelIdx < totalPixels - 1) {
                     const int16_t clampedB = (b < 0) ? 0 : ((b > 255) ? 255 : b);
                     const uint8_t brightness = static_cast<uint8_t>(clampedB);
-                    matrix->setPixel(x, y, csColorRGBA{255, brightness, brightness, brightness});
+                    matrixDest->setPixel(x, y, csColorRGBA{255, brightness, brightness, brightness});
                     b -= dec;
                     if (b < 0) {
                         break;
@@ -898,24 +898,24 @@ public:
     }
     
     void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
         offset = static_cast<uint8_t>(currTime / speed);
         if (dir == 0) {
-            const uint32_t totalPixels = getMatrixPixelCount(matrix);
+            const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
             offset = static_cast<uint8_t>(totalPixels - 1 - offset);
         }
         offset = static_cast<uint8_t>(offset + pos);
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -1073,11 +1073,11 @@ public:
     }
     
     void init(csRandGen& rand) {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         if (totalPixels == 0) {
             return;
         }
@@ -1107,7 +1107,7 @@ public:
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         
         for (uint32_t i = 0; i < splashesCount; ++i) {
             if (splashes[i].level == 0) {
@@ -1125,21 +1125,21 @@ public:
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
-        const tMatrixPixelsSize matrixWidth = matrix->width();
+        const tMatrixPixelsSize matrixWidth = matrixDest->width();
         
         for (uint32_t i = 0; i < splashesCount; ++i) {
             if (splashes[i].level > 0) {
                 tMatrixPixelsCoord x, y;
-                indexTo2D(static_cast<uint32_t>(splashes[i].pos), matrixWidth, matrix->height(), x, y);
+                indexTo2D(static_cast<uint32_t>(splashes[i].pos), matrixWidth, matrixDest->height(), x, y);
                 
                 if (x >= target.x && x < target.x + to_coord(target.width) &&
                     y >= target.y && y < target.y + to_coord(target.height)) {
-                    matrix->setPixel(x, y, csColorRGBA{255, splashes[i].level, splashes[i].level, splashes[i].level});
+                    matrixDest->setPixel(x, y, csColorRGBA{255, splashes[i].level, splashes[i].level, splashes[i].level});
                 }
             }
         }
@@ -1197,13 +1197,13 @@ public:
     }
     
     void recalc(csRandGen& /*rand*/, tTime currTime) override {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
         offset = static_cast<uint16_t>(currTime / speed);
         if (dir == 0) {
-            const uint32_t totalPixels = getMatrixPixelCount(matrix);
+            const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
             offset = static_cast<uint16_t>(totalPixels - 1 - offset);
         }
         offset = static_cast<uint16_t>(offset + pos);
@@ -1249,11 +1249,11 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
@@ -1310,18 +1310,18 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
         const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
         const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
-        const tMatrixPixelsSize matrixWidth = matrix->width();
+        const tMatrixPixelsSize matrixWidth = matrixDest->width();
         
         for (tMatrixPixelsCoord y = target.y; y < endY; ++y) {
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
@@ -1375,11 +1375,11 @@ public:
     }
     
     void init(csRandGen& rand) {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         if (totalPixels == 0) {
             return;
         }
@@ -1396,7 +1396,7 @@ public:
     }
     
     void recalc(csRandGen& rand, tTime /*currTime*/) override {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
         
@@ -1405,7 +1405,7 @@ public:
             return;
         }
         
-        const uint32_t totalPixels = getMatrixPixelCount(matrix);
+        const uint32_t totalPixels = getMatrixPixelCount(matrixDest);
         
         for (uint32_t i = 0; i < splashesCount; ++i) {
             if (glows[i].level == 0) {
@@ -1440,27 +1440,27 @@ public:
     }
     
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
-        if (disabled || !matrix) {
+        if (disabled || !matrixDest) {
             return;
         }
         
-        const csRect target = rectDest.intersect(matrix->getRect());
+        const csRect target = rectDest.intersect(matrixDest->getRect());
         if (target.empty()) {
             return;
         }
         
-        const tMatrixPixelsSize matrixWidth = matrix->width();
+        const tMatrixPixelsSize matrixWidth = matrixDest->width();
         
         for (uint32_t i = 0; i < splashesCount; ++i) {
             if (glows[i].level != 0) {
                 tMatrixPixelsCoord x, y;
-                indexTo2D(static_cast<uint32_t>(glows[i].pos), matrixWidth, matrix->height(), x, y);
+                indexTo2D(static_cast<uint32_t>(glows[i].pos), matrixWidth, matrixDest->height(), x, y);
                 
                 if (x >= target.x && x < target.x + to_coord(target.width) &&
                     y >= target.y && y < target.y + to_coord(target.height)) {
                     const int16_t absLevel = (glows[i].level < 0) ? -static_cast<int16_t>(glows[i].level) : static_cast<int16_t>(glows[i].level);
                     const uint8_t brightness = static_cast<uint8_t>(absLevel * 2);
-                    matrix->setPixel(x, y, csColorRGBA{255, brightness, brightness, brightness});
+                    matrixDest->setPixel(x, y, csColorRGBA{255, brightness, brightness, brightness});
                 }
             }
         }

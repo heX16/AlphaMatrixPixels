@@ -12,7 +12,13 @@ namespace amp {
 
 // TODO: `csMatrixSFXSystem` as `csRender` - WIP... !
 
+// TODO: `csMatrixSFXSystem` as `csRender` - add the `virtual_matrix`.
+// режим когда матрица создается перед отрисовкой, и затем удаляется, чтобы не занимать место
+// впрочем имеет смысл сделать особый режим у самой `Matrix` - чтобы она освобождала буффер `pixels_` по запросу,
+// и затем повторно его создавала когда нужно.
+
 // TODO: `csMatrixSFXSystem` rename `csRenderSubMatrix`
+// TODO: `matrix_sfx_system.hpp` rename `render_sub_matrix.hpp`
 
 // Container class that manages csMatrixPixels and csEffectManager lifecycle.
 // Creates both objects in constructor via virtual factory methods and destroys them in destructor.
@@ -21,21 +27,21 @@ public:
     // Delete copy constructor and assignment operator to prevent shallow copy of pointers
     csMatrixSFXSystem(const csMatrixSFXSystem&) = delete;
     csMatrixSFXSystem& operator=(const csMatrixSFXSystem&) = delete;
-    
+
     // Delete move constructor and move assignment
     csMatrixSFXSystem(csMatrixSFXSystem&& other) = delete;
     csMatrixSFXSystem& operator=(csMatrixSFXSystem&& other) = delete;
-    
+
 public:
     // Construct matrix system with empty matrix (0x0).
     // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
     csMatrixSFXSystem()
-        : csRenderMatrixBase()  // matrix will be nullptr (external matrix not used yet)
+        : csRenderMatrixBase()  // matrixDest will be nullptr (external matrix not used yet)
         , effectManager(createEffectManager())
         , randGen(csRandGen::RAND16_SEED) {
         // Create internal matrix
         internalMatrix = createMatrix(0, 0);
-        
+
         // effectManager works with internalMatrix directly
         if (effectManager && internalMatrix) {
             effectManager->setMatrix(*internalMatrix);
@@ -45,12 +51,12 @@ public:
     // Construct matrix system with given matrix size.
     // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
     csMatrixSFXSystem(tMatrixPixelsSize width, tMatrixPixelsSize height)
-        : csRenderMatrixBase()  // matrix will be nullptr (external matrix not used yet)
+        : csRenderMatrixBase()  // matrixDest will be nullptr (external matrix not used yet)
         , effectManager(createEffectManager())
         , randGen(csRandGen::RAND16_SEED) {
         // Create internal matrix
         internalMatrix = createMatrix(width, height);
-        
+
         // effectManager works with internalMatrix directly
         if (effectManager && internalMatrix) {
             effectManager->setMatrix(*internalMatrix);
@@ -70,7 +76,7 @@ public:
     }
 
     // Public fields: direct access to internal matrix and effect manager pointers.
-    // Base class field 'matrix' is used for external matrix reference (not used yet).
+    // Base class field 'matrixDest' is used for external matrix reference (not used yet).
     csMatrixPixels* internalMatrix = nullptr;
     csEffectManager* effectManager;
     csRandGen randGen;
@@ -103,10 +109,10 @@ public:
         }
     }
 
-    // Set external matrix pointer (base class field 'matrix').
+    // Set external matrix pointer (base class field 'matrixDest').
     // This sets the external matrix reference, not the internal matrix.
     void setMatrix(csMatrixPixels* m) {
-        matrix = m;  // Base class field - external matrix
+        matrixDest = m;  // Base class field - external matrix
         propChanged(propMatrixDest);  // Call base class propChanged
     }
 

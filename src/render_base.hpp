@@ -184,7 +184,7 @@ public:
     //   if (auto* m = static_cast<csRenderMatrixBase*>(
     //       eff->queryClassFamily(PropType::EffectMatrixDest)
     //   )) {
-    //       m->setMatrix(matrix);
+    //       m->setMatrix(matrixDest);
     //   }
     //
     // Get class family identifier
@@ -212,7 +212,7 @@ public:
 // All fields are public by design for direct access/performance.
 class csRenderMatrixBase : public csEffectBase {
 public:
-    csMatrixPixels* matrix = nullptr;
+    csMatrixPixels* matrixDest = nullptr;
 
     csRect rectDest;
 
@@ -223,11 +223,11 @@ public:
     virtual ~csRenderMatrixBase() = default;
 
     void setMatrix(csMatrixPixels* m) noexcept {
-        matrix = m;
+        matrixDest = m;
         propChanged(propMatrixDest);
     }
     void setMatrix(csMatrixPixels& m) noexcept {
-        matrix = &m;
+        matrixDest = &m;
         propChanged(propMatrixDest);
     }
 
@@ -263,7 +263,7 @@ public:
                 info.disabled = false;
                 break;
             case propMatrixDest:
-                info.valuePtr = &matrix;
+                info.valuePtr = &matrixDest;
                 info.disabled = false;
                 break;
             case propDisabled:
@@ -290,12 +290,12 @@ public:
 
 protected:
     virtual void updateRenderRect() {
-        if (!matrix) {
+        if (!matrixDest) {
             return;
         }
 
         if (renderRectAutosize) {
-            rectDest = matrix->getRect();
+            rectDest = matrixDest->getRect();
         }
     }
 };
