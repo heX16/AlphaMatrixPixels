@@ -20,18 +20,7 @@
   #include <ArduinoOTA.h>
 #endif
 
-namespace amp {
-namespace wifi_ota {
-
-inline constexpr bool enabled() {
-#if (defined(ESP8266) || defined(ESP32)) && defined(AMP_ENABLE_WIFI_OTA) && (AMP_ENABLE_WIFI_OTA != 0)
-  return true;
-#else
-  return false;
-#endif
-}
-
-inline void setup() {
+inline void setupOTA() {
 #if (defined(ESP8266) || defined(ESP32)) && defined(AMP_ENABLE_WIFI_OTA) && (AMP_ENABLE_WIFI_OTA != 0)
   // Skip if SSID is not provided.
   if (sizeof(AMP_WIFI_SSID) <= 1) {
@@ -69,7 +58,7 @@ inline void setup() {
 #endif
 }
 
-inline void handle() {
+inline void handleOTA() {
 #if (defined(ESP8266) || defined(ESP32)) && defined(AMP_ENABLE_WIFI_OTA) && (AMP_ENABLE_WIFI_OTA != 0)
   static bool ota_started = false;
 
@@ -87,8 +76,5 @@ inline void handle() {
   }
 #endif
 }
-
-} // namespace wifi_ota
-} // namespace amp
 
 

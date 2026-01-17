@@ -49,7 +49,7 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
-    amp::wifi_ota::setup();
+    setupOTA();
     
     tEffectSwitch.start();  // Start timer with default time (20 seconds)
     tRender.start();        // Start render timer with default time (~60 FPS)
@@ -57,7 +57,7 @@ void setup() {
 }
 
 void loop() {
-    amp::wifi_ota::handle();
+    handleOTA();
 
     // Blink built-in LED: (millis() / 500) % 2, no timers/state.
     #if defined(ARDUINO_ARCH_ESP8266)
