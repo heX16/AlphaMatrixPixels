@@ -76,7 +76,9 @@ public:
     [[nodiscard]] tMatrixPixelsSize height() const noexcept { return size_y_; }
 
     // Return full matrix bounds as a rectangle: (0, 0, width, height).
-    [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
+    [[nodiscard]] inline csRect getRect() const noexcept {
+        return csRect{0, 0, width(), height()}; 
+    }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
     inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
@@ -87,7 +89,7 @@ public:
 
     // Blend source color over destination pixel using SourceOver (straight alpha).
     // 'alpha' is an extra global multiplier for the source alpha channel.
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
+    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color, alpha);
@@ -95,7 +97,7 @@ public:
     }
 
     // Blend source color over destination pixel using SourceOver with only the pixel's own alpha.
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
+    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color);
@@ -105,7 +107,7 @@ public:
     // Blend source color over destination pixels using sub-pixel positioning.
     // Fixed-point coordinates allow positioning between pixels; color is distributed across 1-2 pixels
     // with alpha proportional to distance from pixel center.
-    inline void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
+    void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
         // Round to nearest pixel to find the center pixel
         const tMatrixPixelsCoord cx = static_cast<tMatrixPixelsCoord>(x.round_int());
         const tMatrixPixelsCoord cy = static_cast<tMatrixPixelsCoord>(y.round_int());
@@ -172,7 +174,7 @@ public:
     // Blend source color over destination pixels using classical 4-tap bilinear splat.
     // Integer coordinates are treated as pixel centers, so (10.0, 1.0) affects exactly one pixel.
     // The source color is distributed to the 4 neighboring pixel centers around floor(x), floor(y).
-    inline void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
+    void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color) noexcept {
         // Fast path: exact pixel center.
         if (x.frac_abs_raw() == 0 && y.frac_abs_raw() == 0) {
             setPixel(static_cast<tMatrixPixelsCoord>(x.int_trunc()),
@@ -225,7 +227,7 @@ public:
     }
 
     // Blend source color over destination pixels using classical 4-tap bilinear splat with global alpha multiplier.
-    inline void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+    void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
         // Apply global alpha multiplier to color's alpha channel first.
         const uint8_t effective_alpha = mul8(color.a, alpha);
         const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
@@ -233,7 +235,7 @@ public:
     }
 
     // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
-    inline void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
+    void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
         // Apply global alpha multiplier to color's alpha channel first
         const uint8_t effective_alpha = mul8(color.a, alpha);
         const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
@@ -258,7 +260,7 @@ public:
     }
 
     // Draw another matrix over this one with clipping. Source alpha is respected and additionally scaled by 'alpha'.
-    inline void drawMatrix(tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
+    void drawMatrix(tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
         const tMatrixPixelsCoord start_x = max(to_coord(0), -dst_x);
         const tMatrixPixelsCoord start_y = max(to_coord(0), -dst_y);
         const tMatrixPixelsCoord end_x = min(to_coord(source.width()),
@@ -278,8 +280,8 @@ public:
     // Draw specific source area to destination coordinates with clipping.
     // 'src' is the area to copy from source matrix, (dst_x, dst_y) is where to draw in this matrix.
     // Source alpha is respected and additionally scaled by 'alpha'.
-    inline void drawMatrixArea(csRect src, tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y,
-                               const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
+    void drawMatrixArea(csRect src, tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y,
+                       const csMatrixPixels& source, uint8_t alpha = 255) noexcept {
         // Clip source rectangle to source matrix bounds
         const csRect srcBounds = source.getRect();
         const csRect srcClipped = src.intersect(srcBounds);
@@ -300,7 +302,7 @@ public:
     }
 
     // Clear matrix to transparent black.
-    inline void clear() noexcept {
+    void clear() noexcept {
         const size_t bytes = count() * sizeof(csColorRGBA);
         if (bytes != 0 && pixels_) {
             // Fast zero-fill; csColorRGBA is 4 bytes (see static_assert in color_rgba.hpp).
@@ -309,7 +311,7 @@ public:
     }
 
     // Fill rectangular area with color. Area is clipped to matrix bounds.
-    inline void fillArea(csRect area, csColorRGBA color) noexcept {
+    void fillArea(csRect area, csColorRGBA color) noexcept {
         const csRect target = area.intersect(getRect());
         if (target.empty()) {
             return;
@@ -326,7 +328,7 @@ public:
     // Calc average color of area. Fast.
     // Uses two-level hierarchical averaging to avoid overflow in uint16_t accumulators.
     // Max area: 65536 pixels (256x256). Larger areas return transparent black.
-    [[nodiscard]] inline csColorRGBA getAreaColor(csRect area) const noexcept {
+    [[nodiscard]] csColorRGBA getAreaColor(csRect area) const noexcept {
         const csRect bounded = area.intersect(getRect());
         if (bounded.empty()) {
             return csColorRGBA{0, 0, 0, 0};
