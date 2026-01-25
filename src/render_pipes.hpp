@@ -10,34 +10,21 @@ namespace amp {
 // Base class for effects that use a source matrix.
 class csRenderMatrixPipeBase : public csRenderMatrixBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixBase::propLast;
-    static constexpr uint8_t propMatrixSource = base + 1;
-    static constexpr uint8_t propRectSource = base + 2;
-    static constexpr uint8_t propLast = propRectSource;
-
     // Source matrix pointer (nullptr means no source).
     csMatrixPixels* matrixSource = nullptr;
 
     // Source rectangle (defines area to copy from source matrix).
     csRect rectSource;
 
-    uint8_t getPropsCount() const override {
-        return propLast;
-    }
-
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderMatrixBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propMatrixSource:
-                info.valueType = PropType::Matrix;
-                info.name = "Matrix source";
                 info.valuePtr = &matrixSource;
                 info.readOnly = false;
                 info.disabled = false;
                 break;
             case propRectSource:
-                info.valueType = PropType::Rect;
-                info.name = "Rect source";
                 info.valuePtr = &rectSource;
                 info.readOnly = false;
                 info.disabled = false;
@@ -155,22 +142,12 @@ public:
 // Effect: copy pixels by some remap function from source matrix to destination matrix.
 class csRenderRemapBase : public csRenderMatrixPipeBase {
 public:
-    static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
-    static constexpr uint8_t propRewrite = base + 1;
-    static constexpr uint8_t propLast = propRewrite;
-
     bool rewrite = false;
-
-    uint8_t getPropsCount() const override {
-        return propLast;
-    }
 
     void getPropInfo(uint8_t propNum, csPropInfo& info) override {
         csRenderMatrixPipeBase::getPropInfo(propNum, info);
         switch (propNum) {
             case propRewrite:
-                info.valueType = PropType::Bool;
-                info.name = "Rewrite";
                 info.valuePtr = &rewrite;
                 info.readOnly = false;
                 info.disabled = false;
@@ -366,16 +343,119 @@ public:
 
 
 
+// Effect: remap 1D matrix (height=1) to 2D matrix.
+// Base class for 1D->2D remapping effects. Source matrix must have height=1.
+// Provides virtual function to calculate required source pixel count and auto-update source matrix size.
+class csRenderMatrix1DTo2DBase : public csRenderMatrixPipeBase {
+public:
+    static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
+    static constexpr uint8_t propAutoUpdateSourceMatrixSize = base + 1;
+    static constexpr uint8_t propLast = propAutoUpdateSourceMatrixSize;
+
+    // Auto-update source matrix size when pixel count changes
+    bool autoUpdateSourceMatrixSize = true;
+
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixPipeBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propAutoUpdateSourceMatrixSize:
+                info.valueType = PropType::Bool;
+                info.name = "Auto update source matrix size";
+                info.valuePtr = &autoUpdateSourceMatrixSize;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    // Calculate required number of pixels in source matrix (1D, so this is the width).
+    // Default implementation returns rectDest.width (simple example: one line maps to destination width).
+    virtual tMatrixPixelsSize calcSourceMatrixPixelsCount() const {
+        return rectDest.width;
+    }
+
+    // Map 1D source index to 2D destination coordinates.
+    // src_x is the 1D index (y is implicitly 0 for 1D source matrix).
+    // Returns false to skip mapping this pixel.
+    // Simple example implementation: x passthrough, y fixed to 1.
+    virtual bool mapIndexToDest(tMatrixPixelsCoord src_x, tMatrixPixelsCoord& dst_x, tMatrixPixelsCoord& dst_y) const {
+        dst_x = src_x;
+        dst_y = 1; // Fixed y coordinate as per example
+        return true;
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixPipeBase::propChanged(propNum);
+        
+        // Trigger source matrix size update on relevant property changes
+        if (propNum == csRenderMatrixBase::propMatrixDest ||
+            propNum == csRenderMatrixBase::propRectDest ||
+            propNum == csRenderMatrixBase::propRenderRectAutosize ||
+            propNum == csRenderMatrixPipeBase::propMatrixSource ||
+            propNum == propAutoUpdateSourceMatrixSize) {
+            updateSourceMatrixSizeIfNeeded();
+        }
+    }
+
+    void render(csRandGen& rand, tTime currTime) const override {
+        if (disabled || !matrixDest || !matrixSource) {
+            return;
+        }
+
+        // Source must be 1D (height=1)
+        if (matrixSource->height() != 1) {
+            return;
+        }
+
+        const tMatrixPixelsSize sourceWidth = matrixSource->width();
+        
+        // Iterate over source width only (1D matrix: height=1, so y is always 0)
+        for (tMatrixPixelsSize x = 0; x < sourceWidth; ++x) {
+            tMatrixPixelsCoord dst_x = 0;
+            tMatrixPixelsCoord dst_y = 0;
+            
+            // Map 1D index to 2D destination coordinates
+            if (!mapIndexToDest(to_coord(x), dst_x, dst_y)) {
+                continue; // Skip if mapping function returns false
+            }
+
+            // Source coordinates: x from loop, y is always 0 for 1D matrix
+            const csColorRGBA sourcePixel = matrixSource->getPixel(to_coord(x), 0);
+
+            // Write to destination with blending (always use setPixel, no rewrite option)
+            matrixDest->setPixel(rectDest.x + dst_x, rectDest.y + dst_y, sourcePixel);
+        }
+    }
+
+protected:
+    // Update source matrix size if auto-update is enabled and size mismatch detected.
+    void updateSourceMatrixSizeIfNeeded() {
+        if (!autoUpdateSourceMatrixSize || !matrixSource) {
+            return;
+        }
+
+        const tMatrixPixelsSize neededWidth = calcSourceMatrixPixelsCount();
+        
+        // Ensure source is 1D (height=1)
+        if (matrixSource->height() != 1) {
+            matrixSource->resize(neededWidth, 1);
+        }
+        // Ensure source width matches required pixel count
+        else if (matrixSource->width() != neededWidth) {
+            matrixSource->resize(neededWidth, 1);
+        }
+
+        // Update rectSource to cover full source line
+        rectSource = csRect{0, 0, neededWidth, 1};
+    }
+};
+
 /*
 TODO: 
-
-csRenderMatrix1DTo2DBase
-- remap 1D matrix (height=1) to 2D matrix
-- Virt. Func: calc source matrix pixels count, return `tMatrixPixelsSize`
-- Property: "auto update size of the source matrix if pixels count changed" (придумай название сам)
-- Virt. Func: `getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {`
-
-
 
 future:
 - csRenderMatrix1DTo2DRect

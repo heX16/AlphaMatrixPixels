@@ -62,6 +62,9 @@ public:
     static constexpr uint8_t propColor2 = base + 9;
     static constexpr uint8_t propColor3 = base + 10;
     static constexpr uint8_t propColorBackground = base + 11;
+    static constexpr uint8_t propMatrixSource = base + 12;
+    static constexpr uint8_t propRectSource = base + 13;
+    static constexpr uint8_t propRewrite = base + 14;
 
     // `propLast` - Special "property" - the last one in the list. 
     // Shadowed in each derived class.
@@ -71,7 +74,7 @@ public:
     //     static constexpr uint8_t propNew = base+1;
     //     static constexpr uint8_t propLast = propNew;
     // ```
-    static constexpr uint8_t propLast = propColorBackground;
+    static constexpr uint8_t propLast = propRewrite;
 
     // Property introspection: returns number of exposed properties
     // NOTE: property indices start at 1 (not 0).
@@ -132,6 +135,18 @@ public:
             case propColorBackground:
                 info.valueType = PropType::Color;
                 info.name = "Background color";
+                break;
+            case propMatrixSource:
+                info.valueType = PropType::Matrix;
+                info.name = "Matrix source";
+                break;
+            case propRectSource:
+                info.valueType = PropType::Rect;
+                info.name = "Rect source";
+                break;
+            case propRewrite:
+                info.valueType = PropType::Bool;
+                info.name = "Rewrite";
                 break;
             default:
                 csBase::getPropInfo(propNum, info);
