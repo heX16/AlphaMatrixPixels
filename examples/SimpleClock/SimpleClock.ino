@@ -118,9 +118,7 @@ void loop() {
     
     // Normal mode: render effects
     // Recalc and render all effects
-    sfxSystem.recalc(currTime);
-    sfxSystem.render(currTime);
-    
+    sfxSystem.recalcAndRender(currTime);
 
     //#define HORIZONTAL_LINE_DEBUG_MODE
     #ifdef HORIZONTAL_LINE_DEBUG_MODE

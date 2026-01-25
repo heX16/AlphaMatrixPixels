@@ -88,18 +88,25 @@ public:
     // Public fields: direct access to internal matrix and effect manager pointers.
     // Base class field 'matrixDest' is used for external matrix reference (not used yet).
     csMatrixPixels* internalMatrix = nullptr;
-    csEffectManager* effectManager;
-    csRandGen randGen;
+    mutable csEffectManager* effectManager;  // mutable: render() is const but needs to call non-const effectManager->render()
 
-    // Recalc all effects (update internal state, no rendering).
-    void recalc(tTime currTime) {
+    /*
+    // TODO: для работы recalc и render нужно использовать эту переменную
+    но при этом `recalc(csRandGen& rand`
+    этот входящий rand тоже может пригодиться - как источник случайности для нашего генератора.
+    тут нужно подумать...
+    */
+    mutable csRandGen randGen;
+
+    // Override csEffectBase::recalc - recalc all effects (update internal state, no rendering).
+    void recalc(csRandGen& rand, tTime currTime) override {
         if (effectManager) {
             effectManager->recalc(randGen, currTime);
         }
     }
 
-    // Render all effects and call onFrameDone for post-frame effects.
-    void render(tTime currTime) {
+    // Override csEffectBase::render - render all effects and call onFrameDone for post-frame effects.
+    void render(csRandGen& rand, tTime currTime) const override {
         if (effectManager) {
             effectManager->render(randGen, currTime);
         }
@@ -107,8 +114,8 @@ public:
 
     // Convenience method: recalc and render all effects in one call.
     void recalcAndRender(tTime currTime) {
-        recalc(currTime);
-        render(currTime);
+        recalc(randGen, currTime);
+        render(randGen, currTime);
     }
 
     // Delete current internal matrix. Effect manager reference is not updated (caller should handle this).
