@@ -472,6 +472,18 @@ public:
     `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
     */
 
+    // Resize matrix to new dimensions. Existing pixels are lost (matrix is cleared).
+    void resize(uint16_t sx, uint16_t sy) {
+        if (sx == size_x_ && sy == size_y_) {
+            return;
+        }
+        delete[] pixels_;
+        // TODO: добавиь проверку на нулевой размер - в таком случае `pixels_ = nullptr`.
+        size_x_ = sx;
+        size_y_ = sy;
+        pixels_ = allocate(size_x_, size_y_);
+    }
+
 private:
     tMatrixPixelsSize size_x_;
     tMatrixPixelsSize size_y_;
@@ -500,17 +512,6 @@ private:
         for (size_t i = 0; i < n; ++i) {
             dst[i] = src[i];
         }
-    }
-
-    void resize(uint16_t sx, uint16_t sy) {
-        if (sx == size_x_ && sy == size_y_) {
-            return;
-        }
-        delete[] pixels_;
-        // TODO: добавиь проверку на нулевой размер - в таком случае `pixels_ = nullptr`.
-        size_x_ = sx;
-        size_y_ = sy;
-        pixels_ = allocate(size_x_, size_y_);
     }
 };
 
