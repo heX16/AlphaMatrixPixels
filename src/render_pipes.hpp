@@ -3,6 +3,7 @@
 #include "render_base.hpp"
 #include "matrix_types.hpp"
 #include "amp_macros.hpp"
+#include "fixed_point.hpp"
 // #include <stdint.h>
 
 namespace amp {
@@ -454,13 +455,110 @@ protected:
     }
 };
 
+// Effect: fill destination rectangle with 1D source strip (height=1) by drawing repeated stripes.
+// The fill direction is controlled by the `angle` property:
+// - angle = 0  -> horizontal mode: pixel strip is drawn horizontally. Each pixel is stretched (copied) along the rect height. The loop runs over `x`.
+// - angle = 90 -> vertical mode: the pixel strip is drawn vertically. Each pixel is stretched (copied) along the rect length. The loop runs over `y`.
+// Only angle values 0 and 90 are supported and meaningful.
+class csRenderMatrix1DTo2DRect : public csRenderMatrix1DTo2DBase {
+public:
+    static constexpr uint8_t base = csRenderMatrix1DTo2DBase::propLast;
+    static constexpr uint8_t propAngle = base + 1;
+    static constexpr uint8_t propLast = propAngle;
+
+    math::csFP16 angle{0.0f};
+
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrix1DTo2DBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propAngle:
+                info.valueType = PropType::FP16;
+                info.name = "Angle";
+                info.valuePtr = &angle;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    // Calculate required number of pixels in source matrix based on fill angle.
+    // Horizontal mode (angle=0): need rectDest.width pixels (one per column).
+    // Vertical mode (angle=90): need rectDest.height pixels (one per row).
+    tMatrixPixelsSize calcSourceMatrixPixelsCount() const override {
+        // Check if angle is 90 degrees (vertical mode)
+        // Only 0 and 90 are supported, so we check if rounded angle equals 90
+        if (angle.round_int() == 90) {
+            return rectDest.height;
+        }
+        // Otherwise, use horizontal mode (angle=0 or any other value)
+        return rectDest.width;
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrix1DTo2DBase::propChanged(propNum);
+        
+        // Trigger source matrix size update when angle changes
+        if (propNum == propAngle) {
+            updateSourceMatrixSizeIfNeeded();
+        }
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrixDest || !matrixSource) {
+            return;
+        }
+
+        // Source must be 1D (height=1)
+        if (matrixSource->height() != 1) {
+            return;
+        }
+
+        const tMatrixPixelsSize sourceWidth = matrixSource->width();
+        
+        // Determine fill mode based on angle (only 0 and 90 are supported)
+        const bool isVertical = (angle.round_int() == 90);
+
+        if (isVertical) {
+            // Vertical mode: loop over y, draw horizontal stripes
+            // Each source pixel source[y] is stretched into a horizontal stripe of width rectDest.width
+            const tMatrixPixelsSize effectiveRows = (rectDest.height < sourceWidth) ? rectDest.height : sourceWidth;
+            
+            for (tMatrixPixelsSize y = 0; y < effectiveRows; ++y) {
+                const csColorRGBA sourcePixel = matrixSource->getPixel(to_coord(y), 0);
+                
+                // Draw horizontal stripe: fill entire row with this pixel
+                for (tMatrixPixelsSize x = 0; x < rectDest.width; ++x) {
+                    matrixDest->setPixel(rectDest.x + to_coord(x), rectDest.y + to_coord(y), sourcePixel);
+                }
+            }
+        } else {
+            // Horizontal mode: loop over x, draw vertical stripes
+            // Each source pixel source[x] is stretched into a vertical stripe of height rectDest.height
+            const tMatrixPixelsSize effectiveCols = (rectDest.width < sourceWidth) ? rectDest.width : sourceWidth;
+            
+            for (tMatrixPixelsSize x = 0; x < effectiveCols; ++x) {
+                const csColorRGBA sourcePixel = matrixSource->getPixel(to_coord(x), 0);
+                
+                // Draw vertical stripe: fill entire column with this pixel
+                for (tMatrixPixelsSize y = 0; y < rectDest.height; ++y) {
+                    matrixDest->setPixel(rectDest.x + to_coord(x), rectDest.y + to_coord(y), sourcePixel);
+                }
+            }
+        }
+    }
+};
+
 /*
 TODO: 
 
 future:
-- csRenderMatrix1DTo2DRect
 - csRenderMatrix1DTo2DRectFrame
 - csRenderMatrix1DTo2DRectSpiral
+- csRenderMatrix1DTo2DRectZigzag
 - csRenderMatrix1DTo2DRectAngle
 - csRenderMatrix1DTo2DLine
 - csRenderMatrix1DTo2DRadial
