@@ -67,6 +67,10 @@ public:
     uint16_t eff1_base = cEff1BaseMin; // GradientWaves (was 1)
     uint16_t eff2 = cEff2Min; // Glyph (was 5)
 
+    // Effect name display tracking
+    amp::tProgmemStrPtr currentEffectName = nullptr;
+    uint32_t effectNameShowTime = 0;
+
     static uint16_t cyclePresetId(uint16_t current, uint16_t minId, uint16_t maxId, int delta) {
         if (minId == 0 || maxId == 0 || minId > maxId) {
             return current;
@@ -218,11 +222,22 @@ public:
         sfxSystem.effectManager->clearAll();
 
         // Default order: base first, then overlay.
+        amp::tProgmemStrPtr effectName = nullptr;
         if (eff1_base != 0) {
-            loadEffectPreset(*sfxSystem.effectManager, eff1_base);
+            loadEffectPreset(*sfxSystem.effectManager, eff1_base, nullptr, &effectName);
+            if (effectName) {
+                currentEffectName = effectName;
+                effectNameShowTime = SDL_GetTicks();
+            }
         }
         if (eff2 != 0) {
-            loadEffectPreset(*sfxSystem.effectManager, eff2);
+            effectName = nullptr;
+            loadEffectPreset(*sfxSystem.effectManager, eff2, nullptr, &effectName);
+            // If eff1_base was not set, use eff2 name; otherwise keep eff1_base name
+            if (effectName && eff1_base == 0) {
+                currentEffectName = effectName;
+                effectNameShowTime = SDL_GetTicks();
+            }
         }
     }
 
@@ -318,20 +333,24 @@ public:
         // Format number as string
         char buf[32];
         std::snprintf(buf, sizeof(buf), format, value);
-        
-        if (font) {
-            // Use SDL_ttf for rendering
-            SDL_Color color = {255, 255, 255, 255};
-            SDL_Surface* textSurface = TTF_RenderText_Solid(font, buf, color);
-            if (textSurface) {
-                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-                if (textTexture) {
-                    SDL_Rect destRect = {x, y, textSurface->w, textSurface->h};
-                    SDL_RenderCopy(renderer, textTexture, nullptr, &destRect);
-                    SDL_DestroyTexture(textTexture);
-                }
-                SDL_FreeSurface(textSurface);
+        drawText(x, y, buf);
+    }
+
+    void drawText(int x, int y, const char* text) {
+        if (!font || !text) {
+            return;
+        }
+        // Use SDL_ttf for rendering
+        SDL_Color color = {255, 255, 255, 255};
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, color);
+        if (textSurface) {
+            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            if (textTexture) {
+                SDL_Rect destRect = {x, y, textSurface->w, textSurface->h};
+                SDL_RenderCopy(renderer, textTexture, nullptr, &destRect);
+                SDL_DestroyTexture(textTexture);
             }
+            SDL_FreeSurface(textSurface);
         }
     }
 
@@ -353,6 +372,25 @@ public:
         // Draw effect preset IDs
         drawNumber(10, 30, static_cast<float>(eff1_base), "eff1_base: %.0f");
         drawNumber(10, 50, static_cast<float>(eff2), "eff2: %.0f");
+
+        // Display effect name at top center if within 3 second window
+        if (currentEffectName != nullptr) {
+            const uint32_t currentTime = SDL_GetTicks();
+            if (currentTime - effectNameShowTime < 3000) {
+                // Calculate text width for centering
+                if (font) {
+                    int textWidth = 0, textHeight = 0;
+                    TTF_SizeText(font, currentEffectName, &textWidth, &textHeight);
+                    const int textX = (screenWidth - textWidth) / 2;
+                    const int textY = 10;
+                    // Use drawText function for rendering
+                    drawText(textX, textY, currentEffectName);
+                }
+            } else {
+                // Time expired, clear the effect name
+                currentEffectName = nullptr;
+            }
+        }
 
         // Render 1D matrix overlay if debug mode is active
         copyLineIndexHelper.render(renderer, screenWidth, screenHeight);
