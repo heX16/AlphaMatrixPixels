@@ -552,11 +552,123 @@ public:
     }
 };
 
+// Effect: fill destination rectangle perimeter with 1D source strip (height=1).
+// The source strip is mapped to the perimeter of rectDest in clockwise order,
+// starting from the top-left corner and going right along the top edge first.
+// Each corner pixel is used exactly once (no duplication).
+class csRenderMatrix1DTo2DRectFrame : public csRenderMatrix1DTo2DBase {
+public:
+    // Calculate required number of pixels in source matrix based on perimeter length.
+    // Perimeter calculation:
+    // - If width==0 || height==0: 0
+    // - If width==1 && height==1: 1
+    // - If height==1: width (single row)
+    // - If width==1: height (single column)
+    // - Else: 2*(width + height) - 4 (unique corners)
+    tMatrixPixelsSize calcSourceMatrixPixelsCount() const override {
+        const tMatrixPixelsSize w = rectDest.width;
+        const tMatrixPixelsSize h = rectDest.height;
+        
+        if (w == 0 || h == 0) {
+            return 0;
+        }
+        if (w == 1 && h == 1) {
+            return 1;
+        }
+        if (h == 1) {
+            return w; // Single row
+        }
+        if (w == 1) {
+            return h; // Single column
+        }
+        // Normal rectangle: perimeter = 2*(w+h) - 4 (corners counted once)
+        return 2 * (w + h) - 4;
+    }
+
+    // Map 1D source index to 2D destination coordinates on the perimeter.
+    // Traversal order: clockwise, starting at top-left, going right first.
+    // Each corner pixel is used exactly once.
+    bool mapIndexToDest(tMatrixPixelsCoord src_x, tMatrixPixelsCoord& dst_x, tMatrixPixelsCoord& dst_y) const override {
+        const tMatrixPixelsSize w = rectDest.width;
+        const tMatrixPixelsSize h = rectDest.height;
+        const tMatrixPixelsCoord i = src_x;
+        
+        // Edge cases
+        if (w == 0 || h == 0) {
+            return false;
+        }
+        if (w == 1 && h == 1) {
+            if (i == 0) {
+                dst_x = 0;
+                dst_y = 0;
+                return true;
+            }
+            return false;
+        }
+        if (h == 1) {
+            // Single row: all pixels are on the perimeter
+            if (i < static_cast<tMatrixPixelsCoord>(w)) {
+                dst_x = i;
+                dst_y = 0;
+                return true;
+            }
+            return false;
+        }
+        if (w == 1) {
+            // Single column: all pixels are on the perimeter
+            if (i < static_cast<tMatrixPixelsCoord>(h)) {
+                dst_x = 0;
+                dst_y = i;
+                return true;
+            }
+            return false;
+        }
+        
+        // Normal rectangle: perimeter = 2*(w+h) - 4
+        const tMatrixPixelsSize perimeter = 2 * (w + h) - 4;
+        if (i >= static_cast<tMatrixPixelsCoord>(perimeter)) {
+            return false;
+        }
+        
+        // Top edge: indices [0 .. w-1]
+        if (i < static_cast<tMatrixPixelsCoord>(w)) {
+            dst_x = i;
+            dst_y = 0;
+            return true;
+        }
+        
+        // Right edge (excluding top-right corner): indices [w .. w+h-2]
+        const tMatrixPixelsCoord rightStart = static_cast<tMatrixPixelsCoord>(w);
+        const tMatrixPixelsCoord rightEnd = rightStart + static_cast<tMatrixPixelsCoord>(h) - 1;
+        if (i < rightEnd) {
+            dst_x = static_cast<tMatrixPixelsCoord>(w) - 1;
+            dst_y = 1 + (i - rightStart);
+            return true;
+        }
+        
+        // Bottom edge (excluding bottom-right corner): indices [w+h-1 .. w+h+w-3]
+        const tMatrixPixelsCoord bottomStart = rightEnd;
+        const tMatrixPixelsCoord bottomEnd = bottomStart + static_cast<tMatrixPixelsCoord>(w) - 1;
+        if (i < bottomEnd) {
+            const tMatrixPixelsCoord bottomIdx = i - bottomStart;
+            dst_x = static_cast<tMatrixPixelsCoord>(w) - 2 - bottomIdx;
+            dst_y = static_cast<tMatrixPixelsCoord>(h) - 1;
+            return true;
+        }
+        
+        // Left edge (excluding both left corners): indices [w+h+w-2 .. perimeter-1]
+        const tMatrixPixelsCoord leftStart = bottomEnd;
+        const tMatrixPixelsCoord leftIdx = i - leftStart;
+        dst_x = 0;
+        dst_y = static_cast<tMatrixPixelsCoord>(h) - 2 - leftIdx;
+        return true;
+    }
+};
+
 /*
 TODO: 
 
 future:
-- csRenderMatrix1DTo2DRectFrame
 - csRenderMatrix1DTo2DRectSpiral
 - csRenderMatrix1DTo2DRectZigzag
 - csRenderMatrix1DTo2DRectAngle

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include "../src/matrix_pixels.hpp"
+#include "../src/render_pipes.hpp"
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
@@ -627,6 +628,153 @@ void test_setPixelFloat4_out_of_bounds(TestStats& stats) {
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(1, 2), 0, 0, 0, 0), "other pixels stay clear");
 }
 
+void test_rectframe_1x1(TestStats& stats) {
+    const char* testName = "rectframe_1x1";
+    csMatrixPixels dest{1, 1};
+    csMatrixPixels src{1, 1};
+    
+    // Fill source with a distinct color
+    src.setPixelRewrite(0, 0, csColorRGBA{255, 100, 200, 50});
+    
+    amp::csRenderMatrix1DTo2DRectFrame frame;
+    frame.setMatrix(dest);
+    frame.matrixSource = &src;
+    frame.rectDest = amp::csRect{0, 0, 1, 1};
+    
+    amp::csRandGen rand;
+    frame.render(rand, 0);
+    
+    // The single pixel should be filled
+    expect_true(stats, testName, __LINE__, colorEq(dest.getPixel(0, 0), 255, 100, 200, 50), "1x1 pixel filled");
+}
+
+void test_rectframe_1xN(TestStats& stats) {
+    const char* testName = "rectframe_1xN";
+    const tMatrixPixelsSize height = 5;
+    csMatrixPixels dest{1, height};
+    csMatrixPixels src{height, 1};
+    
+    // Fill source with distinct colors per index
+    for (tMatrixPixelsSize i = 0; i < height; ++i) {
+        src.setPixelRewrite(to_coord(i), 0, csColorRGBA{255, static_cast<uint8_t>(i * 50), 0, 0});
+    }
+    
+    amp::csRenderMatrix1DTo2DRectFrame frame;
+    frame.setMatrix(dest);
+    frame.matrixSource = &src;
+    frame.rectDest = amp::csRect{0, 0, 1, height};
+    
+    amp::csRandGen rand;
+    frame.render(rand, 0);
+    
+    // All pixels should be filled (single column = all perimeter)
+    for (tMatrixPixelsSize i = 0; i < height; ++i) {
+        const csColorRGBA expected{255, static_cast<uint8_t>(i * 50), 0, 0};
+        expect_true(stats, testName, __LINE__, 
+                   colorEq(dest.getPixel(0, to_coord(i)), expected.a, expected.r, expected.g, expected.b),
+                   "1xN column pixel matches source");
+    }
+}
+
+void test_rectframe_Nx1(TestStats& stats) {
+    const char* testName = "rectframe_Nx1";
+    const tMatrixPixelsSize width = 4;
+    csMatrixPixels dest{width, 1};
+    csMatrixPixels src{width, 1};
+    
+    // Fill source with distinct colors per index
+    for (tMatrixPixelsSize i = 0; i < width; ++i) {
+        src.setPixelRewrite(to_coord(i), 0, csColorRGBA{255, 0, static_cast<uint8_t>(i * 60), 0});
+    }
+    
+    amp::csRenderMatrix1DTo2DRectFrame frame;
+    frame.setMatrix(dest);
+    frame.matrixSource = &src;
+    frame.rectDest = amp::csRect{0, 0, width, 1};
+    
+    amp::csRandGen rand;
+    frame.render(rand, 0);
+    
+    // All pixels should be filled (single row = all perimeter)
+    for (tMatrixPixelsSize i = 0; i < width; ++i) {
+        const csColorRGBA expected{255, 0, static_cast<uint8_t>(i * 60), 0};
+        expect_true(stats, testName, __LINE__, 
+                   colorEq(dest.getPixel(to_coord(i), 0), expected.a, expected.r, expected.g, expected.b),
+                   "Nx1 row pixel matches source");
+    }
+}
+
+void test_rectframe_4x3(TestStats& stats) {
+    const char* testName = "rectframe_4x3";
+    const tMatrixPixelsSize width = 4;
+    const tMatrixPixelsSize height = 3;
+    // Perimeter = 2*(4+3) - 4 = 10
+    const tMatrixPixelsSize perimeter = 2 * (width + height) - 4;
+    
+    csMatrixPixels dest{width, height};
+    csMatrixPixels src{perimeter, 1};
+    
+    // Fill source with distinct colors per index
+    for (tMatrixPixelsSize i = 0; i < perimeter; ++i) {
+        src.setPixelRewrite(to_coord(i), 0, csColorRGBA{255, static_cast<uint8_t>(i * 25), 0, 0});
+    }
+    
+    amp::csRenderMatrix1DTo2DRectFrame frame;
+    frame.setMatrix(dest);
+    frame.matrixSource = &src;
+    frame.rectDest = amp::csRect{0, 0, width, height};
+    
+    amp::csRandGen rand;
+    frame.render(rand, 0);
+    
+    // Expected perimeter mapping (clockwise from top-left):
+    // Top: (0,0), (1,0), (2,0), (3,0) -> indices 0,1,2,3
+    // Right: (3,1), (3,2) -> indices 4,5
+    // Bottom: (2,2), (1,2), (0,2) -> indices 6,7,8
+    // Left: (0,1) -> index 9
+    
+    // Check top edge
+    for (tMatrixPixelsSize x = 0; x < width; ++x) {
+        const csColorRGBA expected{255, static_cast<uint8_t>(x * 25), 0, 0};
+        expect_true(stats, testName, __LINE__, 
+                   colorEq(dest.getPixel(to_coord(x), 0), expected.a, expected.r, expected.g, expected.b),
+                   "top edge pixel matches");
+    }
+    
+    // Check right edge (excluding top-right)
+    for (tMatrixPixelsSize y = 1; y < height; ++y) {
+        const tMatrixPixelsSize idx = width + (y - 1);
+        const csColorRGBA expected{255, static_cast<uint8_t>(idx * 25), 0, 0};
+        expect_true(stats, testName, __LINE__, 
+                   colorEq(dest.getPixel(to_coord(width - 1), to_coord(y)), expected.a, expected.r, expected.g, expected.b),
+                   "right edge pixel matches");
+    }
+    
+    // Check bottom edge (excluding bottom-right)
+    // Bottom edge goes from (width-2, height-1) to (0, height-1)
+    for (tMatrixPixelsSize x = 0; x < width - 1; ++x) {
+        // x=0 -> actual x coord = width-2, index = width + (height-1) + 0
+        // x=1 -> actual x coord = width-3, index = width + (height-1) + 1
+        // x=2 -> actual x coord = width-4, index = width + (height-1) + 2
+        const tMatrixPixelsSize actualX = width - 2 - x;
+        const tMatrixPixelsSize idx = width + (height - 1) + x;
+        const csColorRGBA expected{255, static_cast<uint8_t>(idx * 25), 0, 0};
+        expect_true(stats, testName, __LINE__, 
+                   colorEq(dest.getPixel(to_coord(actualX), to_coord(height - 1)), expected.a, expected.r, expected.g, expected.b),
+                   "bottom edge pixel matches");
+    }
+    
+    // Check left edge (excluding both left corners)
+    const tMatrixPixelsSize leftIdx = width + (height - 1) + (width - 1);
+    const csColorRGBA leftExpected{255, static_cast<uint8_t>(leftIdx * 25), 0, 0};
+    expect_true(stats, testName, __LINE__, 
+               colorEq(dest.getPixel(0, 1), leftExpected.a, leftExpected.r, leftExpected.g, leftExpected.b),
+               "left edge pixel matches");
+    
+    // Check interior pixel stays clear
+    expect_true(stats, testName, __LINE__, colorEq(dest.getPixel(1, 1), 0, 0, 0, 0), "interior pixel stays clear");
+}
+
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
@@ -666,6 +814,11 @@ int main() {
     test_setPixelFloat4_offset_diagonal(stats);
     test_setPixelFloat4_center_diagonal(stats);
     test_setPixelFloat4_out_of_bounds(stats);
+
+    test_rectframe_1x1(stats);
+    test_rectframe_1xN(stats);
+    test_rectframe_Nx1(stats);
+    test_rectframe_4x3(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
     if (stats.failed != 0) {
