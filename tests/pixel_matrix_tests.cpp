@@ -5,6 +5,8 @@
 
 using amp::csColorRGBA;
 using amp::csMatrixPixels;
+using amp::tMatrixPixelsSize;
+using amp::to_coord;
 using namespace amp::math;
 
 // Minimal self-contained test runner (no external frameworks).
@@ -254,7 +256,7 @@ void test_fp16_basic(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c.to_float(), 1.25f, 0.15f, "fp16 add works");
     const csFP16 d = a * b; // -0.375
     expect_near_float(stats, testName, __LINE__, d.to_float(), -0.375f, 0.15f, "fp16 mul works");
-    const csFP16 e = csFP16::from_int(2) / csFP16::from_int(4); // 0.5
+    const csFP16 e = csFP16(2.0f) / csFP16(4.0f); // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.15f, "fp16 div works");
 
     // Signed fractional raw part helper (useful for negative values).
@@ -276,7 +278,7 @@ void test_fp32_basic(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c.to_float(), 2.75f, 0.001f, "fp32 sub works");
     const csFP32 d = a * b; // 1.625
     expect_near_float(stats, testName, __LINE__, d.to_float(), 1.625f, 0.001f, "fp32 mul works");
-    const csFP32 e = csFP32::from_int(1) / csFP32::from_int(2); // 0.5
+    const csFP32 e = csFP32(1.0f) / csFP32(2.0f); // 0.5
     expect_near_float(stats, testName, __LINE__, e.to_float(), 0.5f, 0.001f, "fp32 div works");
 }
 
@@ -296,7 +298,7 @@ void test_fp_trig(TestStats& stats) {
     expect_near_float(stats, testName, __LINE__, c1.to_float(), 0.0f, 0.05f, "cos(pi/2) ~ 0");
     expect_eq_int(
         stats, testName, __LINE__,
-        static_cast<long long>(csFP32::from_int(1).raw_value()),
+        static_cast<long long>(csFP32(1.0f).raw_value()),
         static_cast<long long>(one.raw_value()),
         "fp32 comparison works (raw)"
     );
@@ -372,7 +374,7 @@ void test_setPixelFloat_exact_center(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Exact center at (2, 2) - should draw single pixel with full alpha
-    m.setPixelFloat2(csFP16::from_int(2), csFP16::from_int(2), color);
+    m.setPixelFloat2(csFP16(2.0f), csFP16(2.0f), color);
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 2), 255, 100, 200, 50), "exact center draws single pixel with full alpha");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 1), 0, 0, 0, 0), "neighbor pixel stays clear");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
@@ -384,7 +386,7 @@ void test_setPixelFloat_offset_vertical_down(TestStats& stats) {
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (0, +0.5) - should split between (2,2) and (2,3)
     // max_offset_raw = 8 (0.5 * 16), weight = (8 * 255 + 8) / 16 = 128
-    m.setPixelFloat2(csFP16::from_int(2), csFP16{2.5f}, color);
+    m.setPixelFloat2(csFP16(2.0f), csFP16{2.5f}, color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(2, 3);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -399,7 +401,7 @@ void test_setPixelFloat_offset_vertical_up(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (0, -0.5) - should split between (2,2) and (2,1)
-    m.setPixelFloat2(csFP16::from_int(2), csFP16{1.5f}, color);
+    m.setPixelFloat2(csFP16(2.0f), csFP16{1.5f}, color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(2, 1);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -429,7 +431,7 @@ void test_setPixelFloat_offset_horizontal(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Offset (+0.5, 0) - should split between (2,2) and (3,2)
-    m.setPixelFloat2(csFP16{2.5f}, csFP16::from_int(2), color);
+    m.setPixelFloat2(csFP16{2.5f}, csFP16(2.0f), color);
     const csColorRGBA center = m.getPixel(2, 2);
     const csColorRGBA secondary = m.getPixel(3, 2);
     expect_true(stats, testName, __LINE__, center.a > 0 && secondary.a > 0, "both pixels have alpha");
@@ -529,7 +531,7 @@ void test_setPixelFloat4_exact_center(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // Exact center at (2,2) - should draw exactly one pixel with full alpha.
-    m.setPixelFloat4(csFP16::from_int(2), csFP16::from_int(2), color);
+    m.setPixelFloat4(csFP16(2.0f), csFP16(2.0f), color);
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 2), 255, 100, 200, 50), "exact center draws single pixel with full alpha");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(3, 2), 0, 0, 0, 0), "neighbor pixel stays clear");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(2, 3), 0, 0, 0, 0), "neighbor pixel stays clear");
@@ -541,7 +543,7 @@ void test_setPixelFloat4_offset_horizontal(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // x = 2.5, y = 2.0 -> bilinear splits into two pixels: (2,2) and (3,2) at ~50/50.
-    m.setPixelFloat4(csFP16{2.5f}, csFP16::from_int(2), color);
+    m.setPixelFloat4(csFP16{2.5f}, csFP16(2.0f), color);
     const csColorRGBA p00 = m.getPixel(2, 2);
     const csColorRGBA p10 = m.getPixel(3, 2);
     expect_true(stats, testName, __LINE__, p00.a > 0 && p10.a > 0, "both pixels have alpha");
@@ -558,7 +560,7 @@ void test_setPixelFloat4_offset_vertical(TestStats& stats) {
     csMatrixPixels m{5, 5};
     const csColorRGBA color{255, 100, 200, 50};
     // x = 2.0, y = 2.5 -> bilinear splits into two pixels: (2,2) and (2,3) at ~50/50.
-    m.setPixelFloat4(csFP16::from_int(2), csFP16{2.5f}, color);
+    m.setPixelFloat4(csFP16(2.0f), csFP16{2.5f}, color);
     const csColorRGBA p00 = m.getPixel(2, 2);
     const csColorRGBA p01 = m.getPixel(2, 3);
     expect_true(stats, testName, __LINE__, p00.a > 0 && p01.a > 0, "both pixels have alpha");

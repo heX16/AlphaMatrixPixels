@@ -403,6 +403,9 @@ public:
     }
 
     void render(csRandGen& rand, tTime currTime) const override {
+        (void)rand;
+        (void)currTime;
+
         if (disabled || !matrixDest || !matrixSource) {
             return;
         }

@@ -20,6 +20,21 @@
             }
         },
         {
+            "label": "Build Tests",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cd tests && meson setup builddir --buildtype=debug && meson compile -C builddir"
+            ],
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
             "label": "Build GUI_Test (Release)",
             "type": "shell",
             "command": "bash",
