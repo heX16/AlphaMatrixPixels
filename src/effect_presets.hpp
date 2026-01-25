@@ -9,6 +9,7 @@
 #include "render_efffects.hpp"
 #include "render_pipes.hpp"
 #include "fixed_point.hpp"
+#include "amp_macros.hpp"
 #include "fonts.h"
 
 using namespace amp;
@@ -18,31 +19,41 @@ using namespace amp::math;
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
 // matrixSecondBuffer: optional second buffer for effects that need it (e.g., case 5)
-inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
+inline void loadEffectPreset(
+        csEffectManager& effectManager, 
+        uint16_t effectId, 
+        csMatrixPixels* matrixSecondBuffer = nullptr,
+        amp::tProgmemStrPtr eff_name = nullptr)
+{
+    (void)eff_name; // Optional effect name stored in PROGMEM (Flash). Currently unused.
+
     if (effectId == 0) {
         return;
     }
 
     switch (effectId) {
         // AlphaMatrixPixelsBase effects (1-5)
-        case 1: // Plasma
+        case 1:
             {
+                eff_name = F("Plasma");
                 auto* plasma = new csRenderPlasma();
                 plasma->scale = csFP16(0.3f);
                 plasma->speed = csFP16(1.0f);
                 effectManager.add(plasma);
                 break;
             }
-        case 2: // GradientWaves
+        case 2:
             {
+                eff_name = F("GradientWaves");
                 auto* gradientWaves = new csRenderGradientWaves();
                 gradientWaves->scale = csFP16(0.5f);
                 gradientWaves->speed = csFP16(1.0f);
                 effectManager.add(gradientWaves);
                 break;
             }
-        case 3: // Snowfall
+        case 3:
             {
+                eff_name = F("Snowfall");
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
                 snowfall->count = 5;
@@ -52,8 +63,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(snowfall);
                 break;
             }
-        case 4: // Glyph
+        case 4:
             {
+                eff_name = F("Glyph");
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
                 glyph->backgroundColor = csColorRGBA{128, 0, 0, 0};
@@ -69,8 +81,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(glyph);
                 break;
             }
-        case 5: // Snowfall (copy) - renders to canvasX2, then copies to canvas via pipe
+        case 5:
             {
+                eff_name = F("Snowfall (copy)");
                 if (!matrixSecondBuffer) {
                     break; // canvasX2 not provided
                 }
@@ -98,17 +111,27 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             }
         
         // GUI_Test effects (101-110, 200)
-        case 101: // GradientWaves
-            effectManager.add(new csRenderGradientWaves());
-            break;
-        case 102: // GradientWavesFP
-            effectManager.add(new csRenderGradientWavesFP());
-            break;
-        case 103: // Plasma
-            effectManager.add(new csRenderPlasma());
-            break;
-        case 104: // Snowfall
+        case 101:
             {
+                eff_name = F("GradientWaves");
+                effectManager.add(new csRenderGradientWaves());
+                break;
+            }
+        case 102:
+            {
+                eff_name = F("GradientWavesFP");
+                effectManager.add(new csRenderGradientWavesFP());
+                break;
+            }
+        case 103:
+            {
+                eff_name = F("Plasma");
+                effectManager.add(new csRenderPlasma());
+                break;
+            }
+        case 104:
+            {
+                eff_name = F("Snowfall");
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 effectManager.add(snowfall);
@@ -116,8 +139,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             }
         
         // Secondary effects (105-108)
-        case 105: // Glyph
+        case 105:
             {
+                eff_name = F("Glyph");
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
                 glyph->backgroundColor = csColorRGBA{196, 0, 0, 0};
@@ -133,8 +157,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(glyph);
                 break;
             }
-        case 106: // Circle
+        case 106:
             {
+            eff_name = F("Circle");
             auto* circle = new csRenderCircleGradient();
             circle->color = csColorRGBA{255, 255, 255, 255};
             circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
@@ -143,8 +168,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             effectManager.add(circle);
             break;
         }
-        case 107: // Clock
+        case 107:
             {
+                eff_name = F("Clock");
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitalClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -189,8 +215,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 108: // AverageArea
+        case 108:
             {
+            eff_name = F("AverageArea");
             if (!effectManager.getMatrix()) {
                 break;
             }
@@ -203,9 +230,10 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             effectManager.add(averageArea);
             break;
         }
-        case 109: // Clock (3x5 font)
-        case 110: // Clock (3x5 font) (BG color - none)
+        case 109:
+        case 110:
             {
+                eff_name = (effectId == 109) ? F("Clock 3x5") : F("Clock 3x5 (no BG)");
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -247,8 +275,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 111: // SlowFadingBackground (post-frame trail)
+        case 111:
             {
+                eff_name = F("SlowFadingBackground");
                 auto* fade = new csRenderSlowFadingBackground();
 
                 // Slightly slower fade by default (higher = slower).
@@ -257,8 +286,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(fade);
                 break;
             }
-        case 112: // 7 horizontal lines with different colors
+        case 112:
             {
+                eff_name = F("7 horizontal lines");
                 if (!effectManager.getMatrix()) {
                     break;
                 }
@@ -297,8 +327,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 }
                 break;
             }
-        case 113: // BouncingPixel
+        case 113:
             {
+                eff_name = F("BouncingPixel");
                 auto* bouncingPixel = new csRenderBouncingPixel();
                 bouncingPixel->color = csColorRGBA{255, 255, 255, 0};
                 bouncingPixel->speed = csFP16(0.5f);
@@ -306,8 +337,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(bouncingPixel);
                 break;
             }
-        case 114: // SlowFadingOverlay (post-frame trail overlay)
+        case 114:
             {
+                eff_name = F("SlowFadingOverlay");
                 auto* fade = new csRenderSlowFadingOverlay();
 
                 // Default fadeAlpha is already set to 240 in constructor.
@@ -317,8 +349,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(fade);
                 break;
             }
-        case 115: // BouncingPixelDualTrail
+        case 115:
             {
+                eff_name = F("BouncingPixelDualTrail");
                 auto* bouncingPixelDualTrail = new csRenderBouncingPixelDualTrail();
                 bouncingPixelDualTrail->color = csColorRGBA{255, 255, 255, 0};
                 bouncingPixelDualTrail->speed = csFP16(0.5f);
@@ -326,8 +359,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(bouncingPixelDualTrail);
                 break;
             }
-        case 116: // 5 BouncingPixels with different bright colors
+        case 116:
             {
+                eff_name = F("5 BouncingPixels");
                 // Define 5 bright colors
                 // csColorRGBA format: (a, r, g, b)
                 const csColorRGBA colors[5] = {
@@ -352,9 +386,10 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
             ; // slip - remove "effect2"
         
         // SimpleClock effects (201-205)
-        case 201: // Clock
-        case 202: // Clock negative
+        case 201:
+        case 202:
             {
+                eff_name = (effectId == 201) ? F("Clock") : F("Clock negative");
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -400,8 +435,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 203: // 5 horizontal lines with different colors
+        case 203:
             {
+                eff_name = F("5 horizontal lines");
                 if (!effectManager.getMatrix()) {
                     break;
                 }
@@ -434,16 +470,23 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 }
                 break;
             }
-        case 204: // GradientWavesFP
-            effectManager.add(new csRenderGradientWavesFP());
-            break;
-        case 205: // Plasma
-            effectManager.add(new csRenderPlasma());
-            break;
+        case 204:
+            {
+                eff_name = F("GradientWavesFP");
+                effectManager.add(new csRenderGradientWavesFP());
+                break;
+            }
+        case 205:
+            {
+                eff_name = F("Plasma");
+                effectManager.add(new csRenderPlasma());
+                break;
+            }
         
         // SimpleClock_DBG effects (301-302)
-        case 301: // Clock
+        case 301:
             {
+                eff_name = F("Clock");
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -481,8 +524,9 @@ inline void loadEffectPreset(csEffectManager& effectManager, uint16_t effectId, 
                 effectManager.add(digitGlyph);
                 break;
             }
-        case 302: // DigitGlyph (standalone, if needed)
+        case 302:
             {
+                eff_name = F("DigitGlyph");
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 auto* digitGlyph = new csRenderDigitalClockDigit();
                 digitGlyph->setFont(font);
