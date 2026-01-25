@@ -507,6 +507,7 @@ private:
             return;
         }
         delete[] pixels_;
+        // TODO: добавиь проверку на нулевой размер - в таком случае `pixels_ = nullptr`.
         size_x_ = sx;
         size_y_ = sy;
         pixels_ = allocate(size_x_, size_y_);

@@ -364,6 +364,32 @@ public:
     }
 };
 
+
+
+/*
+TODO: 
+
+csRenderMatrix1DTo2DBase
+- remap 1D matrix (height=1) to 2D matrix
+- Virt. Func: calc source matrix pixels count, return `tMatrixPixelsSize`
+- Property: "auto update size of the source matrix if pixels count changed" (придумай название сам)
+- Virt. Func: `getPixelRemap(tMatrixPixelsCoord src_x, tMatrixPixelsCoord src_y, tMatrixPixelsCoord & dst_x, tMatrixPixelsCoord & dst_y) const override {`
+
+
+
+future:
+- csRenderMatrix1DTo2DRect
+- csRenderMatrix1DTo2DRectFrame
+- csRenderMatrix1DTo2DRectSpiral
+- csRenderMatrix1DTo2DRectAngle
+- csRenderMatrix1DTo2DLine
+- csRenderMatrix1DTo2DRadial
+
+*/
+
+
+
+
 /*
 Effect: remap 2D matrix to 1D matrix (height=1) using custom index mapping via 2D array.
 
@@ -443,6 +469,22 @@ public:
 // Derived classes only need to override composePixel() to specify the blending order.
 class csRenderSlowFadingBase : public csRenderPostFrame {
 public:
+    /*
+    // TODO: `buffer` - улучшить качество логики.
+     `buffer` - можно сделать его как свойство, которое может буть null - и тогда оно само создает буффер.
+     а если оно имеет указатель на матрицу, тогда в `buffer` записывается этот указатель,
+     но при этом csRender больше не может удалять матрицу (поскольку он не владелец).
+
+     но csRender может менять размер матрицы `buffer`, и без разницы - владеет от этой матрицей или нет.
+
+     получается что у класса будет 3 матрицы:
+     1. source
+     2. dest
+     3. buffer
+
+     это интересно тем что если буфер будет доступен, тогда можно будет делать более сложные эффекты.
+    */
+
     static constexpr uint8_t base = csRenderMatrixPipeBase::propLast;
     static constexpr uint8_t propFadeAlpha = base + 1;
     static constexpr uint8_t propLast = propFadeAlpha;
@@ -577,6 +619,7 @@ protected:
             return;
         }
 
+        // TODO: тут ошибка! удалять объект buffer не нужно. достаточно вызывать `resize`.
         delete buffer;
         buffer = new csMatrixPixels(width, height);
         buffer->clear();

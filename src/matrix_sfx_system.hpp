@@ -33,6 +33,16 @@ public:
     csMatrixSFXSystem& operator=(csMatrixSFXSystem&& other) = delete;
 
 public:
+    /*
+    // TODO:
+    подумать какие тут имеет смысл добавить или активировать Property.
+
+    Нужно добавить property:
+    - `virtual_matrix`.
+    - `clean_matrix`
+
+    */
+
     // Construct matrix system with empty matrix (0x0).
     // Creates matrix and effect manager via virtual factory methods, and binds matrix to manager.
     csMatrixSFXSystem()
