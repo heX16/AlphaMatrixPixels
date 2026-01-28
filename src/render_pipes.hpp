@@ -1046,6 +1046,7 @@ protected:
                       csColorRGBA trail) override {
         // Accumulate: current frame over existing trail in buffer (slowly).
         // NOTE: accumulationAlpha is currently fixed to 16.
+        // TODO: `accumulationAlpha=16` - make a property.
         const csColorRGBA accumulated = csColorRGBA::sourceOverStraight(trail, cur, 16);
         buffer->setPixelRewrite(x, y, accumulated);
 

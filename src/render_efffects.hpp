@@ -1244,6 +1244,7 @@ public:
     }
 };
 
+// TODO: csRenderContainer - remove???
 // Effect: container that holds and calls up to 5 nested effects.
 // Container does NOT create or destroy nested effects - only stores pointers.
 class csRenderContainer : public csRenderMatrixBase {
@@ -1946,6 +1947,142 @@ private:
     // Previous cell coordinates (integer cell indices)
     tMatrixPixelsCoord prevCellX = 0;
     tMatrixPixelsCoord prevCellY = 0;
+};
+
+// Effect: a single random pixel flashes for param ms, then stays off for pauseMs ms.
+// Only one pixel is visible at any time. Position and color change only in recalc();
+// render() only draws the current pixel. Virtual respawn() picks random x,y and color.
+class csRenderRandomFlashPoint : public csRenderMatrixBase {
+public:
+    static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    static constexpr uint8_t propParam = base + 1;
+    static constexpr uint8_t propPauseMs = base + 2;
+    static constexpr uint8_t propLast = propPauseMs;
+
+    // ON duration in milliseconds
+    uint16_t param = 120;
+    // OFF duration in milliseconds
+    uint16_t pauseMs = 300;
+
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderMatrixBase::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propParam:
+                info.valueType = PropType::UInt16;
+                info.name = "On time (ms)";
+                info.valuePtr = &param;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case propPauseMs:
+                info.valueType = PropType::UInt16;
+                info.name = "Off time (ms)";
+                info.valuePtr = &pauseMs;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderMatrixBase::propChanged(propNum);
+        if (propNum == propMatrixDest || propNum == propRectDest) {
+            needsRespawn = true;
+        }
+    }
+
+    void recalc(csRandGen& rand, tTime currTime) override {
+        if (disabled || !matrixDest || rectDest.empty()) {
+            return;
+        }
+
+        const csRect target = rectDest.intersect(matrixDest->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        if (needsRespawn) {
+            respawn(rand, currTime);
+            isOn = true;
+            phaseStartTime = currTime;
+            needsRespawn = false;
+            return;
+        }
+
+        const uint16_t elapsed = static_cast<uint16_t>(currTime - phaseStartTime);
+
+        if (isOn) {
+            if (param != 0 && elapsed >= param) {
+                isOn = false;
+                phaseStartTime = currTime;
+            }
+            return;
+        }
+
+        if (pauseMs != 0 && elapsed >= pauseMs) {
+            respawn(rand, currTime);
+            isOn = true;
+            phaseStartTime = currTime;
+        }
+    }
+
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrixDest || rectDest.empty()) {
+            return;
+        }
+        if (!isOn) {
+            return;
+        }
+
+        const csRect target = rectDest.intersect(matrixDest->getRect());
+        if (target.empty()) {
+            return;
+        }
+
+        const tMatrixPixelsCoord endX = target.x + to_coord(target.width);
+        const tMatrixPixelsCoord endY = target.y + to_coord(target.height);
+        if (x < target.x || x >= endX || y < target.y || y >= endY) {
+            return;
+        }
+
+        matrixDest->setPixel(x, y, color);
+    }
+
+    // Virtual respawn: choose random position and color. Override in derived classes to customize.
+    virtual void respawn(csRandGen& rand, tTime /*currTime*/) {
+        const csRect target = rectDest.intersect(matrixDest->getRect());
+        if (target.empty() || !matrixDest) {
+            return;
+        }
+
+        x = target.x + to_coord(randCoord(rand, target.width));
+        y = target.y + to_coord(randCoord(rand, target.height));
+        color = csColorRGBA{255, rand.rand(), rand.rand(), rand.rand()};
+    }
+
+protected:
+    tMatrixPixelsCoord x = 0;
+    tMatrixPixelsCoord y = 0;
+    csColorRGBA color{255, 255, 255, 255};
+    uint16_t phaseStartTime = 0;
+    bool isOn = false;
+    bool needsRespawn = true;
+
+    // Helper: random value in [0, maxExcl) for maxExcl up to 65535 (csRandGen is 8-bit).
+    static tMatrixPixelsSize randCoord(csRandGen& rand, tMatrixPixelsSize maxExcl) {
+        if (maxExcl == 0) {
+            return 0;
+        }
+        if (maxExcl <= 256) {
+            return static_cast<tMatrixPixelsSize>(rand.rand(static_cast<uint8_t>(maxExcl)));
+        }
+        const uint32_t r = (static_cast<uint32_t>(rand.rand()) << 8) | rand.rand();
+        return static_cast<tMatrixPixelsSize>((r * static_cast<uint32_t>(maxExcl)) >> 16);
+    }
 };
 
 } // namespace amp

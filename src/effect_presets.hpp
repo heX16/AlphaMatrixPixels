@@ -385,6 +385,17 @@ inline void loadEffectPreset(
                 }
                 break;
             }
+        case 117:
+            {
+                // TODO: add csRenderSlowFadingBackground
+                *name_ptr = F("RandomFlashPoint");
+                auto* flash = new csRenderRandomFlashPoint();
+                flash->param = 120;
+                flash->pauseMs = 300;
+                flash->renderRectAutosize = true;
+                effectManager.add(flash);
+                break;
+            }
         case 200:
             ; // slip - remove "effect2"
         
