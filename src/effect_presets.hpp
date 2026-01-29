@@ -389,11 +389,21 @@ inline void loadEffectPreset(
             {
                 *name_ptr = F("RandomFlashPoint");
                 auto* fade = new csRenderSlowFadingBackground();
-                fade->fadeAlpha = 128;
+                fade->fadeAlpha = 192;
                 effectManager.add(fade);
                 auto* flash = new csRenderRandomFlashPoint();
-                flash->param = 120;
-                flash->pauseMs = 300;
+                flash->param = 100;
+                flash->pauseMs = 100;
+                flash->renderRectAutosize = true;
+                effectManager.add(flash);
+                flash = new csRenderRandomFlashPoint();
+                flash->param = 100;
+                flash->pauseMs = 100;
+                flash->renderRectAutosize = true;
+                effectManager.add(flash);
+                flash = new csRenderRandomFlashPoint();
+                flash->param = 100;
+                flash->pauseMs = 100;
                 flash->renderRectAutosize = true;
                 effectManager.add(flash);
                 break;
