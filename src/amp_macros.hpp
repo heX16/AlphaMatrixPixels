@@ -65,23 +65,19 @@ Note:
     #define pgm_read_dword(addr) (*(const uint32_t *)(addr))
 #endif
 
-// Arduino flash-string helper macro compatibility.
-// In Arduino, `F("text")` stores the string in flash/PROGMEM and returns a special pointer type.
-// For non-Arduino builds we define `F(x)` as a no-op so the same code compiles.
+// Fallback for F() when not provided by the framework (e.g. non-Arduino build).
 #ifndef F
-    #if defined(ARDUINO)
-        // Arduino core normally defines `F()` in Arduino.h/WString.h.
-        // If some toolchain doesn't provide it, define a compatible fallback.
-        class __FlashStringHelper;
-        #ifndef PSTR
-            #define F(str) (str)
-        #else
-            #define F(str) (reinterpret_cast<const __FlashStringHelper*>(PSTR(str)))
-        #endif
-    #else
-        #define F(str) (str)
-    #endif
+  #define F(str) (str)
 #endif
+
+namespace amp {
+  #if defined(ARDUINO)
+    // Arduino.h/WString.h already provide __FlashStringHelper; we only alias the pointer type.
+    using tProgmemStrPtr = const __FlashStringHelper*;
+  #else
+    using tProgmemStrPtr = const char*;
+  #endif
+} // namespace amp
 
 #ifdef __cpp_static_assert
     // C++ 17+
@@ -91,17 +87,4 @@ Note:
     #include <cassert>
     #define AMP_STATIC_ASSERT(condition, message) static_assert(condition, message)
 #endif
-
-// PROGMEM string pointer type (Flash/ROM string storage).
-// Use this type for pointers to strings stored in flash.
-// - Arduino: matches the type returned by `F("...")`.
-// - Non-Arduino builds: falls back to a normal `const char*`.
-namespace amp {
-#if defined(ARDUINO)
-    class __FlashStringHelper;
-    using tProgmemStrPtr = const __FlashStringHelper*;
-#else
-    using tProgmemStrPtr = const char*;
-#endif
-} // namespace amp
 
