@@ -1955,6 +1955,7 @@ private:
 class csRenderRandomFlashPoint : public csRenderMatrixBase {
 public:
     static constexpr uint8_t base = csRenderMatrixBase::propLast;
+    // TODO: rename `propParam` to ????
     static constexpr uint8_t propParam = base + 1;
     static constexpr uint8_t propPauseMs = base + 2;
     static constexpr uint8_t propLast = propPauseMs;

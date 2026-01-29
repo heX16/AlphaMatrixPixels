@@ -387,8 +387,10 @@ inline void loadEffectPreset(
             }
         case 117:
             {
-                // TODO: add csRenderSlowFadingBackground
                 *name_ptr = F("RandomFlashPoint");
+                auto* fade = new csRenderSlowFadingBackground();
+                fade->fadeAlpha = 128;
+                effectManager.add(fade);
                 auto* flash = new csRenderRandomFlashPoint();
                 flash->param = 120;
                 flash->pauseMs = 300;
