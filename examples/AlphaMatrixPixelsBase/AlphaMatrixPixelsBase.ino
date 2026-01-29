@@ -20,7 +20,8 @@ amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
 
 csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
-uint8_t effectIndex = 0;
+constexpr uint8_t cEffectsCount = 5;
+uint8_t effectIndex = 1;
 
 void setup() {
     constexpr uint16_t cLedCount = cNumLeds;
@@ -66,24 +67,26 @@ void loop() {
 
     // Check if timer has fired and switch to next effect
     if (tEffectSwitch.run()) {
-        effectIndex = (effectIndex + 1) % 4;
+        effectIndex = (effectIndex % cEffectsCount) + 1;
         tEffectSwitch.start();  // Restart timer with default time
 
-        // Clear all effects and add needed ones based on effectIndex
+        // Clear all effects and add needed ones based on effectIndex (1..cEffectsCount)
         sfxSystem.effectManager->clearAll();
         switch (effectIndex) {
-            case 0:
-                //loadEffectPresetLocal(*sfxSystem.effectManager, 2); // GradientWaves
+            case 1:
                 loadEffectPresetLocal(*sfxSystem.effectManager, 3); // Snowfall
                 break;
-            case 1:
+            case 2:
                 loadEffectPresetLocal(*sfxSystem.effectManager, 2); // GradientWaves
                 break;
-            case 2:
+            case 3:
                 loadEffectPresetLocal(*sfxSystem.effectManager, 1); // Plasma
                 break;
-            default:
+            case 4:
                 loadEffectPresetLocal(*sfxSystem.effectManager, 116); // 5 BouncingPixels with different bright colors
+                break;
+            case 5:
+                loadEffectPresetLocal(*sfxSystem.effectManager, 117); // RandomFlashPoint
                 break;
         }
     }
