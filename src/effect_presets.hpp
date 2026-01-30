@@ -415,6 +415,28 @@ inline void loadEffectPreset(
                 }
                 break;
             }
+        case 119:
+            {
+                *name_ptr = F("5 BouncingPixels Fading");
+                auto* fade = new csRenderSlowFadingBackground();
+                fade->fadeAlpha = 192;
+                effectManager.add(fade);
+                const csColorRGBA colors[5] = {
+                    csColorRGBA{255, 255, 0, 0},      // Red
+                    csColorRGBA{255, 0, 255, 0},     // Green
+                    csColorRGBA{255, 0, 0, 255},     // Blue
+                    csColorRGBA{255, 255, 255, 0},   // Yellow
+                    csColorRGBA{255, 0, 255, 255}    // Cyan
+                };
+                for (uint8_t i = 0; i < 5; ++i) {
+                    auto* bouncingPixel = new csRenderBouncingPixel();
+                    bouncingPixel->color = colors[i];
+                    bouncingPixel->speed = csFP16(0.5f);
+                    bouncingPixel->renderRectAutosize = true;
+                    effectManager.add(bouncingPixel);
+                }
+                break;
+            }
         case 200:
             ; // slip - remove "effect2"
         
