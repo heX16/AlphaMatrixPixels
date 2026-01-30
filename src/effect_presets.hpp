@@ -391,21 +391,28 @@ inline void loadEffectPreset(
                 auto* fade = new csRenderSlowFadingBackground();
                 fade->fadeAlpha = 192;
                 effectManager.add(fade);
-                auto* flash = new csRenderRandomFlashPoint();
-                flash->param = 100;
-                flash->pauseMs = 100;
-                flash->renderRectAutosize = true;
-                effectManager.add(flash);
-                flash = new csRenderRandomFlashPoint();
-                flash->param = 100;
-                flash->pauseMs = 100;
-                flash->renderRectAutosize = true;
-                effectManager.add(flash);
-                flash = new csRenderRandomFlashPoint();
-                flash->param = 100;
-                flash->pauseMs = 100;
-                flash->renderRectAutosize = true;
-                effectManager.add(flash);
+                for (int i = 0; i < 3; ++i) {
+                    auto* flash = new csRenderRandomFlashPoint();
+                    flash->param = 100;
+                    flash->pauseMs = 100;
+                    flash->renderRectAutosize = true;
+                    effectManager.add(flash);
+                }
+                break;
+            }
+        case 118:
+            {
+                *name_ptr = F("RandomFlashPointOverlay");
+                auto* fade = new csRenderSlowFadingOverlay();
+                fade->fadeAlpha = 240;
+                effectManager.add(fade);
+                for (int i = 0; i < 3; ++i) {
+                    auto* flash = new csRenderRandomFlashPoint();
+                    flash->param = 100;
+                    flash->pauseMs = 100;
+                    flash->renderRectAutosize = true;
+                    effectManager.add(flash);
+                }
                 break;
             }
         case 200:
