@@ -20,7 +20,7 @@ amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
 
 csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
-constexpr uint8_t cEffectsCount = 5;
+constexpr uint8_t cEffectsCount = 6;
 uint8_t effectIndex = 1;
 
 void setup() {
@@ -87,6 +87,9 @@ void loop() {
                 break;
             case 5:
                 loadEffectPresetLocal(*sfxSystem.effectManager, 117); // RandomFlashPoint
+                break;
+            case 6:
+                loadEffectPresetLocal(*sfxSystem.effectManager, 118); // RandomFlashPointOverlay
                 break;
         }
     }

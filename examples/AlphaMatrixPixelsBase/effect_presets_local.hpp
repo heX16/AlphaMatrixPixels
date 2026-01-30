@@ -38,7 +38,7 @@ Example:
 inline void loadEffectPresetLocal(csEffectManager& effectManager, uint16_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     // Only effects listed here are compiled into binary
     switch (effectId) {
-        EFFECT_CASE_LIST(1, 2, 3, 5, 116, 117)
+        EFFECT_CASE_LIST(1, 2, 3, 5, 116, 117, 118)
         default:
             break;
     }
