@@ -301,6 +301,30 @@ public:
         }
     }
 
+    // Draw specific source area to destination coordinates with clipping, overwriting destination pixels.
+    // Unlike drawMatrixArea(), this does NOT blend; it writes pixels directly.
+    // Useful for internal buffers where pixels are treated as data (e.g. heat fields), not composited imagery.
+    void drawMatrixAreaRewrite(csRect src, tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y,
+                              const csMatrixPixels& source) noexcept {
+        // Clip source rectangle to source matrix bounds
+        const csRect srcBounds = source.getRect();
+        const csRect srcClipped = src.intersect(srcBounds);
+        if (srcClipped.empty()) {
+            return;
+        }
+
+        // Apply global alpha multiplier by scaling the source alpha channel, then overwrite.
+        for (tMatrixPixelsSize y = 0; y < srcClipped.height; ++y) {
+            for (tMatrixPixelsSize x = 0; x < srcClipped.width; ++x) {
+                const csColorRGBA pixel = source.getPixel(srcClipped.x + static_cast<tMatrixPixelsCoord>(x),
+                                                          srcClipped.y + static_cast<tMatrixPixelsCoord>(y));
+                setPixelRewrite(dst_x + static_cast<tMatrixPixelsCoord>(x),
+                                dst_y + static_cast<tMatrixPixelsCoord>(y),
+                                pixel);
+            }
+        }
+    }
+
     // Clear matrix to transparent black.
     void clear() noexcept {
         const size_t bytes = count() * sizeof(csColorRGBA);
