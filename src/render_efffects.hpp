@@ -295,6 +295,41 @@ public:
         return csColorRGBA{a, r, g, b};
     }
 
+private:
+    // Upward diffusion (weighted rise + slight lateral spread) for a single visible row.
+    // Reads from src and writes into dst for the given y (requires y + 1 < visibleH).
+    static void diffuseUpwardRow(
+        csRandGen& rand,
+        tMatrixPixelsSize y,
+        tMatrixPixelsSize w,
+        tMatrixPixelsSize visibleH,
+        int windShift,
+        const csMatrixPixels& src,
+        csMatrixPixels& dst
+    ) {
+        // Keep all computations identical to the previous inline loop in recalc().
+        const tMatrixPixelsSize yp1 = y + 1;
+        const tMatrixPixelsSize yp2 = (y + 2 < visibleH) ? (y + 2) : (visibleH - 1);
+        for (tMatrixPixelsSize x = 0; x < w; ++x) {
+            const int jitter = static_cast<int>(rand.rand(3)) - 1;
+            const int sx = static_cast<int>(x) + windShift + jitter;
+            const int sxClamp = (sx < 0) ? 0 : (sx >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : sx;
+            const int sxLClamp = (sxClamp - 1 < 0) ? 0 : (sxClamp - 1);
+            const int sxRClamp = (sxClamp + 1 >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : (sxClamp + 1);
+            const tMatrixPixelsCoord cx = to_coord(sxClamp);
+            const tMatrixPixelsCoord cxL = to_coord(sxLClamp);
+            const tMatrixPixelsCoord cxR = to_coord(sxRClamp);
+
+            const uint16_t v1 = src.getPixel(cx, to_coord(yp1)).r;
+            const uint16_t v2 = src.getPixel(cx, to_coord(yp2)).r;
+            const uint16_t vL = src.getPixel(cxL, to_coord(yp1)).r;
+            const uint16_t vR = src.getPixel(cxR, to_coord(yp1)).r;
+            const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
+            dst.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+        }
+    }
+
+public:
     // Simulation: run N steps:
     // - cool the heat field (including technical fuel row)
     // - add sparks into heatB technical row
@@ -352,8 +387,6 @@ public:
         const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / hClamp) + 2u);
         const uint8_t coolMax = (coolMax16 > 255u) ? 255u : static_cast<uint8_t>(coolMax16);
 
-        const int windShift = static_cast<int>(wind);
-
         const tMatrixPixelsCoord fuelY = to_coord(visibleH);
         const tMatrixPixelsCoord bottomVisibleY = to_coord(visibleH - 1);
 
@@ -393,27 +426,9 @@ public:
 
             // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
             // Read from heatB, write into heatA for visible rows y < visibleH-1.
-            csMatrixPixels* src = &heatB;
+            const int windShift = static_cast<int>(wind);
             for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
-                const tMatrixPixelsSize yp1 = y + 1;
-                const tMatrixPixelsSize yp2 = (y + 2 < visibleH) ? (y + 2) : (visibleH - 1);
-                for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                    const int jitter = static_cast<int>(rand.rand(3)) - 1;
-                    const int sx = static_cast<int>(x) + windShift + jitter;
-                    const int sxClamp = (sx < 0) ? 0 : (sx >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : sx;
-                    const int sxLClamp = (sxClamp - 1 < 0) ? 0 : (sxClamp - 1);
-                    const int sxRClamp = (sxClamp + 1 >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : (sxClamp + 1);
-                    const tMatrixPixelsCoord cx = to_coord(sxClamp);
-                    const tMatrixPixelsCoord cxL = to_coord(sxLClamp);
-                    const tMatrixPixelsCoord cxR = to_coord(sxRClamp);
-
-                    const uint16_t v1 = src->getPixel(cx, to_coord(yp1)).r;
-                    const uint16_t v2 = src->getPixel(cx, to_coord(yp2)).r;
-                    const uint16_t vL = src->getPixel(cxL, to_coord(yp1)).r;
-                    const uint16_t vR = src->getPixel(cxR, to_coord(yp1)).r;
-                    const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
-                    heatA.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
-                }
+                diffuseUpwardRow(rand, y, w, visibleH, windShift, heatB, heatA);
             }
 
             // --- Copy bottom visible row and technical row from heatB into heatA.
