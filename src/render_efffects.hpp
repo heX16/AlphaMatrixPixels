@@ -174,8 +174,7 @@ public:
     }
 };
 
-// Classic flame/fire effect. Uses internal heat buffers and a final RGBA canvas;
-// draws to matrixDest via drawMatrix() so clipping is handled there.
+// Classic flame/fire effect. Uses internal heat buffers; draws heat->palette directly to matrixDest.
 // Heat is stored in the R channel (A=255) in double-buffered heat matrices.
 // Cooling is scaled by rectDest.height so the look is consistent across heights.
 class csRenderFlame : public csRenderDynamic {
@@ -197,11 +196,10 @@ public:
 
     csMatrixPixels heatA{0, 0};
     csMatrixPixels heatB{0, 0};
-    csMatrixPixels canvas{0, 0};
-    // Hidden 1-pixel-tall fuel row used only for spark generation.
-    // It is blurred into the visible bottom row each simulation step to avoid a harsh "technical" bottom line.
-    csMatrixPixels fuelRow{0, 0};
     uint16_t lastUpdateTime = 0;
+
+    // Hidden fuel-burn row count appended below visible area. Sparks/fuel live here; blurred into visible bottom row.
+    static constexpr tMatrixPixelsSize cFuelBurnRowCount = 1;
 
     static constexpr uint16_t refHeight = 16;
     static constexpr uint16_t baseStepMs = 35;
@@ -249,6 +247,13 @@ public:
         }
     }
 
+    // Returns the technical fuel-burn zone rectangle (always height cFuelBurnRowCount) at bottom of heat buffers.
+    // Visible rows are y=0..rectDest.height-1; technical row is at y=rectDest.height.
+    [[nodiscard]] csRect getFuelBurnRect() const noexcept {
+        const tMatrixPixelsSize visibleH = rectDest.height;
+        return csRect{0, to_coord(visibleH), rectDest.width, cFuelBurnRowCount};
+    }
+
     // Resize internal buffers to match rectDest when width/height change.
     // Called from propChanged(propMatrixDest | propRectDest). Clears buffers and resets time.
     void updateFlameBuffers() {
@@ -256,18 +261,15 @@ public:
             return;
         }
         const tMatrixPixelsSize w = rectDest.width;
-        const tMatrixPixelsSize h = rectDest.height;
-        if (heatA.width() == w && heatA.height() == h) {
+        const tMatrixPixelsSize visibleH = rectDest.height;
+        const tMatrixPixelsSize internalH = visibleH + cFuelBurnRowCount;
+        if (heatA.width() == w && heatA.height() == internalH) {
             return;
         }
-        heatA.resize(w, h);
-        heatB.resize(w, h);
-        canvas.resize(w, h);
-        fuelRow.resize(w, 1);
+        heatA.resize(w, internalH);
+        heatB.resize(w, internalH);
         heatA.clear();
         heatB.clear();
-        canvas.clear();
-        fuelRow.clear();
         lastUpdateTime = 0;
     }
 
@@ -294,19 +296,19 @@ public:
     }
 
     // Simulation: run N steps:
-    // - cool the heat field
-    // - update hidden fuelRow (cool + sparks)
-    // - blur fuelRow into the visible bottom row
+    // - cool the heat field (including technical fuel row)
+    // - add sparks into heatB technical row
+    // - blur technical row into visible bottom row
     // - diffuse upward with slight lateral spread
-    // then fill canvas from heat.
     void recalc(csRandGen& rand, tTime currTime) override {
         if (disabled || rectDest.empty()) {
             return;
         }
         updateFlameBuffers();
         const tMatrixPixelsSize w = rectDest.width;
-        const tMatrixPixelsSize h = rectDest.height;
-        if (w == 0 || h == 0) {
+        const tMatrixPixelsSize visibleH = rectDest.height;
+        const tMatrixPixelsSize internalH = visibleH + cFuelBurnRowCount;
+        if (w == 0 || visibleH == 0) {
             return;
         }
 
@@ -344,17 +346,20 @@ public:
         }
 
         // Fire2012-style cooling normalization by height:
-        // coolMax = ((cooling * 10) / h) + 2
+        // coolMax = ((cooling * 10) / visibleH) + 2
         // Used as upper bound for random per-cell cooling per simulation step.
-        const tMatrixPixelsSize hClamp = (h > 0) ? h : 1;
+        const tMatrixPixelsSize hClamp = (visibleH > 0) ? visibleH : 1;
         const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / hClamp) + 2u);
         const uint8_t coolMax = (coolMax16 > 255u) ? 255u : static_cast<uint8_t>(coolMax16);
 
         const int windShift = static_cast<int>(wind);
 
+        const tMatrixPixelsCoord fuelY = to_coord(visibleH);
+        const tMatrixPixelsCoord bottomVisibleY = to_coord(visibleH - 1);
+
         for (uint16_t step = 0; step < steps; ++step) {
-            // --- Cooling: subtract random [0..coolMax) from each cell; write into heatB.
-            for (tMatrixPixelsSize y = 0; y < h; ++y) {
+            // --- Cooling: subtract random [0..coolMax) from each cell; write into heatB (full internal height).
+            for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
                 for (tMatrixPixelsSize x = 0; x < w; ++x) {
                     uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
                     const uint8_t cool = rand.rand(coolMax);
@@ -363,49 +368,36 @@ public:
                 }
             }
 
-            // --- Fuel row (hidden): cool previous fuel, then add sparks into fuelRow (1px tall).
-            // This prevents the visible bottom row from being a harsh "technical" generation line.
-            if (fuelRow.width() == w) {
-                for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                    uint8_t v = fuelRow.getPixel(to_coord(x), 0).r;
-                    const uint8_t cool = rand.rand(coolMax);
-                    v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
-                    fuelRow.setPixel(to_coord(x), 0, csColorRGBA{255, v, 0, 0});
-                }
-                const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
-                for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
-                    const tMatrixPixelsSize x = (w <= 255)
-                        ? to_size(rand.rand(static_cast<uint8_t>(w)))
-                        : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
-                    if (rand.rand() < sparking) {
-                        const uint8_t v = rand.randRange(160, 255);
-                        fuelRow.setPixel(to_coord(x), 0, csColorRGBA{255, v, 0, 0});
-                    }
+            // --- Fuel (technical row in heatB): add sparks. Cooling already applied above.
+            const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
+            for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
+                const tMatrixPixelsSize x = (w <= 255)
+                    ? to_size(rand.rand(static_cast<uint8_t>(w)))
+                    : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
+                if (rand.rand() < sparking) {
+                    const uint8_t v = rand.randRange(160, 255);
+                    heatB.setPixel(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
                 }
             }
 
-            // --- Inject fuel into the visible bottom row with a 3-pixel blur:
-            // v(x) = (fuel(x-1) + 2*fuel(x) + fuel(x+1)) / 4
-            // This makes ignition smoother and hides the technical spawn row.
+            // --- Inject fuel into visible bottom row with 3-pixel blur: v(x) = (L + 2*C + R) / 4
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
                 const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
                 const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-                const uint16_t fL = fuelRow.getPixel(to_coord(xL), 0).r;
-                const uint16_t fC = fuelRow.getPixel(to_coord(x), 0).r;
-                const uint16_t fR = fuelRow.getPixel(to_coord(xR), 0).r;
+                const uint16_t fL = heatB.getPixel(to_coord(xL), fuelY).r;
+                const uint16_t fC = heatB.getPixel(to_coord(x), fuelY).r;
+                const uint16_t fR = heatB.getPixel(to_coord(xR), fuelY).r;
                 const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-                heatB.setPixel(to_coord(x), to_coord(h - 1), csColorRGBA{255, v, 0, 0});
+                heatB.setPixel(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
             }
 
             // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
-            // Read from heatB (cooled), write into heatA for y < h-1.
-            // We use a small random sideways jitter and blend left/right neighbors to avoid rigid vertical columns.
+            // Read from heatB, write into heatA for visible rows y < visibleH-1.
             csMatrixPixels* src = &heatB;
-            for (tMatrixPixelsSize y = 0; y + 1 < h; ++y) {
+            for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
                 const tMatrixPixelsSize yp1 = y + 1;
-                const tMatrixPixelsSize yp2 = (y + 2 < h) ? (y + 2) : (h - 1);
+                const tMatrixPixelsSize yp2 = (y + 2 < visibleH) ? (y + 2) : (visibleH - 1);
                 for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                    // Jitter in [-1..1] adds a small random sideways spread.
                     const int jitter = static_cast<int>(rand.rand(3)) - 1;
                     const int sx = static_cast<int>(x) + windShift + jitter;
                     const int sxClamp = (sx < 0) ? 0 : (sx >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : sx;
@@ -419,38 +411,44 @@ public:
                     const uint16_t v2 = src->getPixel(cx, to_coord(yp2)).r;
                     const uint16_t vL = src->getPixel(cxL, to_coord(yp1)).r;
                     const uint16_t vR = src->getPixel(cxR, to_coord(yp1)).r;
-                    // Weighted rise keeps flame tall; side blend gives a softer, more organic look.
                     const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
                     heatA.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
                 }
             }
 
-            // --- Bottom row: copy injected (blurred) fuel from heatB into heatA.
+            // --- Copy bottom visible row and technical row from heatB into heatA.
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                const uint8_t v = heatB.getPixel(to_coord(x), to_coord(h - 1)).r;
-                heatA.setPixel(to_coord(x), to_coord(h - 1), csColorRGBA{255, v, 0, 0});
-            }
-        }
-
-        // --- Copy heat (heatA) to output canvas using flame palette (heat -> RGBA with per-pixel alpha).
-        canvas.clear();
-        for (tMatrixPixelsSize y = 0; y < h; ++y) {
-            for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                const uint8_t heatVal = heatA.getPixel(to_coord(x), to_coord(y)).r;
-                canvas.setPixel(to_coord(x), to_coord(y), heatToColor(heatVal));
+                heatA.setPixel(to_coord(x), bottomVisibleY,
+                    csColorRGBA{255, heatB.getPixel(to_coord(x), bottomVisibleY).r, 0, 0});
+                heatA.setPixel(to_coord(x), fuelY,
+                    csColorRGBA{255, heatB.getPixel(to_coord(x), fuelY).r, 0, 0});
             }
         }
     }
 
-    // Blit internal canvas to destination. drawMatrix() performs clipping; no rectDest.intersect() needed.
+    // Draw heatA to matrixDest with palette mapping and clipping. Renders only visible rows (excludes technical fuel row).
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrixDest) {
             return;
         }
-        if (canvas.width() == 0 || canvas.height() == 0) {
+        const tMatrixPixelsSize visibleH = rectDest.height;
+        if (heatA.width() == 0 || visibleH == 0) {
             return;
         }
-        matrixDest->drawMatrix(rectDest.x, rectDest.y, canvas, alpha);
+        const tMatrixPixelsCoord start_x = math::max(to_coord(0), -rectDest.x);
+        const tMatrixPixelsCoord start_y = math::max(to_coord(0), -rectDest.y);
+        const tMatrixPixelsCoord end_x = math::min(to_coord(heatA.width()),
+                                                  to_coord(matrixDest->width()) - rectDest.x);
+        const tMatrixPixelsCoord end_y = math::min(to_coord(visibleH),
+                                                  to_coord(matrixDest->height()) - rectDest.y);
+        for (tMatrixPixelsCoord sy = start_y; sy < end_y; ++sy) {
+            const tMatrixPixelsCoord dy = sy + rectDest.y;
+            for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
+                const tMatrixPixelsCoord dx = sx + rectDest.x;
+                const uint8_t heatVal = heatA.getPixel(to_coord(sx), to_coord(sy)).r;
+                matrixDest->setPixel(dx, dy, heatToColor(heatVal), alpha);
+            }
+        }
     }
 };
 
