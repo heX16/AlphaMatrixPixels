@@ -298,6 +298,23 @@ public:
 private:
     // Upward diffusion (weighted rise + slight lateral spread) for a single visible row.
     // Reads from src and writes into dst for the given y (requires y + 1 < visibleH).
+    //
+    // IMPORTANT: Call this function strictly bottom -> top (y = visibleH-2 .. 0).
+    // It writes only to dst and does not modify src, but the call order affects which rows consume which RNG jitter.
+    //
+    // For each destination pixel dst(x,y), we sample 4 neighbors from src with a wind + jitter horizontal shift:
+    //
+    //   sx = x + windShift + jitter, where jitter in {-1,0,+1}
+    //   sxClamp = clamp(sx, 0..w-1)
+    //
+    // Neighborhood (src, using shifted x):
+    //
+    //     y+2:        src(sxClamp,  y+2)   (counted twice)
+    //     y+1: src(sxLClamp, y+1)  src(sxClamp, y+1)  src(sxRClamp, y+1)
+    //     y  :                     dst(x, y)
+    //
+    // Weighting:
+    //   dst(x,y) = (v1 + vL + vR + v2 + v2) / 5
     static void diffuseUpwardRow(
         csRandGen& rand,
         tMatrixPixelsSize y,
@@ -426,23 +443,6 @@ public:
 
             // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
             // Read from heatB, write into heatA for visible rows y < visibleH-1.
-            //
-            // Note: The loop runs bottom -> top (y = visibleH-2 .. 0). This affects which rows consume which RNG jitter,
-            // but diffusion math for a given (x,y) stays the same.
-            //
-            // For each destination pixel dst(x,y), we sample 4 neighbors from src with a wind + jitter horizontal shift:
-            //
-            //   sx = x + windShift + jitter, where jitter in {-1,0,+1}
-            //   sxClamp = clamp(sx, 0..w-1)
-            //
-            // Neighborhood (src, using shifted x):
-            //
-            //     y+2:        src(sxClamp,  y+2)   (counted twice)
-            //     y+1: src(sxLClamp, y+1)  src(sxClamp, y+1)  src(sxRClamp, y+1)
-            //     y  :                     dst(x, y)
-            //
-            // Weighting:
-            //   dst(x,y) = (v1 + vL + vR + v2 + v2) / 5
             const int windShift = static_cast<int>(wind);
             if (visibleH >= 2) {
                 for (tMatrixPixelsSize y = static_cast<tMatrixPixelsSize>(visibleH - 2); ; --y) {
