@@ -57,7 +57,7 @@ public:
     // Preset ID ranges for cycling via keyboard.
     // NOTE: These ranges are intentionally continuous to allow +/- 1 wrap-around cycling.
     static constexpr uint16_t cEff1BaseMin = 101;
-    static constexpr uint16_t cEff1BaseMax = 112;
+    static constexpr uint16_t cEff1BaseMax = 120;
     static constexpr uint16_t cEff2Min = 105;
     static constexpr uint16_t cEff2Max = 115;
 

@@ -425,16 +425,25 @@ inline void loadEffectPreset(
                     csColorRGBA{255, 255, 0, 0},      // Red
                     csColorRGBA{255, 0, 255, 0},     // Green
                     csColorRGBA{255, 0, 0, 255},     // Blue
-                    csColorRGBA{255, 255, 255, 0},   // Yellow
-                    csColorRGBA{255, 0, 255, 255}    // Cyan
                 };
-                for (uint8_t i = 0; i < 5; ++i) {
+                for (uint8_t i = 0; i < 3; ++i) {
                     auto* bouncingPixel = new csRenderBouncingPixel();
                     bouncingPixel->color = colors[i];
-                    bouncingPixel->speed = csFP16(0.5f);
+                    bouncingPixel->speed = csFP16(1.5f);
                     bouncingPixel->renderRectAutosize = true;
+                    bouncingPixel->smoothMovement = false;
                     effectManager.add(bouncingPixel);
                 }
+                break;
+            }
+        case 120:
+            {
+                *name_ptr = F("Flame");
+                auto* flame = new csRenderFlame();
+                flame->cooling = 40;
+                flame->speed = csFP16(0.4f);
+                flame->renderRectAutosize = true;
+                effectManager.add(flame);
                 break;
             }
         case 200:

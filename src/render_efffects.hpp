@@ -174,6 +174,286 @@ public:
     }
 };
 
+// Classic flame/fire effect. Uses internal heat buffers and a final RGBA canvas;
+// draws to matrixDest via drawMatrix() so clipping is handled there.
+// Heat is stored in the R channel (A=255) in double-buffered heat matrices.
+// Cooling is scaled by rectDest.height so the look is consistent across heights.
+class csRenderFlame : public csRenderDynamic {
+public:
+    static constexpr uint8_t base = csRenderDynamic::propLast;
+    static constexpr uint8_t propCooling = base + 1;
+    static constexpr uint8_t propSparking = base + 2;
+    static constexpr uint8_t propWind = base + 3;
+    static constexpr uint8_t propLast = propWind;
+
+    // Global output opacity multiplier applied by drawMatrix() (255 = fully opaque).
+    uint8_t alpha = 255;
+    // Cooling intensity: higher values cool faster -> shorter, sharper flame (0..255).
+    uint8_t cooling = 80;
+    // Spark probability: higher values ignite more often -> more active flame (0..255).
+    uint8_t sparking = 120;
+    // Horizontal drift per simulation step (negative = left, positive = right).
+    int8_t wind = 0;
+
+    csMatrixPixels heatA{0, 0};
+    csMatrixPixels heatB{0, 0};
+    csMatrixPixels canvas{0, 0};
+    // Hidden 1-pixel-tall fuel row used only for spark generation.
+    // It is blurred into the visible bottom row each simulation step to avoid a harsh "technical" bottom line.
+    csMatrixPixels fuelRow{0, 0};
+    uint16_t lastUpdateTime = 0;
+
+    static constexpr uint16_t refHeight = 16;
+    static constexpr uint16_t baseStepMs = 35;
+    static constexpr uint16_t maxSimSteps = 8;
+
+    uint8_t getPropsCount() const override {
+        return propLast;
+    }
+
+    void getPropInfo(uint8_t propNum, csPropInfo& info) override {
+        csRenderDynamic::getPropInfo(propNum, info);
+        switch (propNum) {
+            case propAlpha:
+                info.valuePtr = &alpha;
+                info.disabled = false;
+                break;
+            case propCooling:
+                info.valueType = PropType::UInt8;
+                info.name = "Cooling";
+                info.valuePtr = &cooling;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case propSparking:
+                info.valueType = PropType::UInt8;
+                info.name = "Sparking";
+                info.valuePtr = &sparking;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+            case propWind:
+                info.valueType = PropType::Int8;
+                info.name = "Wind";
+                info.valuePtr = &wind;
+                info.readOnly = false;
+                info.disabled = false;
+                break;
+        }
+    }
+
+    void propChanged(uint8_t propNum) override {
+        csRenderDynamic::propChanged(propNum);
+        if (propNum == propMatrixDest || propNum == propRectDest) {
+            updateFlameBuffers();
+        }
+    }
+
+    // Resize internal buffers to match rectDest when width/height change.
+    // Called from propChanged(propMatrixDest | propRectDest). Clears buffers and resets time.
+    void updateFlameBuffers() {
+        if (rectDest.empty()) {
+            return;
+        }
+        const tMatrixPixelsSize w = rectDest.width;
+        const tMatrixPixelsSize h = rectDest.height;
+        if (heatA.width() == w && heatA.height() == h) {
+            return;
+        }
+        heatA.resize(w, h);
+        heatB.resize(w, h);
+        canvas.resize(w, h);
+        fuelRow.resize(w, 1);
+        heatA.clear();
+        heatB.clear();
+        canvas.clear();
+        fuelRow.clear();
+        lastUpdateTime = 0;
+    }
+
+    // Map heat value [0..255] to flame palette: black -> red -> orange -> yellow -> white.
+    // NOTE: Keep pixels opaque (A=255). With SourceOver blending, using A=heat would dim twice
+    // (RGB is already proportional to heat), making the flame look too dark.
+    static csColorRGBA heatToColor(uint8_t heat) {
+        const uint8_t a = 255;
+        uint8_t r, g, b;
+        if (heat < 85) {
+            r = static_cast<uint8_t>(heat * 3);
+            g = 0;
+            b = 0;
+        } else if (heat < 170) {
+            r = 255;
+            g = static_cast<uint8_t>((heat - 85) * 3);
+            b = 0;
+        } else {
+            r = 255;
+            g = 255;
+            b = static_cast<uint8_t>((heat - 170) * 3);
+        }
+        return csColorRGBA{a, r, g, b};
+    }
+
+    // Simulation: run N steps:
+    // - cool the heat field
+    // - update hidden fuelRow (cool + sparks)
+    // - blur fuelRow into the visible bottom row
+    // - diffuse upward with slight lateral spread
+    // then fill canvas from heat.
+    void recalc(csRandGen& rand, tTime currTime) override {
+        if (disabled || rectDest.empty()) {
+            return;
+        }
+        updateFlameBuffers();
+        const tMatrixPixelsSize w = rectDest.width;
+        const tMatrixPixelsSize h = rectDest.height;
+        if (w == 0 || h == 0) {
+            return;
+        }
+
+        // Time step:
+        // - baseStepMs is the nominal simulation interval at speed=1.0
+        // - stepMs scales inversely with speed
+        // - first frame after resize/start runs exactly 1 step to avoid a large catch-up burst
+        const float speedF = speed.to_float();
+        const float denom = (speedF > 0.01f) ? speedF : 0.01f;
+        float stepMsF = static_cast<float>(baseStepMs) / denom;
+        if (stepMsF > 65535.0f) stepMsF = 65535.0f;
+        uint16_t stepMs = static_cast<uint16_t>(stepMsF + 0.5f); // round to nearest
+        if (stepMs < 1) stepMs = 1;
+
+        bool forceSingleStep = false;
+        if (lastUpdateTime == 0) {
+            lastUpdateTime = currTime;
+            forceSingleStep = true;
+        }
+
+        const uint16_t timeDelta = static_cast<uint16_t>(currTime - lastUpdateTime);
+        if (!forceSingleStep && timeDelta < stepMs) {
+            return;
+        }
+
+        uint16_t steps = forceSingleStep ? 1 : static_cast<uint16_t>(timeDelta / stepMs);
+        if (steps > maxSimSteps) {
+            steps = maxSimSteps;
+        }
+        if (steps == 0) {
+            return;
+        }
+        if (!forceSingleStep) {
+            lastUpdateTime = static_cast<uint16_t>(lastUpdateTime + steps * stepMs);
+        }
+
+        // Fire2012-style cooling normalization by height:
+        // coolMax = ((cooling * 10) / h) + 2
+        // Used as upper bound for random per-cell cooling per simulation step.
+        const tMatrixPixelsSize hClamp = (h > 0) ? h : 1;
+        const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / hClamp) + 2u);
+        const uint8_t coolMax = (coolMax16 > 255u) ? 255u : static_cast<uint8_t>(coolMax16);
+
+        const int windShift = static_cast<int>(wind);
+
+        for (uint16_t step = 0; step < steps; ++step) {
+            // --- Cooling: subtract random [0..coolMax) from each cell; write into heatB.
+            for (tMatrixPixelsSize y = 0; y < h; ++y) {
+                for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                    uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
+                    const uint8_t cool = rand.rand(coolMax);
+                    v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
+                    heatB.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+                }
+            }
+
+            // --- Fuel row (hidden): cool previous fuel, then add sparks into fuelRow (1px tall).
+            // This prevents the visible bottom row from being a harsh "technical" generation line.
+            if (fuelRow.width() == w) {
+                for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                    uint8_t v = fuelRow.getPixel(to_coord(x), 0).r;
+                    const uint8_t cool = rand.rand(coolMax);
+                    v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
+                    fuelRow.setPixel(to_coord(x), 0, csColorRGBA{255, v, 0, 0});
+                }
+                const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
+                for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
+                    const tMatrixPixelsSize x = (w <= 255)
+                        ? to_size(rand.rand(static_cast<uint8_t>(w)))
+                        : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
+                    if (rand.rand() < sparking) {
+                        const uint8_t v = rand.randRange(160, 255);
+                        fuelRow.setPixel(to_coord(x), 0, csColorRGBA{255, v, 0, 0});
+                    }
+                }
+            }
+
+            // --- Inject fuel into the visible bottom row with a 3-pixel blur:
+            // v(x) = (fuel(x-1) + 2*fuel(x) + fuel(x+1)) / 4
+            // This makes ignition smoother and hides the technical spawn row.
+            for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
+                const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
+                const uint16_t fL = fuelRow.getPixel(to_coord(xL), 0).r;
+                const uint16_t fC = fuelRow.getPixel(to_coord(x), 0).r;
+                const uint16_t fR = fuelRow.getPixel(to_coord(xR), 0).r;
+                const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
+                heatB.setPixel(to_coord(x), to_coord(h - 1), csColorRGBA{255, v, 0, 0});
+            }
+
+            // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
+            // Read from heatB (cooled), write into heatA for y < h-1.
+            // We use a small random sideways jitter and blend left/right neighbors to avoid rigid vertical columns.
+            csMatrixPixels* src = &heatB;
+            for (tMatrixPixelsSize y = 0; y + 1 < h; ++y) {
+                const tMatrixPixelsSize yp1 = y + 1;
+                const tMatrixPixelsSize yp2 = (y + 2 < h) ? (y + 2) : (h - 1);
+                for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                    // Jitter in [-1..1] adds a small random sideways spread.
+                    const int jitter = static_cast<int>(rand.rand(3)) - 1;
+                    const int sx = static_cast<int>(x) + windShift + jitter;
+                    const int sxClamp = (sx < 0) ? 0 : (sx >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : sx;
+                    const int sxLClamp = (sxClamp - 1 < 0) ? 0 : (sxClamp - 1);
+                    const int sxRClamp = (sxClamp + 1 >= static_cast<int>(w)) ? (static_cast<int>(w) - 1) : (sxClamp + 1);
+                    const tMatrixPixelsCoord cx = to_coord(sxClamp);
+                    const tMatrixPixelsCoord cxL = to_coord(sxLClamp);
+                    const tMatrixPixelsCoord cxR = to_coord(sxRClamp);
+
+                    const uint16_t v1 = src->getPixel(cx, to_coord(yp1)).r;
+                    const uint16_t v2 = src->getPixel(cx, to_coord(yp2)).r;
+                    const uint16_t vL = src->getPixel(cxL, to_coord(yp1)).r;
+                    const uint16_t vR = src->getPixel(cxR, to_coord(yp1)).r;
+                    // Weighted rise keeps flame tall; side blend gives a softer, more organic look.
+                    const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
+                    heatA.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+                }
+            }
+
+            // --- Bottom row: copy injected (blurred) fuel from heatB into heatA.
+            for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                const uint8_t v = heatB.getPixel(to_coord(x), to_coord(h - 1)).r;
+                heatA.setPixel(to_coord(x), to_coord(h - 1), csColorRGBA{255, v, 0, 0});
+            }
+        }
+
+        // --- Copy heat (heatA) to output canvas using flame palette (heat -> RGBA with per-pixel alpha).
+        canvas.clear();
+        for (tMatrixPixelsSize y = 0; y < h; ++y) {
+            for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                const uint8_t heatVal = heatA.getPixel(to_coord(x), to_coord(y)).r;
+                canvas.setPixel(to_coord(x), to_coord(y), heatToColor(heatVal));
+            }
+        }
+    }
+
+    // Blit internal canvas to destination. drawMatrix() performs clipping; no rectDest.intersect() needed.
+    void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
+        if (disabled || !matrixDest) {
+            return;
+        }
+        if (canvas.width() == 0 || canvas.height() == 0) {
+            return;
+        }
+        matrixDest->drawMatrix(rectDest.x, rectDest.y, canvas, alpha);
+    }
+};
+
 // Effect: draw a single digit glyph using the 3x5 font.
 class csRenderGlyph : public csRenderMatrixBase {
 public:
