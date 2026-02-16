@@ -195,7 +195,6 @@ public:
     int8_t wind = 0;
 
     csMatrixPixels heatA{0, 0};
-    csMatrixPixels heatB{0, 0};
     uint16_t lastUpdateTime = 0;
 
     // Hidden fuel-burn row count appended below visible area. Sparks/fuel live here; blurred into visible bottom row.
@@ -267,9 +266,7 @@ public:
             return;
         }
         heatA.resize(w, internalH);
-        heatB.resize(w, internalH);
         heatA.clear();
-        heatB.clear();
         lastUpdateTime = 0;
     }
 
@@ -299,8 +296,8 @@ private:
     // Upward diffusion (weighted rise + slight lateral spread) for a single visible row.
     // Reads from src and writes into dst for the given y (requires y + 1 < visibleH).
     //
-    // IMPORTANT: Call this function strictly bottom -> top (y = visibleH-2 .. 0).
-    // It writes only to dst and does not modify src, but the call order affects which rows consume which RNG jitter.
+    // IMPORTANT: When running in-place (src == dst), call strictly top -> bottom (y = 0 .. visibleH-2).
+    // This keeps src rows (y+1, y+2) unmodified when computing row y.
     //
     // For each destination pixel dst(x,y), we sample 4 neighbors from src with a wind + jitter horizontal shift:
     //
@@ -322,8 +319,8 @@ private:
     // - w: Visible buffer width (used for x loop and x clamping).
     // - visibleH: Visible buffer height (used for y+2 clamping to visibleH-1).
     // - windShift: Horizontal drift added to x before clamping (typically static_cast<int>(wind)).
-    // - src: Source heat buffer (read-only), typically heatB.
-    // - dst: Destination heat buffer (written), typically heatA.
+    // - src: Source heat buffer (read-only). Can be the same object as dst for in-place diffusion.
+    // - dst: Destination heat buffer (written). Can be the same object as src for in-place diffusion.
     static void diffuseUpwardRow(
         csRandGen& rand,
         tMatrixPixelsSize y,
@@ -358,7 +355,7 @@ private:
 public:
     // Simulation: run N steps:
     // - cool the heat field (including technical fuel row)
-    // - add sparks into heatB technical row
+    // - add sparks into technical fuel row
     // - blur technical row into visible bottom row
     // - diffuse upward with slight lateral spread
     void recalc(csRandGen& rand, tTime currTime) override {
@@ -417,17 +414,17 @@ public:
         const tMatrixPixelsCoord bottomVisibleY = to_coord(visibleH - 1);
 
         for (uint16_t step = 0; step < steps; ++step) {
-            // --- Cooling: subtract random [0..coolMax) from each cell; write into heatB (full internal height).
+            // --- Cooling: subtract random [0..coolMax) from each cell; write back into heatA (full internal height).
             for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
                 for (tMatrixPixelsSize x = 0; x < w; ++x) {
                     uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
                     const uint8_t cool = rand.rand(coolMax);
                     v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
-                    heatB.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+                    heatA.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
                 }
             }
 
-            // --- Fuel (technical row in heatB): add sparks. Cooling already applied above.
+            // --- Fuel (technical row in heatA): add sparks. Cooling already applied above.
             const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
             for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
                 const tMatrixPixelsSize x = (w <= 255)
@@ -435,7 +432,7 @@ public:
                     : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
                 if (rand.rand() < sparking) {
                     const uint8_t v = rand.randRange(160, 255);
-                    heatB.setPixel(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
+                    heatA.setPixelRewrite(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
                 }
             }
 
@@ -443,31 +440,20 @@ public:
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
                 const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
                 const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-                const uint16_t fL = heatB.getPixel(to_coord(xL), fuelY).r;
-                const uint16_t fC = heatB.getPixel(to_coord(x), fuelY).r;
-                const uint16_t fR = heatB.getPixel(to_coord(xR), fuelY).r;
+                const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY).r;
+                const uint16_t fC = heatA.getPixel(to_coord(x), fuelY).r;
+                const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY).r;
                 const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-                heatB.setPixel(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
+                heatA.setPixelRewrite(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
             }
 
             // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
-            // Read from heatB, write into heatA for visible rows y < visibleH-1.
             const int windShift = static_cast<int>(wind);
             if (visibleH >= 2) {
-                for (tMatrixPixelsSize y = static_cast<tMatrixPixelsSize>(visibleH - 2); ; --y) {
-                    diffuseUpwardRow(rand, y, w, visibleH, windShift, heatB, heatA);
-                    if (y == 0) {
-                        break;
-                    }
+                // In-place diffusion: src == dst, so we must iterate top -> bottom.
+                for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
+                    diffuseUpwardRow(rand, y, w, visibleH, windShift, heatA, heatA);
                 }
-            }
-
-            // --- Copy bottom visible row and technical row from heatB into heatA.
-            for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                heatA.setPixel(to_coord(x), bottomVisibleY,
-                    csColorRGBA{255, heatB.getPixel(to_coord(x), bottomVisibleY).r, 0, 0});
-                heatA.setPixel(to_coord(x), fuelY,
-                    csColorRGBA{255, heatB.getPixel(to_coord(x), fuelY).r, 0, 0});
             }
         }
     }
