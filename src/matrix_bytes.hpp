@@ -77,9 +77,8 @@ public:
         setValue(x, y, i);
     }
 
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
-        const uint8_t a = mul8(color.a, alpha);
-        if (a == 0) {
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
+        if (color.a == 0) {
             return;
         }
 
@@ -88,7 +87,7 @@ public:
         const uint8_t dst = getValue(x, y);
 
         const int32_t diff = static_cast<int32_t>(src) - static_cast<int32_t>(dst);
-        const int32_t out32 = static_cast<int32_t>(dst) + (diff * static_cast<int32_t>(a) + 127) / 255;
+        const int32_t out32 = static_cast<int32_t>(dst) + (diff * static_cast<int32_t>(color.a) + 127) / 255;
         const uint8_t out = (out32 <= 0) ? 0 : (out32 >= 255) ? 255 : static_cast<uint8_t>(out32);
         setValue(x, y, out);
     }

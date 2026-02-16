@@ -139,6 +139,12 @@ struct CS_PACKED csColorRGBA {
         return *this;
     }
 
+    // Return copy with alpha multiplied by multiplier (0..255). Used for global alpha scaling.
+    // Example: color.alpha(128) -> effective alpha = mul8(color.a, 128)
+    [[nodiscard]] csColorRGBA alpha(uint8_t multiplier) const noexcept {
+        return csColorRGBA{mul8(a, multiplier), r, g, b};
+    }
+
     // Blend single channel (SourceOver, straight alpha):
     // Cs/Cd - source/dest channel; As/Ad - source/dest alphas; `invAs = 255 - As`; Aout - resulting alpha.
     [[nodiscard]] static inline uint8_t blendChannel(uint8_t Cs, uint8_t Cd, uint8_t As, uint8_t Ad, uint8_t invAs, uint8_t Aout) noexcept {

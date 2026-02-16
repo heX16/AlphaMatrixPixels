@@ -491,7 +491,7 @@ public:
             for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
                 const tMatrixPixelsCoord dx = sx + rectDest.x;
                 const uint8_t heatVal = heatA.getValue(to_coord(sx), to_coord(sy));
-                matrixDest->setPixel(dx, dy, heatToColor(heatVal), alpha);
+                matrixDest->setPixel(dx, dy, heatToColor(heatVal).alpha(alpha));
             }
         }
     }
@@ -804,7 +804,7 @@ public:
                 matrixDest->setPixel(x, y, backgroundColor);
                 if (coverage > 0.0f) {
                     const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                    matrixDest->setPixel(x, y, color, coverageAlpha);
+                    matrixDest->setPixel(x, y, color.alpha(coverageAlpha));
                 }
             }
         }
@@ -897,7 +897,7 @@ public:
                     coverage = 1.0f;
                 }
                 const uint8_t coverageAlpha = static_cast<uint8_t>(coverage * 255.0f + 0.5f);
-                matrixDest->setPixel(x, y, color, coverageAlpha);
+                matrixDest->setPixel(x, y, color.alpha(coverageAlpha));
             };
 
             const float leftPixelCenter = static_cast<float>(xLeft) + 0.5f;

@@ -78,6 +78,7 @@
 - Композиция: Porter-Duff **SourceOver**.
 
 - Формат ARGB: порядок байт A,R,G,B при доступе через `raw`/`value` соответствует `0xAARRGGBB`.
+- **Метод `alpha(uint8_t multiplier)`** — возвращает копию цвета с альфой, умноженной на multiplier (0..255). Используется для глобального масштабирования: `setPixel(x, y, color.alpha(128))`.
 
 ### Особенности `csColorRGBA`
 - Конструктор по каналам: порядок аргументов **`(a, r, g, b)`**.
@@ -112,7 +113,7 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 Все матрицы (`csMatrixPixels`, `csMatrixBytes`, `csMatrixBoolean`) наследуются от `csMatrixBase`, чтобы эффекты/алгоритмы могли работать с любым типом матрицы через единый набор виртуальных методов:
 - `getPixel(x, y) -> csColorRGBA`
 - `setPixelRewrite(x, y, csColorRGBA)`
-- `setPixel(x, y, csColorRGBA)` и/или `setPixel(x, y, csColorRGBA, alpha)`
+- `setPixel(x, y, csColorRGBA)` — для глобальной альфы используйте `color.alpha(alphaValue)`
 
 ### Сырой доступ к данным (`getValue/setValue`)
 
@@ -131,10 +132,10 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 - `setValue(x, y, i)`. Альфа игнорируется (это overwrite).
 
 ### RGBA → Bytes (`csMatrixBytes::setPixel`)
-- Эффективная альфа: `a = mul8(color.a, alpha)` (если есть параметр `alpha`, иначе `alpha = 255`).
+- Эффективная альфа берётся из `color.a` (для глобальной альфы вызывающий передаёт `color.alpha(alphaValue)`).
 - Интенсивность источника `src = max(r, g, b)`.
 - Значение назначения `dst = getValue(x, y)`.
-- Новое значение: `out = dst + ((src - dst) * a) / 255`.
+- Новое значение: `out = dst + ((src - dst) * color.a) / 255`.
 - `setValue(x, y, out)`.
 
 ### Boolean → RGBA (`csMatrixBoolean::getPixel`)
@@ -147,9 +148,9 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 - `setValue(x, y, i != 0)`. Альфа игнорируется (это overwrite).
 
 ### RGBA → Boolean (`csMatrixBoolean::setPixel`)
-- Эффективная альфа: `a = mul8(color.a, alpha)` (если есть параметр `alpha`, иначе `alpha = 255`).
+- Эффективная альфа берётся из `color.a` (для глобальной альфы вызывающий передаёт `color.alpha(alphaValue)`).
 - Интенсивность `i = max(r, g, b)`.
-- Правило: если `a != 0` и `i != 0`, то `setValue(x, y, true)`, иначе `setValue(x, y, false)`.
+- Правило: если `color.a != 0` и `i != 0`, то `setValue(x, y, true)`, иначе `setValue(x, y, false)`.
 
 ## Система рендеринга
 

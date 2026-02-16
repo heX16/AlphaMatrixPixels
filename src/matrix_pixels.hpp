@@ -84,15 +84,6 @@ public:
     }
 
     // Blend source color over destination pixel using SourceOver (straight alpha).
-    // 'alpha' is an extra global multiplier for the source alpha channel.
-    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
-        if (inside(x, y)) {
-            const csColorRGBA dst = pixels_[index(x, y)];
-            pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color, alpha);
-        }
-    }
-
-    // Blend source color over destination pixel using SourceOver with only the pixel's own alpha.
     void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
@@ -222,22 +213,6 @@ public:
         }
     }
 
-    // Blend source color over destination pixels using classical 4-tap bilinear splat with global alpha multiplier.
-    void setPixelFloat4(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
-        // Apply global alpha multiplier to color's alpha channel first.
-        const uint8_t effective_alpha = mul8(color.a, alpha);
-        const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
-        setPixelFloat4(x, y, effective_color);
-    }
-
-    // Blend source color over destination pixels using sub-pixel positioning with global alpha multiplier.
-    void setPixelFloat2(csFP16 x, csFP16 y, csColorRGBA color, uint8_t alpha) noexcept {
-        // Apply global alpha multiplier to color's alpha channel first
-        const uint8_t effective_alpha = mul8(color.a, alpha);
-        const csColorRGBA effective_color{effective_alpha, color.r, color.g, color.b};
-        setPixelFloat2(x, y, effective_color);
-    }
-
     // Read pixel; returns transparent black when out of bounds.
     [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept override {
         if (inside(x, y)) {
@@ -268,7 +243,7 @@ public:
             const tMatrixPixelsCoord dy = sy + dst_y;
             for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
                 const tMatrixPixelsCoord dx = sx + dst_x;
-                setPixel(dx, dy, source.getPixel(sx, sy), alpha);
+                setPixel(dx, dy, source.getPixel(sx, sy).alpha(alpha));
             }
         }
     }
@@ -290,9 +265,9 @@ public:
             for (tMatrixPixelsSize x = 0; x < srcClipped.width; ++x) {
                 const csColorRGBA pixel = source.getPixel(srcClipped.x + static_cast<tMatrixPixelsCoord>(x), 
                                                            srcClipped.y + static_cast<tMatrixPixelsCoord>(y));
-                setPixel(dst_x + static_cast<tMatrixPixelsCoord>(x), 
-                        dst_y + static_cast<tMatrixPixelsCoord>(y), 
-                        pixel, alpha);
+                setPixel(dst_x + static_cast<tMatrixPixelsCoord>(x),
+                        dst_y + static_cast<tMatrixPixelsCoord>(y),
+                        pixel.alpha(alpha));
             }
         }
     }

@@ -203,7 +203,7 @@ void test_matrix_setPixelBlend_with_global(TestStats& stats) {
     const csColorRGBA dst{200, 0, 50, 100};
     const csColorRGBA src{128, 255, 0, 0};
     m.setPixelRewrite(0, 0, dst);
-    m.setPixel(0, 0, src, 128);
+    m.setPixel(0, 0, src.alpha(128));
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, src, 128);
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "setPixel with global alpha matches SourceOver");
 }

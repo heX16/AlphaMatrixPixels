@@ -74,9 +74,8 @@ public:
         setValue(x, y, (color.r != 0) || (color.g != 0) || (color.b != 0));
     }
 
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
-        const uint8_t a = mul8(color.a, alpha);
-        if (a == 0) {
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
+        if (color.a == 0) {
             return;
         }
         setValue(x, y, (color.r != 0) || (color.g != 0) || (color.b != 0));

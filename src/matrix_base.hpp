@@ -29,12 +29,7 @@ public:
     virtual void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept = 0;
 
     // Write pixel with blending (semantics depend on implementation).
-    virtual void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
-        setPixel(x, y, color, 255);
-    }
-
-    // Write pixel with additional global alpha multiplier (0..255).
-    virtual void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept = 0;
+    virtual void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept = 0;
 };
 
 } // namespace amp
