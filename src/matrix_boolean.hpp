@@ -93,7 +93,7 @@ public:
     }
 
     // Get bit value by coordinates (x, y). Returns outOfBoundsValue when out of bounds.
-    [[nodiscard]] inline bool getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+    [[nodiscard]] inline bool getValue(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         if (!inside(x, y)) {
             return outOfBoundsValue;
         }
@@ -104,7 +104,7 @@ public:
     }
 
     // Set bit value by coordinates (x, y). Out-of-bounds writes are silently ignored.
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, bool value) noexcept {
+    inline void setValue(tMatrixPixelsCoord x, tMatrixPixelsCoord y, bool value) noexcept {
         if (!inside(x, y)) {
             return;
         }

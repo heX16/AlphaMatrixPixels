@@ -344,12 +344,12 @@ private:
             const tMatrixPixelsCoord cxL = to_coord(sxLClamp);
             const tMatrixPixelsCoord cxR = to_coord(sxRClamp);
 
-            const uint16_t v1 = src.getPixel(cx, to_coord(yp1));
-            const uint16_t v2 = src.getPixel(cx, to_coord(yp2));
-            const uint16_t vL = src.getPixel(cxL, to_coord(yp1));
-            const uint16_t vR = src.getPixel(cxR, to_coord(yp1));
+            const uint16_t v1 = src.getValue(cx, to_coord(yp1));
+            const uint16_t v2 = src.getValue(cx, to_coord(yp2));
+            const uint16_t vL = src.getValue(cxL, to_coord(yp1));
+            const uint16_t vR = src.getValue(cxR, to_coord(yp1));
             const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
-            dst.setPixel(to_coord(x), to_coord(y), v);
+            dst.setValue(to_coord(x), to_coord(y), v);
         }
     }
 
@@ -357,10 +357,10 @@ private:
     void stepCooling(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize internalH, uint8_t coolMax) {
         for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                uint8_t v = heatA.getPixel(to_coord(x), to_coord(y));
+                uint8_t v = heatA.getValue(to_coord(x), to_coord(y));
                 const uint8_t cool = rand.rand(coolMax);
                 v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
-                heatA.setPixel(to_coord(x), to_coord(y), v);
+                heatA.setValue(to_coord(x), to_coord(y), v);
             }
         }
     }
@@ -374,7 +374,7 @@ private:
                 : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
             if (rand.rand() < sparking) {
                 const uint8_t v = rand.randRange(160, 255);
-                heatA.setPixel(to_coord(x), fuelY, v);
+                heatA.setValue(to_coord(x), fuelY, v);
             }
         }
     }
@@ -384,11 +384,11 @@ private:
         for (tMatrixPixelsSize x = 0; x < w; ++x) {
             const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
             const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-            const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY);
-            const uint16_t fC = heatA.getPixel(to_coord(x), fuelY);
-            const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY);
+            const uint16_t fL = heatA.getValue(to_coord(xL), fuelY);
+            const uint16_t fC = heatA.getValue(to_coord(x), fuelY);
+            const uint16_t fR = heatA.getValue(to_coord(xR), fuelY);
             const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-            heatA.setPixel(to_coord(x), bottomVisibleY, v);
+            heatA.setValue(to_coord(x), bottomVisibleY, v);
         }
     }
 
@@ -490,7 +490,7 @@ public:
             const tMatrixPixelsCoord dy = sy + rectDest.y;
             for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
                 const tMatrixPixelsCoord dx = sx + rectDest.x;
-                const uint8_t heatVal = heatA.getPixel(to_coord(sx), to_coord(sy));
+                const uint8_t heatVal = heatA.getValue(to_coord(sx), to_coord(sy));
                 matrixDest->setPixel(dx, dy, heatToColor(heatVal), alpha);
             }
         }
@@ -1188,18 +1188,18 @@ public:
             // Common fix logic (takes snowflake reference)
             auto fixSnowflakeAtCurrent = [&](Snowflake& flake) {
                 // Logic with outOfBoundsValue = true:
-                // - If snowflake is inside bounds and position is empty: getPixel returns false,
+                // - If snowflake is inside bounds and position is empty: getValue returns false,
                 //   we set the pixel and increment counter.
-                // - If snowflake is inside bounds and position already has snowflake: getPixel returns true,
+                // - If snowflake is inside bounds and position already has snowflake: getValue returns true,
                 //   we do nothing.
-                // - If snowflake is out of bounds: getPixel returns true (due to outOfBoundsValue = true),
+                // - If snowflake is out of bounds: getValue returns true (due to outOfBoundsValue = true),
                 //   we do nothing, counter is not incremented.
-                // No boundary check needed: getPixel with outOfBoundsValue = true already handles out-of-bounds.
+                // No boundary check needed: getValue with outOfBoundsValue = true already handles out-of-bounds.
                 // Convert fixed-point coordinates to integer for bitmap operations
                 const tMatrixPixelsSize flakeX = to_size(static_cast<tMatrixPixelsCoord>(flake.x.round_int()));
                 const tMatrixPixelsSize flakeY = to_size(static_cast<tMatrixPixelsCoord>(flake.y.round_int()));
-                if (!bitmap->getPixel(flakeX, flakeY)) {
-                    bitmap->setPixel(flakeX, flakeY, true);
+                if (!bitmap->getValue(flakeX, flakeY)) {
+                    bitmap->setValue(flakeX, flakeY, true);
                     ++filledPixelsCount;
                 }
 
@@ -1221,11 +1221,11 @@ public:
             };
 
             // Check collision with existing snowflake or boundary
-            // outOfBoundsValue = true means getPixel returns true for out-of-bounds
+            // outOfBoundsValue = true means getValue returns true for out-of-bounds
             // Convert fixed-point coordinates to integer for bitmap collision check
             const tMatrixPixelsSize snowflakeX = to_size(static_cast<tMatrixPixelsCoord>(snowflake.x.round_int()));
             const tMatrixPixelsSize nextYInt = to_size(static_cast<tMatrixPixelsCoord>(nextY.round_int()));
-            if (bitmap->getPixel(snowflakeX, nextYInt)) {
+            if (bitmap->getValue(snowflakeX, nextYInt)) {
                 fixSnowflakeAtCurrent(snowflake);
                 continue;
             }
@@ -1253,7 +1253,7 @@ public:
             for (tMatrixPixelsCoord x = target.x; x < endX; ++x) {
                 const tMatrixPixelsCoord localX = x - rectDest.x;
                 const tMatrixPixelsCoord localY = y - rectDest.y;
-                if (bitmap->getPixel(to_size(localX), to_size(localY))) {
+                if (bitmap->getValue(to_size(localX), to_size(localY))) {
                     matrixDest->setPixel(x, y, color);
                 }
             }
@@ -1345,10 +1345,10 @@ private:
 
     // Try to move snowflake down. Returns true if moved.
     bool moveDown(tMatrixPixelsSize x, tMatrixPixelsSize y) {
-        if (!bitmap->getPixel(x, y + 1)) {
+        if (!bitmap->getValue(x, y + 1)) {
             // Move down
-            bitmap->setPixel(x, y, false);
-            bitmap->setPixel(x, y + 1, true);
+            bitmap->setValue(x, y, false);
+            bitmap->setValue(x, y + 1, true);
             return true;
         }
         return false;
@@ -1360,10 +1360,10 @@ private:
     bool moveDownSide(tMatrixPixelsSize x, tMatrixPixelsSize y, int direction, bool& lastDirectionWasLeft) {
         const int newXInt = static_cast<int>(x) + direction;
         const tMatrixPixelsSize newX = static_cast<tMatrixPixelsSize>(newXInt);
-        if (!bitmap->getPixel(newX, y + 1)) {
+        if (!bitmap->getValue(newX, y + 1)) {
             // Move down-side
-            bitmap->setPixel(x, y, false);
-            bitmap->setPixel(newX, y + 1, true);
+            bitmap->setValue(x, y, false);
+            bitmap->setValue(newX, y + 1, true);
             lastDirectionWasLeft = !lastDirectionWasLeft;
             return true;
         }
@@ -1387,7 +1387,7 @@ private:
                 const tMatrixPixelsSize px = x - 1;
 
                 // Check if there's a snowflake at this position
-                if (!bitmap->getPixel(px, py)) {
+                if (!bitmap->getValue(px, py)) {
                     continue;
                 }
 
@@ -1424,14 +1424,14 @@ private:
         // Shift all rows down (from bottom to top to avoid overwriting)
         for (tMatrixPixelsSize y = h - 1; y > 0; --y) {
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                const bool value = bitmap->getPixel(x, y - 1);
-                bitmap->setPixel(x, y, value);
+                const bool value = bitmap->getValue(x, y - 1);
+                bitmap->setValue(x, y, value);
             }
         }
 
         // Clear top row
         for (tMatrixPixelsSize x = 0; x < w; ++x) {
-            bitmap->setPixel(x, 0, false);
+            bitmap->setValue(x, 0, false);
         }
     }
 

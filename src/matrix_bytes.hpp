@@ -86,7 +86,7 @@ public:
     }
 
     // Get byte value by coordinates (x, y). Returns outOfBoundsValue when out of bounds.
-    [[nodiscard]] inline uint8_t getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+    [[nodiscard]] inline uint8_t getValue(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
         if (!inside(x, y)) {
             return outOfBoundsValue;
         }
@@ -94,7 +94,7 @@ public:
     }
 
     // Set byte value by coordinates (x, y). Out-of-bounds writes are silently ignored.
-    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, uint8_t value) noexcept {
+    inline void setValue(tMatrixPixelsCoord x, tMatrixPixelsCoord y, uint8_t value) noexcept {
         if (!inside(x, y)) {
             return;
         }

@@ -40,7 +40,7 @@ public:
             const uint32_t row = getRowBits(glyphIndex, y);
             for (uint16_t x = 0; x < width(); ++x) {
                 const bool bit = getColBit(row, x);
-                temp->setPixel(x, y, bit);
+                temp->setValue(x, y, bit);
             }
         }
         return temp;

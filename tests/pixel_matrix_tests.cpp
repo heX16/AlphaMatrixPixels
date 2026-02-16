@@ -784,7 +784,7 @@ void test_matrix_bytes_ctor_and_clear(TestStats& stats) {
     csMatrixBytes m{3, 2};
     expect_true(stats, testName, __LINE__, m.width() == 3 && m.height() == 2, "width/height match ctor");
     expect_eq_int(stats, testName, __LINE__, m.get(0), 0, "bytes start at 0");
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(2, 1), 0, "last pixel byte is 0");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(2, 1), 0, "last pixel byte is 0");
     const auto r = m.getRect();
     expect_true(stats, testName, __LINE__, r.x == 0 && r.y == 0 && r.width == 3 && r.height == 2, "getRect returns full bounds");
 }
@@ -794,54 +794,54 @@ void test_matrix_bytes_oob_read(TestStats& stats) {
     csMatrixBytes m{2, 2};
     m.outOfBoundsValue = 42;
     expect_eq_int(stats, testName, __LINE__, m.get(100), 42, "get OOB returns outOfBoundsValue");
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(-1, 0), 42, "getPixel negative x returns outOfBoundsValue");
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(5, 5), 42, "getPixel beyond bounds returns outOfBoundsValue");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(-1, 0), 42, "getValue negative x returns outOfBoundsValue");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(5, 5), 42, "getValue beyond bounds returns outOfBoundsValue");
 }
 
 void test_matrix_bytes_oob_write(TestStats& stats) {
     const char* testName = "matrix_bytes_oob_write";
     csMatrixBytes m{2, 2};
-    m.setPixel(0, 0, 10);
-    m.setPixel(-1, 0, 99);
-    m.setPixel(5, 5, 99);
+    m.setValue(0, 0, 10);
+    m.setValue(-1, 0, 99);
+    m.setValue(5, 5, 99);
     m.set(100, 99);
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 10, "in-bounds write stored");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(0, 0), 10, "in-bounds write stored");
     expect_eq_int(stats, testName, __LINE__, m.get(0), 10, "in-bounds set stored");
 }
 
 void test_matrix_bytes_copy_deep(TestStats& stats) {
     const char* testName = "matrix_bytes_copy_deep";
     csMatrixBytes a{2, 2};
-    a.setPixel(0, 0, 7);
-    a.setPixel(1, 1, 11);
+    a.setValue(0, 0, 7);
+    a.setValue(1, 1, 11);
     csMatrixBytes b = a;
-    b.setPixel(0, 0, 99);
-    expect_eq_int(stats, testName, __LINE__, a.getPixel(0, 0), 7, "original unchanged after copy mutation");
-    expect_eq_int(stats, testName, __LINE__, b.getPixel(0, 0), 99, "copy mutated");
+    b.setValue(0, 0, 99);
+    expect_eq_int(stats, testName, __LINE__, a.getValue(0, 0), 7, "original unchanged after copy mutation");
+    expect_eq_int(stats, testName, __LINE__, b.getValue(0, 0), 99, "copy mutated");
 }
 
 void test_matrix_bytes_move(TestStats& stats) {
     const char* testName = "matrix_bytes_move";
     csMatrixBytes a{2, 2};
-    a.setPixel(0, 0, 5);
+    a.setValue(0, 0, 5);
     csMatrixBytes b = std::move(a);
     expect_true(stats, testName, __LINE__, a.width() == 0 && a.height() == 0, "moved-from has zero size");
-    expect_eq_int(stats, testName, __LINE__, b.getPixel(0, 0), 5, "moved-to has data");
+    expect_eq_int(stats, testName, __LINE__, b.getValue(0, 0), 5, "moved-to has data");
 }
 
 void test_matrix_bytes_clear_resize(TestStats& stats) {
     const char* testName = "matrix_bytes_clear_resize";
     csMatrixBytes m{2, 2};
-    m.setPixel(0, 0, 1);
-    m.setPixel(1, 1, 2);
+    m.setValue(0, 0, 1);
+    m.setValue(1, 1, 2);
     m.clear();
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 0, "clear zeros pixels");
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(1, 1), 0, "clear zeros all");
-    m.setPixel(0, 0, 3);
+    expect_eq_int(stats, testName, __LINE__, m.getValue(0, 0), 0, "clear zeros pixels");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(1, 1), 0, "clear zeros all");
+    m.setValue(0, 0, 3);
     m.resize(3, 3);
     expect_eq_int(stats, testName, __LINE__, m.width(), 3, "resize updates width");
     expect_eq_int(stats, testName, __LINE__, m.height(), 3, "resize updates height");
-    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 0, "resize clears content");
+    expect_eq_int(stats, testName, __LINE__, m.getValue(0, 0), 0, "resize clears content");
 }
 
 int main() {
