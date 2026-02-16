@@ -136,7 +136,7 @@ public:
     }
 
     // Resize matrix to new dimensions. Existing bytes are lost (matrix is cleared).
-    void resize(tMatrixPixelsSize w, tMatrixPixelsSize h) {
+    void resize(tMatrixPixelsSize w, tMatrixPixelsSize h) override {
         if (w == width_ && h == height_) {
             return;
         }

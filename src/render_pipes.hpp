@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render_base.hpp"
+#include "matrix_base.hpp"
 #include "matrix_types.hpp"
 #include "amp_macros.hpp"
 #include "fixed_point.hpp"
@@ -13,7 +14,7 @@ namespace amp {
 class csRenderMatrixPipeBase : public csRenderMatrixBase {
 public:
     // Source matrix pointer (nullptr means no source).
-    csMatrixPixels* matrixSource = nullptr;
+    csMatrixBase* matrixSource = nullptr;
 
     // Source rectangle (defines area to copy from source matrix).
     csRect rectSource;

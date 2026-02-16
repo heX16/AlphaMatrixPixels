@@ -230,19 +230,8 @@ public:
         }
     }
 
-    /*
-    TODO:
-
-    `void getScanLine(csRect area, offset_x, offset_y, OUT &* ptrLineOfColors, OUT & lineLen)`
-
-    `void fill(csRect area, color)`
-
-    // overwrite dst area. fast.
-    `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
-    */
-
     // Resize matrix to new dimensions. Existing pixels are lost (matrix is cleared).
-    void resize(uint16_t sx, uint16_t sy) {
+    void resize(tMatrixPixelsSize sx, tMatrixPixelsSize sy) override {
         if (sx == size_x_ && sy == size_y_) {
             return;
         }

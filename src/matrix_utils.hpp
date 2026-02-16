@@ -17,6 +17,19 @@ using ::size_t;
 using math::max;
 using math::min;
 
+
+/*
+// TODO:
+
+    `void getScanLine(csRect area, offset_x, offset_y, OUT &* ptrLineOfColors, OUT & lineLen)`
+
+    `void fill(csRect area, color)`
+
+    // overwrite dst area. fast.
+    `bool copyMatrix(dst_x, dst_y, const csMatrixPixels& source)`
+*/
+
+
 // Draw another matrix over destination with clipping. Source alpha is respected and additionally scaled by 'alpha'.
 inline void drawMatrix(csMatrixBase& dst, tMatrixPixelsCoord dst_x, tMatrixPixelsCoord dst_y, 
                        const csMatrixBase& src, uint8_t alpha = 255) noexcept {

@@ -33,7 +33,7 @@ enum class PropType : uint8_t {
     // PROGMEM const
     StrConst = 11,
     Str = 12,
-    // `csMatrixPixels`
+    // Matrix pointer: may be `csMatrixBase*` or `csMatrixPixels*` (mixed during transition).
     Matrix = 13,
     // `csRect`
     Rect = 14,

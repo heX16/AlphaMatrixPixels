@@ -140,6 +140,17 @@ public:
         }
     }
 
+    // Resize matrix to new dimensions. Existing bits are lost (matrix is cleared).
+    void resize(tMatrixPixelsSize w, tMatrixPixelsSize h) override {
+        if (w == width_ && h == height_) {
+            return;
+        }
+        delete[] bytes_;
+        width_ = w;
+        height_ = h;
+        bytes_ = allocate(width_, height_);
+    }
+
 private:
     tMatrixPixelsSize width_;
     tMatrixPixelsSize height_;
@@ -171,16 +182,6 @@ private:
         if (n > 0 && dst && src) {
             memcpy(static_cast<void*>(dst), static_cast<const void*>(src), n);
         }
-    }
-
-    void resize(uint16_t w, uint16_t h) {
-        if (w == width_ && h == height_) {
-            return;
-        }
-        delete[] bytes_;
-        width_ = w;
-        height_ = h;
-        bytes_ = allocate(width_, height_);
     }
 };
 

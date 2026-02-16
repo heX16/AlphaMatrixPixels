@@ -30,6 +30,13 @@ public:
 
     // Write pixel with blending (semantics depend on implementation).
     virtual void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept = 0;
+
+    // Resize matrix to new dimensions. Existing data is lost (matrix is cleared).
+    // Optional: derived classes may override; default does nothing.
+    virtual void resize(tMatrixPixelsSize w, tMatrixPixelsSize h) {
+        (void)w;
+        (void)h;
+    }
 };
 
 } // namespace amp
