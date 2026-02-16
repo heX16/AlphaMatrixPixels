@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "color_rgba.hpp"
+#include "matrix_bytes.hpp"
 #include "matrix_pixels.hpp"
 #include "rect.hpp"
 #include "math.hpp"
@@ -174,8 +175,8 @@ public:
     }
 };
 
-// Classic flame/fire effect. Uses internal heat buffers; draws heat->palette directly to matrixDest.
-// Heat is stored in the R channel (A=255) in double-buffered heat matrices.
+// Classic flame/fire effect. Uses internal heat buffer; draws heat->palette directly to matrixDest.
+// Heat is stored as 1 byte per cell in csMatrixBytes (visible rows + 1 fuel-burn row).
 // Cooling is scaled by rectDest.height so the look is consistent across heights.
 class csRenderFlame : public csRenderDynamic {
 public:
@@ -194,7 +195,7 @@ public:
     // Horizontal drift per simulation step (negative = left, positive = right).
     int8_t wind = 0;
 
-    csMatrixPixels heatA{0, 0};
+    csMatrixBytes heatA{0, 0};
     uint16_t lastUpdateTime = 0;
 
     // Hidden fuel-burn row count appended below visible area. Sparks/fuel live here; blurred into visible bottom row.
@@ -327,8 +328,8 @@ private:
         tMatrixPixelsSize w,
         tMatrixPixelsSize visibleH,
         int windShift,
-        const csMatrixPixels& src,
-        csMatrixPixels& dst
+        const csMatrixBytes& src,
+        csMatrixBytes& dst
     ) {
         // Keep all computations identical to the previous inline loop in recalc().
         const tMatrixPixelsSize yp1 = y + 1;
@@ -343,12 +344,12 @@ private:
             const tMatrixPixelsCoord cxL = to_coord(sxLClamp);
             const tMatrixPixelsCoord cxR = to_coord(sxRClamp);
 
-            const uint16_t v1 = src.getPixel(cx, to_coord(yp1)).r;
-            const uint16_t v2 = src.getPixel(cx, to_coord(yp2)).r;
-            const uint16_t vL = src.getPixel(cxL, to_coord(yp1)).r;
-            const uint16_t vR = src.getPixel(cxR, to_coord(yp1)).r;
+            const uint16_t v1 = src.getPixel(cx, to_coord(yp1));
+            const uint16_t v2 = src.getPixel(cx, to_coord(yp2));
+            const uint16_t vL = src.getPixel(cxL, to_coord(yp1));
+            const uint16_t vR = src.getPixel(cxR, to_coord(yp1));
             const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
-            dst.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+            dst.setPixel(to_coord(x), to_coord(y), v);
         }
     }
 
@@ -356,10 +357,10 @@ private:
     void stepCooling(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize internalH, uint8_t coolMax) {
         for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
+                uint8_t v = heatA.getPixel(to_coord(x), to_coord(y));
                 const uint8_t cool = rand.rand(coolMax);
                 v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
-                heatA.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+                heatA.setPixel(to_coord(x), to_coord(y), v);
             }
         }
     }
@@ -373,7 +374,7 @@ private:
                 : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
             if (rand.rand() < sparking) {
                 const uint8_t v = rand.randRange(160, 255);
-                heatA.setPixelRewrite(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
+                heatA.setPixel(to_coord(x), fuelY, v);
             }
         }
     }
@@ -383,11 +384,11 @@ private:
         for (tMatrixPixelsSize x = 0; x < w; ++x) {
             const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
             const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-            const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY).r;
-            const uint16_t fC = heatA.getPixel(to_coord(x), fuelY).r;
-            const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY).r;
+            const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY);
+            const uint16_t fC = heatA.getPixel(to_coord(x), fuelY);
+            const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY);
             const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-            heatA.setPixelRewrite(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
+            heatA.setPixel(to_coord(x), bottomVisibleY, v);
         }
     }
 
@@ -489,7 +490,7 @@ public:
             const tMatrixPixelsCoord dy = sy + rectDest.y;
             for (tMatrixPixelsCoord sx = start_x; sx < end_x; ++sx) {
                 const tMatrixPixelsCoord dx = sx + rectDest.x;
-                const uint8_t heatVal = heatA.getPixel(to_coord(sx), to_coord(sy)).r;
+                const uint8_t heatVal = heatA.getPixel(to_coord(sx), to_coord(sy));
                 matrixDest->setPixel(dx, dy, heatToColor(heatVal), alpha);
             }
         }
