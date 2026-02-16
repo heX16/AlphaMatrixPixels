@@ -6,6 +6,7 @@
 #include "color_rgba.hpp"
 #include "matrix_bytes.hpp"
 #include "matrix_pixels.hpp"
+#include "matrix_utils.hpp"
 #include "rect.hpp"
 #include "math.hpp"
 #include "fixed_point.hpp"
@@ -1470,7 +1471,7 @@ public:
         if (disabled || !matrixDest) {
             return;
         }
-        matrixDest->fillArea(rectDest, color);
+        matrix_utils::fillArea(*matrixDest, rectDest, color);
     }
 };
 

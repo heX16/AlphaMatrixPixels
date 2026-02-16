@@ -154,7 +154,7 @@ void loop() {
     // Calculate line position based on seconds (moves down every second)
     uint8_t lineY = (now.second() % sfxSystem.internalMatrix->height());
     amp::csColorRGBA c(0xff0000);
-    sfxSystem.internalMatrix->fillArea(amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.internalMatrix->width(), 1}, c);
+    amp::matrix_utils::fillArea(*sfxSystem.internalMatrix, amp::csRect{0, static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.internalMatrix->width(), 1}, c);
     #endif
 
     #if AMP_ENABLE_CLOCK
@@ -184,7 +184,7 @@ void loop() {
         remapHelper.matrix1D.clear();
 
         // Fill entire 1D matrix with black
-        remapHelper.matrix1D.fillArea(remapHelper.matrix1D.getRect(), amp::csColorRGBA(0, 0, 0));
+        amp::matrix_utils::fillArea(remapHelper.matrix1D, remapHelper.matrix1D.getRect(), amp::csColorRGBA(0, 0, 0));
         
         // Calculate current pixel index based on seconds
         uint32_t pixelIndex = (millis() / 1000) % cRemapDestMatrixLen;
@@ -203,7 +203,7 @@ void loop() {
         
         // Check if first button is pressed - fill matrix with white
         /*if (digitalRead(cButton2Pin) == LOW) {
-            canvas.fillArea(canvas.getRect(), amp::csColorRGBA(255, 255, 255));
+            amp::matrix_utils::fillArea(canvas, canvas.getRect(), amp::csColorRGBA(255, 255, 255));
             remapHelper.update(canvas, rng, currTime);
         }*/
     }

@@ -4,6 +4,7 @@
 #include "matrix_types.hpp"
 #include "amp_macros.hpp"
 #include "fixed_point.hpp"
+#include "matrix_utils.hpp"
 // #include <stdint.h>
 
 namespace amp {
@@ -112,8 +113,8 @@ public:
         }
 
         // Get average color of source area and fill destination area with it
-        const csColorRGBA areaColor = matrixSource->getAreaColor(rectSource);
-        matrixDest->fillArea(rectDest, areaColor);
+        const csColorRGBA areaColor = matrix_utils::getAreaColor(*matrixSource, rectSource);
+        matrix_utils::fillArea(*matrixDest, rectDest, areaColor);
     }
 };
 
@@ -132,10 +133,10 @@ public:
 
         // If sizes match, use simple drawMatrix (faster)
         if (rectDest.width == rectSource.width && rectDest.height == rectSource.height) {
-            matrixDest->drawMatrixArea(rectSource, rectDest.x, rectDest.y, *matrixSource);
+            matrix_utils::drawMatrixArea(*matrixDest, rectSource, rectDest.x, rectDest.y, *matrixSource);
         } else {
             // Use drawMatrixScale for different sizes
-            matrixDest->drawMatrixScale(rectSource, rectDest, *matrixSource);
+            (void)matrix_utils::drawMatrixScale(*matrixDest, rectSource, rectDest, *matrixSource);
         }
     }
 };

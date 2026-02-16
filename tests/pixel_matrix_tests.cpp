@@ -10,6 +10,8 @@ using amp::csMatrixPixels;
 using amp::tMatrixPixelsSize;
 using amp::to_coord;
 using namespace amp::math;
+using amp::matrix_utils::getPixelBlend;
+using amp::matrix_utils::drawMatrix;
 
 // Minimal self-contained test runner (no external frameworks).
 struct TestStats {
@@ -214,7 +216,7 @@ void test_matrix_getPixelBlend(TestStats& stats) {
     const csColorRGBA dst{255, 0, 0, 255};
     const csColorRGBA fg{128, 255, 0, 0};
     m.setPixelRewrite(0, 0, fg);
-    const csColorRGBA blended = m.getPixelBlend(0, 0, dst);
+    const csColorRGBA blended = getPixelBlend(m, 0, 0, dst);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(dst, fg);
     expect_true(stats, testName, __LINE__, colorEq(blended, expected.a, expected.r, expected.g, expected.b), "getPixelBlend returns SourceOver without mutating");
     expect_true(stats, testName, __LINE__, colorEq(m.getPixel(0, 0), fg.a, fg.r, fg.g, fg.b), "getPixelBlend does not modify matrix");
@@ -226,7 +228,7 @@ void test_matrix_drawMatrix_clip(TestStats& stats) {
     csMatrixPixels src{2, 2};
     src.setPixelRewrite(0, 0, csColorRGBA{255, 255, 0, 0});     // not drawn (clipped)
     src.setPixelRewrite(1, 1, csColorRGBA{255, 0, 255, 0});     // drawn to (0,0)
-    dst.drawMatrix(-1, -1, src, 128);
+    drawMatrix(dst, -1, -1, src, 128);
     const csColorRGBA expected = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 1), 128);
     expect_true(stats, testName, __LINE__, colorEq(dst.getPixel(0, 0), expected.a, expected.r, expected.g, expected.b), "clipped draw writes only overlapping pixel");
     expect_true(stats, testName, __LINE__, colorEq(dst.getPixel(1, 1), 0, 0, 0, 0), "non-overlapping stays clear");
@@ -239,7 +241,7 @@ void test_matrix_drawMatrix_basic(TestStats& stats) {
     src.setPixelRewrite(0, 0, csColorRGBA{128, 0, 0, 255});
     src.setPixelRewrite(1, 0, csColorRGBA{255, 255, 0, 0});
     dst.setPixelRewrite(0, 0, csColorRGBA{255, 0, 255, 0});
-    dst.drawMatrix(0, 0, src, 200);
+    drawMatrix(dst, 0, 0, src, 200);
     csColorRGBA expected00 = csColorRGBA::sourceOverStraight(csColorRGBA{255, 0, 255, 0}, src.getPixel(0, 0), 200);
     csColorRGBA expected10 = csColorRGBA::sourceOverStraight(csColorRGBA{0, 0, 0, 0}, src.getPixel(1, 0), 200);
     expect_true(stats, testName, __LINE__, colorEq(dst.getPixel(0, 0), expected00.a, expected00.r, expected00.g, expected00.b), "drawMatrix blends with dst");

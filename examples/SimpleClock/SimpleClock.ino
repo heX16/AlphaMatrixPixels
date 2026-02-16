@@ -125,7 +125,7 @@ void loop() {
     // Draw horizontal line in canvas for debugging
     // Calculate line position based on seconds (moves down every second)
     uint8_t lineY = (now.second() % sfxSystem.internalMatrix->height());
-    sfxSystem.internalMatrix->fillArea(
+    amp::matrix_utils::fillArea(*sfxSystem.internalMatrix,
         amp::csRect{0, 
         static_cast<amp::tMatrixPixelsCoord>(lineY), sfxSystem.internalMatrix->width(), 1}, 
         amp::csColorRGBA(0x888800));
