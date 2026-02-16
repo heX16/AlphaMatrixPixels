@@ -49,13 +49,16 @@
 
 ### `namespace amp`
 - `csColorRGBA` (struct) — ARGB цвет (0xAARRGGBB) + операции SourceOver (straight alpha).
-- `csMatrixPixels` (class) — матрица пикселей RGBA в памяти + клиппинг/блендинг.
+- `csMatrixBase` (abstract class) — общий интерфейс матрицы в терминах `csColorRGBA` (`getPixel/setPixelRewrite/setPixel`).
+- `csMatrixPixels` (class) — RGBA-матрица; наследуется от `csMatrixBase`.
+- `csMatrixBytes` (class) — матрица `uint8_t`; наследуется от `csMatrixBase` + предоставляет `getValue/setValue` для сырого доступа.
+- `csMatrixBoolean` (class) — матрица битов (bool); наследуется от `csMatrixBase` + предоставляет `getValue/setValue` для сырого доступа.
 - `csRect` (class) — прямоугольник (x, y, width, height) + пересечение `intersect()`.
 - `csRandGen` (class) — простой генератор псевдослучайных чисел (8-bit) для эффектов.
 - `csEventBase` (class) — базовый тип события для обмена с внешними системами (WIP).
 - `PropType` (enum class) — тип свойства для внешней интроспекции (WIP).
 - `csEffectBase` (class) — базовый интерфейс рендера/эффекта: интроспекция свойств + `propChanged/recalc/render` + события (WIP).
-- `csRenderMatrixBase` (class) — базовый класс для эффектов, которые рисуют в `csMatrixPixels` (см. ниже).
+- `csRenderMatrixBase` (class) — базовый класс для эффектов, которые рисуют в матрицу через интерфейс `csMatrixBase` (см. ниже).
 
 ### `namespace amp::math`
 - `csFP16` (struct) — signed 8.8 fixed-point.
@@ -96,13 +99,57 @@ Cout = (C_src * A_src + C_dst * A_dst * (1 - A_src)) / Aout
 
 **Исходник:** `src/matrix_pixels.hpp`
 
-2D-матрица пикселей ARGB (0xAARRGGBB).
+2D-матрица пикселей ARGB (0xAARRGGBB). Реализует `csMatrixBase` напрямую (без конвертации).
 
 ### Ключевые особенности
 
 - **Безопасные границы:** запись вне границ игнорируется, чтение возвращает `{0,0,0,0}`.
 - **Метод `getRect()`:** возвращает `csRect{0,0,width,height}` — используется для клиппинга в рендерах.
 - **Метод `drawMatrix()`:** композиция матриц с автоклиппингом.
+
+## Матрицы: общий интерфейс (`csMatrixBase`)
+
+Все матрицы (`csMatrixPixels`, `csMatrixBytes`, `csMatrixBoolean`) наследуются от `csMatrixBase`, чтобы эффекты/алгоритмы могли работать с любым типом матрицы через единый набор виртуальных методов:
+- `getPixel(x, y) -> csColorRGBA`
+- `setPixelRewrite(x, y, csColorRGBA)`
+- `setPixel(x, y, csColorRGBA)` и/или `setPixel(x, y, csColorRGBA, alpha)`
+
+### Сырой доступ к данным (`getValue/setValue`)
+
+`csMatrixBytes` и `csMatrixBoolean` дополнительно имеют невиртуальные методы `getValue/setValue` (работают с нативным типом `uint8_t`/`bool`). Их следует использовать в коде, где нужен именно “значение-пиксель”, без RGBA-конвертации.
+
+## Правила конвертации (Bytes/Boolean ↔ RGBA)
+
+Эти правила определяют, как `csMatrixBytes` и `csMatrixBoolean` реализуют виртуальный интерфейс `csMatrixBase` в терминах `csColorRGBA`.
+
+### Bytes → RGBA (`csMatrixBytes::getPixel`)
+- Пусть `v = getValue(x, y)` (0..255).
+- Возвращаем `csColorRGBA{255, v, v, v}` (серый, полностью непрозрачный).
+
+### RGBA → Bytes (`csMatrixBytes::setPixelRewrite`)
+- Вычисляем интенсивность `i` из входного цвета (по умолчанию берём `max(r, g, b)`).
+- `setValue(x, y, i)`. Альфа игнорируется (это overwrite).
+
+### RGBA → Bytes (`csMatrixBytes::setPixel`)
+- Эффективная альфа: `a = mul8(color.a, alpha)` (если есть параметр `alpha`, иначе `alpha = 255`).
+- Интенсивность источника `src = max(r, g, b)`.
+- Значение назначения `dst = getValue(x, y)`.
+- Новое значение: `out = dst + ((src - dst) * a) / 255`.
+- `setValue(x, y, out)`.
+
+### Boolean → RGBA (`csMatrixBoolean::getPixel`)
+- Пусть `b = getValue(x, y)`.
+- `false` → `csColorRGBA{0, 0, 0, 0}` (прозрачный чёрный).
+- `true` → `csColorRGBA{255, 255, 255, 255}` (белый непрозрачный).
+
+### RGBA → Boolean (`csMatrixBoolean::setPixelRewrite`)
+- Вычисляем интенсивность `i = max(r, g, b)`.
+- `setValue(x, y, i != 0)`. Альфа игнорируется (это overwrite).
+
+### RGBA → Boolean (`csMatrixBoolean::setPixel`)
+- Эффективная альфа: `a = mul8(color.a, alpha)` (если есть параметр `alpha`, иначе `alpha = 255`).
+- Интенсивность `i = max(r, g, b)`.
+- Правило: если `a != 0` и `i != 0`, то `setValue(x, y, true)`, иначе `setValue(x, y, false)`.
 
 ## Система рендеринга
 

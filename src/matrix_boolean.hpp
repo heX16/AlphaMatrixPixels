@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "matrix_base.hpp"
 #include "matrix_types.hpp"
 #include "rect.hpp"
 
@@ -12,7 +13,7 @@ using ::size_t;
 using ::uint8_t;
 
 // Header-only bit matrix where each pixel is represented by a single bit (boolean).
-class csMatrixBoolean {
+class csMatrixBoolean : public csMatrixBase {
 public:
     // Construct matrix with given size, all bits cleared.
     csMatrixBoolean(tMatrixPixelsSize width, tMatrixPixelsSize height, bool defaultOutOfBoundsValue = false)
@@ -61,11 +62,25 @@ public:
 
     ~csMatrixBoolean() { delete[] bytes_; }
 
-    [[nodiscard]] tMatrixPixelsSize width() const noexcept { return width_; }
-    [[nodiscard]] tMatrixPixelsSize height() const noexcept { return height_; }
+    [[nodiscard]] tMatrixPixelsSize width() const noexcept override { return width_; }
+    [[nodiscard]] tMatrixPixelsSize height() const noexcept override { return height_; }
 
-    // Return full matrix bounds as a rectangle: (0, 0, width, height).
-    [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
+    // csMatrixBase (RGBA interface)
+    [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept override {
+        return getValue(x, y) ? csColorRGBA{255, 255, 255, 255} : csColorRGBA{0, 0, 0, 0};
+    }
+
+    inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
+        setValue(x, y, (color.r != 0) || (color.g != 0) || (color.b != 0));
+    }
+
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
+        const uint8_t a = mul8(color.a, alpha);
+        if (a == 0) {
+            return;
+        }
+        setValue(x, y, (color.r != 0) || (color.g != 0) || (color.b != 0));
+    }
 
     // Default value returned when accessing out-of-bounds coordinates.
     bool outOfBoundsValue{false};

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "color_rgba.hpp"
+#include "matrix_base.hpp"
 #include "matrix_types.hpp"
 #include "rect.hpp"
 #include "math.hpp"
@@ -19,7 +20,7 @@ using math::csFP16;
 
 // Header-only RGBA pixel matrix with straight-alpha SourceOver blending.
 // Color format: 0xAARRGGBB (A in the most significant byte).
-class csMatrixPixels {
+class csMatrixPixels : public csMatrixBase {
 public:
     // Construct matrix with given size, all pixels cleared.
     csMatrixPixels(tMatrixPixelsSize size_x, tMatrixPixelsSize size_y)
@@ -72,16 +73,11 @@ public:
 
     ~csMatrixPixels() { delete[] pixels_; }
 
-    [[nodiscard]] tMatrixPixelsSize width() const noexcept { return size_x_; }
-    [[nodiscard]] tMatrixPixelsSize height() const noexcept { return size_y_; }
-
-    // Return full matrix bounds as a rectangle: (0, 0, width, height).
-    [[nodiscard]] inline csRect getRect() const noexcept {
-        return csRect{0, 0, width(), height()}; 
-    }
+    [[nodiscard]] tMatrixPixelsSize width() const noexcept override { return size_x_; }
+    [[nodiscard]] tMatrixPixelsSize height() const noexcept override { return size_y_; }
 
     // Overwrite pixel. Out-of-bounds writes are silently ignored.
-    inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
+    inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
         if (inside(x, y)) {
             pixels_[index(x, y)] = color;
         }
@@ -89,7 +85,7 @@ public:
 
     // Blend source color over destination pixel using SourceOver (straight alpha).
     // 'alpha' is an extra global multiplier for the source alpha channel.
-    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept {
+    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color, alpha);
@@ -97,7 +93,7 @@ public:
     }
 
     // Blend source color over destination pixel using SourceOver with only the pixel's own alpha.
-    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept {
+    void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
         if (inside(x, y)) {
             const csColorRGBA dst = pixels_[index(x, y)];
             pixels_[index(x, y)] = csColorRGBA::sourceOverStraight(dst, color);
@@ -243,7 +239,7 @@ public:
     }
 
     // Read pixel; returns transparent black when out of bounds.
-    [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
+    [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept override {
         if (inside(x, y)) {
             return pixels_[index(x, y)];
         }

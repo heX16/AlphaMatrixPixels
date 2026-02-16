@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "matrix_base.hpp"
 #include "matrix_types.hpp"
 #include "rect.hpp"
 
@@ -12,7 +13,7 @@ using ::size_t;
 using ::uint8_t;
 
 // Header-only byte matrix where each pixel is represented by a single uint8_t.
-class csMatrixBytes {
+class csMatrixBytes : public csMatrixBase {
 public:
     // Construct matrix with given size, all bytes cleared to 0.
     csMatrixBytes(tMatrixPixelsSize width, tMatrixPixelsSize height, uint8_t defaultOutOfBoundsValue = 0)
@@ -61,11 +62,36 @@ public:
 
     ~csMatrixBytes() { delete[] bytes_; }
 
-    [[nodiscard]] tMatrixPixelsSize width() const noexcept { return width_; }
-    [[nodiscard]] tMatrixPixelsSize height() const noexcept { return height_; }
+    [[nodiscard]] tMatrixPixelsSize width() const noexcept override { return width_; }
+    [[nodiscard]] tMatrixPixelsSize height() const noexcept override { return height_; }
 
-    // Return full matrix bounds as a rectangle: (0, 0, width, height).
-    [[nodiscard]] inline csRect getRect() const noexcept { return csRect{0, 0, width(), height()}; }
+    // csMatrixBase (RGBA interface)
+    [[nodiscard]] inline csColorRGBA getPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept override {
+        const uint8_t v = getValue(x, y);
+        return csColorRGBA{255, v, v, v};
+    }
+
+    inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
+        const uint8_t rg = (color.r > color.g) ? color.r : color.g;
+        const uint8_t i = (rg > color.b) ? rg : color.b;
+        setValue(x, y, i);
+    }
+
+    inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color, uint8_t alpha) noexcept override {
+        const uint8_t a = mul8(color.a, alpha);
+        if (a == 0) {
+            return;
+        }
+
+        const uint8_t rg = (color.r > color.g) ? color.r : color.g;
+        const uint8_t src = (rg > color.b) ? rg : color.b;
+        const uint8_t dst = getValue(x, y);
+
+        const int32_t diff = static_cast<int32_t>(src) - static_cast<int32_t>(dst);
+        const int32_t out32 = static_cast<int32_t>(dst) + (diff * static_cast<int32_t>(a) + 127) / 255;
+        const uint8_t out = (out32 <= 0) ? 0 : (out32 >= 255) ? 255 : static_cast<uint8_t>(out32);
+        setValue(x, y, out);
+    }
 
     // Default value returned when accessing out-of-bounds coordinates.
     uint8_t outOfBoundsValue{0};
