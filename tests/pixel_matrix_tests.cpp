@@ -1,9 +1,11 @@
 #include <iostream>
 #include <cmath>
+#include "../src/matrix_bytes.hpp"
 #include "../src/matrix_pixels.hpp"
 #include "../src/render_pipes.hpp"
 
 using amp::csColorRGBA;
+using amp::csMatrixBytes;
 using amp::csMatrixPixels;
 using amp::tMatrixPixelsSize;
 using amp::to_coord;
@@ -777,6 +779,71 @@ void test_rectframe_4x3(TestStats& stats) {
     expect_true(stats, testName, __LINE__, colorEq(dest.getPixel(1, 1), 0, 0, 0, 0), "interior pixel stays clear");
 }
 
+void test_matrix_bytes_ctor_and_clear(TestStats& stats) {
+    const char* testName = "matrix_bytes_ctor_and_clear";
+    csMatrixBytes m{3, 2};
+    expect_true(stats, testName, __LINE__, m.width() == 3 && m.height() == 2, "width/height match ctor");
+    expect_eq_int(stats, testName, __LINE__, m.get(0), 0, "bytes start at 0");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(2, 1), 0, "last pixel byte is 0");
+    const auto r = m.getRect();
+    expect_true(stats, testName, __LINE__, r.x == 0 && r.y == 0 && r.width == 3 && r.height == 2, "getRect returns full bounds");
+}
+
+void test_matrix_bytes_oob_read(TestStats& stats) {
+    const char* testName = "matrix_bytes_oob_read";
+    csMatrixBytes m{2, 2};
+    m.outOfBoundsValue = 42;
+    expect_eq_int(stats, testName, __LINE__, m.get(100), 42, "get OOB returns outOfBoundsValue");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(-1, 0), 42, "getPixel negative x returns outOfBoundsValue");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(5, 5), 42, "getPixel beyond bounds returns outOfBoundsValue");
+}
+
+void test_matrix_bytes_oob_write(TestStats& stats) {
+    const char* testName = "matrix_bytes_oob_write";
+    csMatrixBytes m{2, 2};
+    m.setPixel(0, 0, 10);
+    m.setPixel(-1, 0, 99);
+    m.setPixel(5, 5, 99);
+    m.set(100, 99);
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 10, "in-bounds write stored");
+    expect_eq_int(stats, testName, __LINE__, m.get(0), 10, "in-bounds set stored");
+}
+
+void test_matrix_bytes_copy_deep(TestStats& stats) {
+    const char* testName = "matrix_bytes_copy_deep";
+    csMatrixBytes a{2, 2};
+    a.setPixel(0, 0, 7);
+    a.setPixel(1, 1, 11);
+    csMatrixBytes b = a;
+    b.setPixel(0, 0, 99);
+    expect_eq_int(stats, testName, __LINE__, a.getPixel(0, 0), 7, "original unchanged after copy mutation");
+    expect_eq_int(stats, testName, __LINE__, b.getPixel(0, 0), 99, "copy mutated");
+}
+
+void test_matrix_bytes_move(TestStats& stats) {
+    const char* testName = "matrix_bytes_move";
+    csMatrixBytes a{2, 2};
+    a.setPixel(0, 0, 5);
+    csMatrixBytes b = std::move(a);
+    expect_true(stats, testName, __LINE__, a.width() == 0 && a.height() == 0, "moved-from has zero size");
+    expect_eq_int(stats, testName, __LINE__, b.getPixel(0, 0), 5, "moved-to has data");
+}
+
+void test_matrix_bytes_clear_resize(TestStats& stats) {
+    const char* testName = "matrix_bytes_clear_resize";
+    csMatrixBytes m{2, 2};
+    m.setPixel(0, 0, 1);
+    m.setPixel(1, 1, 2);
+    m.clear();
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 0, "clear zeros pixels");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(1, 1), 0, "clear zeros all");
+    m.setPixel(0, 0, 3);
+    m.resize(3, 3);
+    expect_eq_int(stats, testName, __LINE__, m.width(), 3, "resize updates width");
+    expect_eq_int(stats, testName, __LINE__, m.height(), 3, "resize updates height");
+    expect_eq_int(stats, testName, __LINE__, m.getPixel(0, 0), 0, "resize clears content");
+}
+
 int main() {
     TestStats stats;
     test_color_component_ctor(stats);
@@ -821,6 +888,13 @@ int main() {
     test_rectframe_1xN(stats);
     test_rectframe_Nx1(stats);
     test_rectframe_4x3(stats);
+
+    test_matrix_bytes_ctor_and_clear(stats);
+    test_matrix_bytes_oob_read(stats);
+    test_matrix_bytes_oob_write(stats);
+    test_matrix_bytes_copy_deep(stats);
+    test_matrix_bytes_move(stats);
+    test_matrix_bytes_clear_resize(stats);
 
     std::cout << "Passed: " << stats.passed << ", Failed: " << stats.failed << '\n';
     if (stats.failed != 0) {
