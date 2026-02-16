@@ -352,6 +352,54 @@ private:
         }
     }
 
+    // Cooling: subtract random [0..coolMax) from each cell; write back into heatA (full internal height).
+    void stepCooling(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize internalH, uint8_t coolMax) {
+        for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
+            for (tMatrixPixelsSize x = 0; x < w; ++x) {
+                uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
+                const uint8_t cool = rand.rand(coolMax);
+                v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
+                heatA.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+            }
+        }
+    }
+
+    // Add sparks into the technical fuel row. Cooling must already be applied.
+    void stepSparks(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsCoord fuelY) {
+        const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
+        for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
+            const tMatrixPixelsSize x = (w <= 255)
+                ? to_size(rand.rand(static_cast<uint8_t>(w)))
+                : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
+            if (rand.rand() < sparking) {
+                const uint8_t v = rand.randRange(160, 255);
+                heatA.setPixelRewrite(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
+            }
+        }
+    }
+
+    // Blur technical fuel row into visible bottom row: v(x) = (L + 2*C + R) / 4
+    void stepFuelBlur(tMatrixPixelsSize w, tMatrixPixelsCoord fuelY, tMatrixPixelsCoord bottomVisibleY) {
+        for (tMatrixPixelsSize x = 0; x < w; ++x) {
+            const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
+            const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
+            const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY).r;
+            const uint16_t fC = heatA.getPixel(to_coord(x), fuelY).r;
+            const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY).r;
+            const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
+            heatA.setPixelRewrite(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
+        }
+    }
+
+    // Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
+    void stepDiffuse(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize visibleH, int windShift) {
+        if (visibleH >= 2) {
+            for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
+                diffuseUpwardRow(rand, y, w, visibleH, windShift, heatA, heatA);
+            }
+        }
+    }
+
 public:
     // Simulation: run N steps:
     // - cool the heat field (including technical fuel row)
@@ -413,48 +461,12 @@ public:
         const tMatrixPixelsCoord fuelY = to_coord(visibleH);
         const tMatrixPixelsCoord bottomVisibleY = to_coord(visibleH - 1);
 
+        const int windShift = static_cast<int>(wind);
         for (uint16_t step = 0; step < steps; ++step) {
-            // --- Cooling: subtract random [0..coolMax) from each cell; write back into heatA (full internal height).
-            for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
-                for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                    uint8_t v = heatA.getPixel(to_coord(x), to_coord(y)).r;
-                    const uint8_t cool = rand.rand(coolMax);
-                    v = (v > cool) ? static_cast<uint8_t>(v - cool) : 0;
-                    heatA.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
-                }
-            }
-
-            // --- Fuel (technical row in heatA): add sparks. Cooling already applied above.
-            const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
-            for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
-                const tMatrixPixelsSize x = (w <= 255)
-                    ? to_size(rand.rand(static_cast<uint8_t>(w)))
-                    : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
-                if (rand.rand() < sparking) {
-                    const uint8_t v = rand.randRange(160, 255);
-                    heatA.setPixelRewrite(to_coord(x), fuelY, csColorRGBA{255, v, 0, 0});
-                }
-            }
-
-            // --- Inject fuel into visible bottom row with 3-pixel blur: v(x) = (L + 2*C + R) / 4
-            for (tMatrixPixelsSize x = 0; x < w; ++x) {
-                const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
-                const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-                const uint16_t fL = heatA.getPixel(to_coord(xL), fuelY).r;
-                const uint16_t fC = heatA.getPixel(to_coord(x), fuelY).r;
-                const uint16_t fR = heatA.getPixel(to_coord(xR), fuelY).r;
-                const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-                heatA.setPixelRewrite(to_coord(x), bottomVisibleY, csColorRGBA{255, v, 0, 0});
-            }
-
-            // --- Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
-            const int windShift = static_cast<int>(wind);
-            if (visibleH >= 2) {
-                // In-place diffusion: src == dst, so we must iterate top -> bottom.
-                for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
-                    diffuseUpwardRow(rand, y, w, visibleH, windShift, heatA, heatA);
-                }
-            }
+            stepCooling(rand, w, internalH, coolMax);
+            stepSparks(rand, w, fuelY);
+            stepFuelBlur(w, fuelY, bottomVisibleY);
+            stepDiffuse(rand, w, visibleH, windShift);
         }
     }
 
