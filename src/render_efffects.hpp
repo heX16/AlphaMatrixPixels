@@ -315,6 +315,15 @@ private:
     //
     // Weighting:
     //   dst(x,y) = (v1 + vL + vR + v2 + v2) / 5
+    //
+    // Args:
+    // - rand: RNG used for per-pixel horizontal jitter (-1/0/+1).
+    // - y: Destination row index (valid range: 0..visibleH-2). Uses source rows y+1 and y+2.
+    // - w: Visible buffer width (used for x loop and x clamping).
+    // - visibleH: Visible buffer height (used for y+2 clamping to visibleH-1).
+    // - windShift: Horizontal drift added to x before clamping (typically static_cast<int>(wind)).
+    // - src: Source heat buffer (read-only), typically heatB.
+    // - dst: Destination heat buffer (written), typically heatA.
     static void diffuseUpwardRow(
         csRandGen& rand,
         tMatrixPixelsSize y,
@@ -342,7 +351,7 @@ private:
             const uint16_t vL = src.getPixel(cxL, to_coord(yp1)).r;
             const uint16_t vR = src.getPixel(cxR, to_coord(yp1)).r;
             const uint8_t v = static_cast<uint8_t>((v1 + vL + vR + v2 + v2) / 5u);
-            dst.setPixel(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
+            dst.setPixelRewrite(to_coord(x), to_coord(y), csColorRGBA{255, v, 0, 0});
         }
     }
 
@@ -400,8 +409,8 @@ public:
         // Fire2012-style cooling normalization by height:
         // coolMax = ((cooling * 10) / visibleH) + 2
         // Used as upper bound for random per-cell cooling per simulation step.
-        const tMatrixPixelsSize hClamp = (visibleH > 0) ? visibleH : 1;
-        const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / hClamp) + 2u);
+        // NOTE: visibleH is guaranteed to be > 0 due to the early return above.
+        const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / visibleH) + 2u);
         const uint8_t coolMax = (coolMax16 > 255u) ? 255u : static_cast<uint8_t>(coolMax16);
 
         const tMatrixPixelsCoord fuelY = to_coord(visibleH);
