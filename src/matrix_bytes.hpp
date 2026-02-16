@@ -130,7 +130,9 @@ private:
     }
 
     [[nodiscard]] inline size_t index(tMatrixPixelsCoord x, tMatrixPixelsCoord y) const noexcept {
-        return static_cast<size_t>(y) * width_ + static_cast<size_t>(x);
+        const auto xx = static_cast<size_t>(x);
+        const auto yy = static_cast<size_t>(y);
+        return yy * width_ + xx;
     }
 
     [[nodiscard]] inline size_t count() const noexcept {

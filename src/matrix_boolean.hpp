@@ -71,24 +71,24 @@ public:
     bool outOfBoundsValue{false};
 
     // Get bit value by linear index k. Returns outOfBoundsValue when out of bounds.
-    [[nodiscard]] inline bool get(uint16_t k) const noexcept {
+    [[nodiscard]] inline bool get(size_t k) const noexcept {
         if (k >= bitCount()) {
             return outOfBoundsValue;
         }
-        return (bytes_[k / 8] & (1U << (k % 8))) != 0;
+        return (bytes_[k / 8] & static_cast<uint8_t>(1U << (k % 8))) != 0;
     }
 
     // Set bit to 1 by linear index k. Out-of-bounds writes are silently ignored.
-    inline void setbit(uint16_t k) noexcept {
+    inline void setbit(size_t k) noexcept {
         if (k < bitCount()) {
-            bytes_[k / 8] |= (1U << (k % 8));
+            bytes_[k / 8] |= static_cast<uint8_t>(1U << (k % 8));
         }
     }
 
     // Clear bit (set to 0) by linear index k. Out-of-bounds writes are silently ignored.
-    inline void clrbit(uint16_t k) noexcept {
+    inline void clrbit(size_t k) noexcept {
         if (k < bitCount()) {
-            bytes_[k / 8] &= ~(1U << (k % 8));
+            bytes_[k / 8] &= static_cast<uint8_t>(~(1U << (k % 8)));
         }
     }
 
@@ -97,7 +97,9 @@ public:
         if (!inside(x, y)) {
             return outOfBoundsValue;
         }
-        const uint16_t k = static_cast<uint16_t>(y) * width_ + static_cast<uint16_t>(x);
+        const auto xx = static_cast<size_t>(x);
+        const auto yy = static_cast<size_t>(y);
+        const auto k = yy * width_ + xx;
         return get(k);
     }
 
@@ -106,7 +108,9 @@ public:
         if (!inside(x, y)) {
             return;
         }
-        const uint16_t k = static_cast<uint16_t>(y) * width_ + static_cast<uint16_t>(x);
+        const auto xx = static_cast<size_t>(x);
+        const auto yy = static_cast<size_t>(y);
+        const auto k = yy * width_ + xx;
         if (value) {
             setbit(k);
         } else {
