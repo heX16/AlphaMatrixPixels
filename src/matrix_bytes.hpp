@@ -72,9 +72,8 @@ public:
     }
 
     inline void setPixelRewrite(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
-        const uint8_t rg = (color.r > color.g) ? color.r : color.g;
-        const uint8_t i = (rg > color.b) ? rg : color.b;
-        setValue(x, y, i);
+        const uint8_t average = (color.r + color.g + color.b) / 3;
+        setValue(x, y, average);
     }
 
     inline void setPixel(tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA color) noexcept override {
@@ -82,14 +81,16 @@ public:
             return;
         }
 
-        const uint8_t rg = (color.r > color.g) ? color.r : color.g;
-        const uint8_t src = (rg > color.b) ? rg : color.b;
-        const uint8_t dst = getValue(x, y);
-
-        const int32_t diff = static_cast<int32_t>(src) - static_cast<int32_t>(dst);
-        const int32_t out32 = static_cast<int32_t>(dst) + (diff * static_cast<int32_t>(color.a) + 127) / 255;
-        const uint8_t out = (out32 <= 0) ? 0 : (out32 >= 255) ? 255 : static_cast<uint8_t>(out32);
-        setValue(x, y, out);
+        // Average RGB components
+        const int src = (color.r + color.g + color.b) / 3;
+        const int dst = getValue(x, y);
+        
+        // Alpha blending: dst + (src - dst) * alpha
+        const int blended = dst + ((src - dst) * color.a + 127) / 255;
+        
+        // Clamp to [0, 255]
+        const uint8_t result = (blended < 0) ? 0 : (blended > 255) ? 255 : blended;
+        setValue(x, y, result);
     }
 
     // Default value returned when accessing out-of-bounds coordinates.
