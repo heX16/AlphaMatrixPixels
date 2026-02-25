@@ -15,7 +15,7 @@ namespace amp {
 using tPropPtr = void*;
 
 // Property type for render property introspection (WIP).
-enum class PropType : uint8_t {
+enum class PropType : uint16_t {
     None = 0,
     UInt8 = 1,
     UInt16 = 2,
@@ -39,6 +39,8 @@ enum class PropType : uint8_t {
     Rect = 14,
     // `csColorRGBA`
     Color = 15,
+
+    ClassBase = 25,
 
     // WIP ...
     /*
@@ -86,14 +88,14 @@ enum class PropType : uint8_t {
     // этот номер является индификатором события.
     EventReceiverHandlerNum = 31,
 
-    // Special:
-    ClassBase = 25,
+    // Effects families:
     EffectBase = 32,
     EffectMatrixDest = 33,
     EffectPipe = 34,
     EffectPostFrame = 35,
     EffectGlyph = 36,
     EffectDigitalClock = 37,
+    EffectFlame = 38,
     EffectUserArea = 64,
 };
 

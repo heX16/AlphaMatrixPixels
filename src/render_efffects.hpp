@@ -248,6 +248,19 @@ public:
         }
     }
 
+    static constexpr PropType ClassFamilyId = PropType::EffectFlame;
+
+    PropType getClassFamily() const override {
+        return ClassFamilyId;
+    }
+
+    void* queryClassFamily(PropType familyId) override {
+        if (familyId == ClassFamilyId) {
+            return this;
+        }
+        return csRenderDynamic::queryClassFamily(familyId);
+    }
+
     // Returns the technical fuel-burn zone rectangle (always height cFuelBurnRowCount) at bottom of heat buffers.
     // Visible rows are y=0..rectDest.height-1; technical row is at y=rectDest.height.
     [[nodiscard]] csRect getFuelBurnRect() const noexcept {
