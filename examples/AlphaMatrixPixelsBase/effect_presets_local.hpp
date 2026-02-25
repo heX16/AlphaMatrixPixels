@@ -35,6 +35,18 @@ Example:
 #include "effect_presets.hpp"
 #include "effect_presets_local_macros.hpp"
 
+/*
+ * Conditional build:
+ * - Default: full set of effects (cEffectsCount = 8, loadEffectByIndexLocal switches 1..8).
+ * - Define ALPHAMATRIX_SINGLE_EFFECT_FLAME before including this file for minimal build:
+ *   cEffectsCount = 1, loadEffectByIndexLocal always loads preset 120 (Flame).
+ */
+#ifdef ALPHAMATRIX_SINGLE_EFFECT_FLAME
+constexpr uint8_t cEffectsCount = 1;
+#else
+constexpr uint8_t cEffectsCount = 8;
+#endif
+
 inline void loadEffectPresetLocal(csEffectManager& effectManager, uint16_t effectId, csMatrixPixels* matrixSecondBuffer = nullptr) {
     // Only effects listed here are compiled into binary
     switch (effectId) {
@@ -43,6 +55,43 @@ inline void loadEffectPresetLocal(csEffectManager& effectManager, uint16_t effec
             break;
     }
 }
+
+#ifdef ALPHAMATRIX_SINGLE_EFFECT_FLAME
+inline void loadEffectByIndexLocal(csEffectManager& effectManager, uint8_t /* effectIndex */) {
+    loadEffectPresetLocal(effectManager, 120); // Flame
+}
+#else
+inline void loadEffectByIndexLocal(csEffectManager& effectManager, uint8_t effectIndex) {
+    switch (effectIndex) {
+        case 1:
+            loadEffectPresetLocal(effectManager, 3); // Snowfall
+            break;
+        case 2:
+            loadEffectPresetLocal(effectManager, 2); // GradientWaves
+            break;
+        case 3:
+            loadEffectPresetLocal(effectManager, 1); // Plasma
+            break;
+        case 4:
+            loadEffectPresetLocal(effectManager, 116); // 5 BouncingPixels with different bright colors
+            break;
+        case 5:
+            loadEffectPresetLocal(effectManager, 117); // RandomFlashPoint
+            break;
+        case 6:
+            loadEffectPresetLocal(effectManager, 118); // RandomFlashPointOverlay
+            break;
+        case 7:
+            loadEffectPresetLocal(effectManager, 119); // 5 BouncingPixels Fading
+            break;
+        case 8:
+            loadEffectPresetLocal(effectManager, 120); // Flame
+            break;
+        default:
+            break;
+    }
+}
+#endif
 
 #define EFFECT_PRESETS_LOCAL_MACROS_UNDEF
 #include "effect_presets_local_macros.hpp"

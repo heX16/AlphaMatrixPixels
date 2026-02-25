@@ -3,6 +3,8 @@
 #include "effect_manager.hpp"
 #include "matrix_sfx_system.hpp"
 #include "effect_presets.hpp"
+
+#define ALPHAMATRIX_SINGLE_EFFECT_FLAME
 #include "effect_presets_local.hpp"
 #include "led_config.hpp"
 #include "wifi_ota.hpp"
@@ -20,7 +22,6 @@ amp::csMatrixPixels canvasX2(cWidth*2, cHeight*2);
 
 csTimerDef<20 * 1000> tEffectSwitch;  // 20 seconds - default time in template
 csTimerShortDef<1000 / 60> tRender;   // ~60 FPS (16 ms) - default time in template
-constexpr uint8_t cEffectsCount = 8;
 uint8_t effectIndex = 1;
 
 void setup() {
@@ -72,32 +73,7 @@ void loop() {
 
         // Clear all effects and add needed ones based on effectIndex (1..cEffectsCount)
         sfxSystem.effectManager->clearAll();
-        switch (effectIndex) {
-            case 1:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 3); // Snowfall
-                break;
-            case 2:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 2); // GradientWaves
-                break;
-            case 3:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 1); // Plasma
-                break;
-            case 4:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 116); // 5 BouncingPixels with different bright colors
-                break;
-            case 5:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 117); // RandomFlashPoint
-                break;
-            case 6:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 118); // RandomFlashPointOverlay
-                break;
-            case 7:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 119); // 5 BouncingPixels Fading
-                break;
-            case 8:
-                loadEffectPresetLocal(*sfxSystem.effectManager, 120); // Flame
-                break;
-        }
+        loadEffectByIndexLocal(*sfxSystem.effectManager, effectIndex);
     }
     
     // Check if render timer has fired
