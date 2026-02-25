@@ -6,6 +6,7 @@
 #include "color_rgba.hpp"
 #include "matrix_bytes.hpp"
 #include "matrix_pixels.hpp"
+#include "matrix_types.hpp"
 #include "matrix_utils.hpp"
 #include "rect.hpp"
 #include "math.hpp"
@@ -383,34 +384,40 @@ private:
     // Add sparks into the technical fuel row. Cooling must already be applied.
     // w = width, fuelYPos = fuel row y.
     void stepSparks(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsCoord fuelYPos) {
-        const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? (w / 2) : 1;
-        for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
-            tMatrixPixelsSize x;
-            if (w <= 255) {
-                const uint8_t w8 = w;
-                x = to_size(rand.rand(w8));
+        uint32_t numSparks = ((w / 2) * sparking);
+        if (numSparks >= 255) {
+            numSparks = numSparks / 255;
+        } else {
+            if (rand.rand() > numSparks) {
+                // win the "rand"
+                numSparks = 0;
             } else {
-                const uint32_t r = rand.rand(), wu = w;
-                x = to_size(r * wu >> 8);
+                // win the "sparking"
+                numSparks = 1;
             }
-            if (rand.rand() < sparking) {
-                const uint8_t v = rand.randRange(160, 255);
-                heatA.setValue(to_coord(x), fuelYPos, v);
-            }
+        }
+        for (uint32_t i = 0; i < numSparks; ++i) {
+            const tMatrixPixelsSize x = matrix_utils::randCoord(rand, w);
+            heatA.setValue(to_coord(x), fuelYPos, rand.randRange(160, 255));
         }
     }
 
     // Blur technical fuel row into visible bottom row: v(x) = (L + 2*C + R) / 4
+    // IMPORTANT: `fuelYPos != bottomVisibleY`
     // w = width, fuelYPos = fuel row y, bottomVisibleY = visible bottom row y.
     void stepFuelBlur(tMatrixPixelsSize w, tMatrixPixelsCoord fuelYPos, tMatrixPixelsCoord bottomVisibleY) {
-        for (tMatrixPixelsSize x = 0; x < w; ++x) {
-            const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
-            const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-            const uint16_t fL = heatA.getValue(to_coord(xL), fuelYPos);
-            const uint16_t fC = heatA.getValue(to_coord(x), fuelYPos);
-            const uint16_t fR = heatA.getValue(to_coord(xR), fuelYPos);
-            const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
-            heatA.setValue(to_coord(x), bottomVisibleY, v);
+
+        // sliding window
+        uint8_t L = 0;
+        uint8_t C = 0;
+        uint8_t R = 0;
+
+        for (tMatrixPixelsCoord x = -1; x < (w + 1); ++x) {
+            L = C;
+            C = R;
+            R = heatA.getValue(x + 1, fuelYPos);
+            const uint8_t v = (L + (C * 2) + R) / 4;
+            heatA.setValue(x, bottomVisibleY, v);
         }
     }
 
