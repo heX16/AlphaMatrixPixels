@@ -28,7 +28,8 @@ uint8_t effectIndex = 1;
 // 10 s timer: switch flame strength via sparking (strong / medium / weak)
 csTimerDef<10 * 1000> tFlameSparkingSwitch;
 // Sparking levels: higher = more active flame (cooling stays 40, set by preset)
-static const uint8_t cFlameSparkingLevels[3] = { 180, 40, 5 };  // strong, medium, weak
+static const uint8_t cFlameSparkingLevels[3] = { 150, 70, 30 };  // strong, medium, weak
+static const uint8_t cFlameCoolingLevels[3] = { 60, 60, 60 };  // strong, medium, weak
 #endif
 
 void setup() {
@@ -65,7 +66,7 @@ void setup() {
 #ifdef ALPHAMATRIX_SINGLE_EFFECT_FLAME
     tFlameSparkingSwitch.start();  // Start 10 s flame sparking switch timer
 #endif
-    loadEffectPresetLocal(*sfxSystem.effectManager, 5, &canvasX2); // Snowfall
+    loadEffectByIndexLocal(*sfxSystem.effectManager, effectIndex);
 }
 
 void loop() {
@@ -76,6 +77,8 @@ void loop() {
         digitalWrite(LED_BUILTIN, ((millis() / 500u) % 2u) == 0u ? LOW : HIGH);
     #endif
 
+    #ifdef ALPHAMATRIX_SINGLE_EFFECT_FLAME
+    #else
     // Check if timer has fired and switch to next effect
     if (tEffectSwitch.run()) {
         effectIndex = (effectIndex % cEffectsCount) + 1;
@@ -85,6 +88,7 @@ void loop() {
         sfxSystem.effectManager->clearAll();
         loadEffectByIndexLocal(*sfxSystem.effectManager, effectIndex);
     }
+    #endif
     
     // Check if render timer has fired
     if (tRender.run()) {
@@ -97,10 +101,12 @@ void loop() {
         // Every 10 s pick random flame strength via sparking (strong / medium / weak)
         if (tFlameSparkingSwitch.run()) {
             amp::csEffectBase* eff = sfxSystem.effectManager->get(0);
+            auto randValue = random(0, 3);
             if (eff) {
                 auto* flame = static_cast<amp::csRenderFlame*>(eff->queryClassFamily(amp::PropType::EffectFlame));
                 if (flame != nullptr) {
-                    flame->sparking = cFlameSparkingLevels[random(0, 3)];
+                    flame->sparking = cFlameSparkingLevels[randValue];
+                    flame->cooling = cFlameCoolingLevels[randValue];
                 }
             }
             tFlameSparkingSwitch.start();

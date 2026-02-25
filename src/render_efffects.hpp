@@ -368,6 +368,7 @@ private:
     }
 
     // Cooling: subtract random [0..coolMax) from each cell; write back into heatA (full internal height).
+    // w = width, internalH = internal height, coolMax = max cool per cell.
     void stepCooling(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize internalH, uint8_t coolMax) {
         for (tMatrixPixelsSize y = 0; y < internalH; ++y) {
             for (tMatrixPixelsSize x = 0; x < w; ++x) {
@@ -380,33 +381,41 @@ private:
     }
 
     // Add sparks into the technical fuel row. Cooling must already be applied.
-    void stepSparks(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsCoord fuelY) {
-        const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? static_cast<tMatrixPixelsSize>(w / 2) : 1;
+    // w = width, fuelYPos = fuel row y.
+    void stepSparks(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsCoord fuelYPos) {
+        const tMatrixPixelsSize numSparks = (w / 2 >= 1) ? (w / 2) : 1;
         for (tMatrixPixelsSize i = 0; i < numSparks; ++i) {
-            const tMatrixPixelsSize x = (w <= 255)
-                ? to_size(rand.rand(static_cast<uint8_t>(w)))
-                : to_size(static_cast<uint32_t>(rand.rand()) * static_cast<uint32_t>(w) >> 8);
+            tMatrixPixelsSize x;
+            if (w <= 255) {
+                const uint8_t w8 = w;
+                x = to_size(rand.rand(w8));
+            } else {
+                const uint32_t r = rand.rand(), wu = w;
+                x = to_size(r * wu >> 8);
+            }
             if (rand.rand() < sparking) {
                 const uint8_t v = rand.randRange(160, 255);
-                heatA.setValue(to_coord(x), fuelY, v);
+                heatA.setValue(to_coord(x), fuelYPos, v);
             }
         }
     }
 
     // Blur technical fuel row into visible bottom row: v(x) = (L + 2*C + R) / 4
-    void stepFuelBlur(tMatrixPixelsSize w, tMatrixPixelsCoord fuelY, tMatrixPixelsCoord bottomVisibleY) {
+    // w = width, fuelYPos = fuel row y, bottomVisibleY = visible bottom row y.
+    void stepFuelBlur(tMatrixPixelsSize w, tMatrixPixelsCoord fuelYPos, tMatrixPixelsCoord bottomVisibleY) {
         for (tMatrixPixelsSize x = 0; x < w; ++x) {
             const tMatrixPixelsSize xL = (x > 0) ? (x - 1) : 0;
             const tMatrixPixelsSize xR = (x + 1 < w) ? (x + 1) : (w - 1);
-            const uint16_t fL = heatA.getValue(to_coord(xL), fuelY);
-            const uint16_t fC = heatA.getValue(to_coord(x), fuelY);
-            const uint16_t fR = heatA.getValue(to_coord(xR), fuelY);
+            const uint16_t fL = heatA.getValue(to_coord(xL), fuelYPos);
+            const uint16_t fC = heatA.getValue(to_coord(x), fuelYPos);
+            const uint16_t fR = heatA.getValue(to_coord(xR), fuelYPos);
             const uint8_t v = static_cast<uint8_t>((fL + (fC * 2u) + fR) / 4u);
             heatA.setValue(to_coord(x), bottomVisibleY, v);
         }
     }
 
     // Upward diffusion (weighted rise + slight lateral spread): heat rises (y decreases).
+    // w = width, visibleH = visible height, windShift = horizontal drift.
     void stepDiffuse(csRandGen& rand, tMatrixPixelsSize w, tMatrixPixelsSize visibleH, int windShift) {
         if (visibleH >= 2) {
             for (tMatrixPixelsSize y = 0; y + 1 < visibleH; ++y) {
@@ -473,19 +482,20 @@ public:
         const uint16_t coolMax16 = static_cast<uint16_t>(((static_cast<uint16_t>(cooling) * 10u) / visibleH) + 2u);
         const uint8_t coolMax = (coolMax16 > 255u) ? 255u : static_cast<uint8_t>(coolMax16);
 
-        const tMatrixPixelsCoord fuelY = to_coord(visibleH);
+        const tMatrixPixelsCoord fuelYPos = to_coord(visibleH);
         const tMatrixPixelsCoord bottomVisibleY = to_coord(visibleH - 1);
 
         const int windShift = static_cast<int>(wind);
         for (uint16_t step = 0; step < steps; ++step) {
             stepCooling(rand, w, internalH, coolMax);
-            stepSparks(rand, w, fuelY);
-            stepFuelBlur(w, fuelY, bottomVisibleY);
+            stepSparks(rand, w, fuelYPos);
+            stepFuelBlur(w, fuelYPos, bottomVisibleY);
             stepDiffuse(rand, w, visibleH, windShift);
         }
     }
 
     // Draw heatA to matrixDest with palette mapping and clipping. Renders only visible rows (excludes technical fuel row).
+    // rand, currTime = unused (signature from base).
     void render(csRandGen& /*rand*/, tTime /*currTime*/) const override {
         if (disabled || !matrixDest) {
             return;
