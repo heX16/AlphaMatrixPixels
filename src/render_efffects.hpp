@@ -2407,8 +2407,8 @@ public:
             return;
         }
 
-        x = target.x + to_coord(randCoord(rand, target.width));
-        y = target.y + to_coord(randCoord(rand, target.height));
+        x = target.x + to_coord(matrix_utils::randCoord(rand, target.width));
+        y = target.y + to_coord(matrix_utils::randCoord(rand, target.height));
         color = csColorRGBA{255, rand.rand(), rand.rand(), rand.rand()};
     }
 
@@ -2419,18 +2419,6 @@ protected:
     uint16_t phaseStartTime = 0;
     bool isOn = false;
     bool needsRespawn = true;
-
-    // Helper: random value in [0, maxExcl) for maxExcl up to 65535 (csRandGen is 8-bit).
-    static tMatrixPixelsSize randCoord(csRandGen& rand, tMatrixPixelsSize maxExcl) {
-        if (maxExcl == 0) {
-            return 0;
-        }
-        if (maxExcl <= 256) {
-            return static_cast<tMatrixPixelsSize>(rand.rand(static_cast<uint8_t>(maxExcl)));
-        }
-        const uint32_t r = (static_cast<uint32_t>(rand.rand()) << 8) | rand.rand();
-        return static_cast<tMatrixPixelsSize>((r * static_cast<uint32_t>(maxExcl)) >> 16);
-    }
 };
 
 } // namespace amp

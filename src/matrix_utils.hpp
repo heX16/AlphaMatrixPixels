@@ -3,6 +3,7 @@
 #include "color_rgba.hpp"
 #include "matrix_base.hpp"
 #include "matrix_types.hpp"
+#include "rand_gen.hpp"
 #include "rect.hpp"
 #include "math.hpp"
 
@@ -251,6 +252,14 @@ inline void fillArea(csMatrixBase& dst, csRect area, csColorRGBA color) noexcept
 [[nodiscard]] inline csColorRGBA getPixelBlend(const csMatrixBase& m, tMatrixPixelsCoord x, tMatrixPixelsCoord y, csColorRGBA bgColor) noexcept {
     const csColorRGBA pixel = m.getPixel(x, y);
     return csColorRGBA::sourceOverStraight(bgColor, pixel);
+}
+
+// Random value in [0, maxExcl) for maxExcl up to 65535.
+[[nodiscard]] inline tMatrixPixelsSize randCoord(csRandGen& rand, tMatrixPixelsSize maxExcl) {
+    if (maxExcl == 0) {
+        return 0;
+    }
+    return static_cast<tMatrixPixelsSize>(rand.rand16(maxExcl));
 }
 
 } // namespace matrix_utils
