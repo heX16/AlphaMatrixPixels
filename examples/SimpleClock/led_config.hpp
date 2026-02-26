@@ -83,3 +83,35 @@ constexpr EOrder cLedRgbOrder = BGR;
 #error "LED_CFG invalid config number"
 #endif
 
+
+// ---------------------------
+// WiFi + OTA configuration
+// ---------------------------
+//
+// This section is intentionally board-agnostic (no ESP headers here),
+// so the project can still compile for boards without WiFi (e.g. Arduino Nano).
+//
+// To enable OTA on ESP8266/ESP32:
+// - Set AMP_WIFI_SSID / AMP_WIFI_PASSWORD
+// - Optionally set AMP_OTA_HOSTNAME / AMP_OTA_PASSWORD
+//
+// The implementation is in `wifi_ota.hpp`.
+#define AMP_ENABLE_WIFI_OTA 1
+
+// WiFi credentials (ESP8266/ESP32 only). Include mywifipass.hpp to provide them.
+#ifndef AMP_WIFI_PASSWORD
+#include "mywifipass.hpp"
+#endif
+
+// OTA settings (ESP8266/ESP32 only).
+#ifndef AMP_OTA_HOSTNAME
+#define AMP_OTA_HOSTNAME "simpleclock"
+#endif
+
+// Note: AMP_OTA_HOSTNAME is also used as the WiFi device hostname (DHCP name in your router).
+
+// Leave empty for no OTA password (not recommended on shared networks).
+#ifndef AMP_OTA_PASSWORD
+#define AMP_OTA_PASSWORD ""
+#endif
+

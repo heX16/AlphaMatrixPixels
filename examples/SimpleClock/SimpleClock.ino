@@ -15,6 +15,7 @@
 
 #define LED_CFG 6
 #include "led_config.hpp"
+#include "wifi_ota.hpp"
 
 
 // Real-time clock
@@ -80,6 +81,8 @@ void setup() {
     FastLED.setBrightness(180);
     FastLED.clear(true);
 
+    setupOTA();
+
     // Initialize RTC
     Wire.begin();
     rtc.begin();
@@ -93,6 +96,8 @@ void setup() {
 }
 
 void loop() {
+    handleOTA();
+
     // Read time from RTC
     DateTime now = rtc.now();
 
