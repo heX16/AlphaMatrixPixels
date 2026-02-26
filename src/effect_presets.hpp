@@ -22,7 +22,7 @@ using namespace amp::math;
 // getOnlyName: if true, fill name_ptr (eff_name) and return without creating the effect
 inline void loadEffectPreset(
         csEffectManager& effectManager, 
-        uint16_t effectId, 
+        uint8_t effectId, 
         csMatrixPixels* matrixSecondBuffer = nullptr,
         amp::tProgmemStrPtr* eff_name = nullptr,
         bool getOnlyName = false)
@@ -30,14 +30,17 @@ inline void loadEffectPreset(
     // Optional effect name stored in PROGMEM (Flash). If pointer is provided, will be set to effect name.
     // If eff_name is nullptr, use a dummy local pointer as a placeholder
     amp::tProgmemStrPtr dummy_name;
-    amp::tProgmemStrPtr* name_ptr = (eff_name != nullptr) ? eff_name : &dummy_name;
+    amp::tProgmemStrPtr *name_ptr = eff_name;
+    if (eff_name == nullptr) {
+        eff_name = &dummy_name;
+    }
+    *name_ptr = F("");
 
     if (effectId == 0) {
         return;
     }
 
     switch (effectId) {
-        // AlphaMatrixPixelsBase effects (1-5)
         case 1:
             {
                 *name_ptr = F("Plasma");
@@ -577,61 +580,6 @@ inline void loadEffectPreset(
                 break;
             }
         
-        // SimpleClock_DBG effects (301-302)
-        case 301:
-            {
-                *name_ptr = F("Clock");
-                if (getOnlyName) return;
-                // Get font dimensions for clock size calculation
-                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
-                const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
-                const tMatrixPixelsSize fontHeight = static_cast<tMatrixPixelsSize>(font.height());
-                constexpr tMatrixPixelsSize spacing = 0; // spacing between digits (no spacing for 12x5 matrix)
-                constexpr uint8_t digitCount = 4; // clock displays 4 digits
-                
-                // Calculate clock rect size: 4 digits without spacing (12 = 3+3+3+3)
-                const tMatrixPixelsSize clockWidth = digitCount * fontWidth + (digitCount - 1) * spacing;
-                const tMatrixPixelsSize clockHeight = fontHeight;
-                
-                // Create digitGlyph effect for rendering digits
-                auto* digitGlyph = new csRenderDigitalClockDigit();
-                digitGlyph->setFont(font);
-                digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-                digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
-                digitGlyph->renderRectAutosize = false;
-                
-                // Create clock effect
-                auto* clock = new csRenderDigitalClock();
-                
-                // Set renderDigit via propRenderDigit property
-                clock->renderDigit = digitGlyph;
-                
-                // Notify clock that propRenderDigit property changed
-                // This will validate the glyph type and update its matrix if needed
-                clock->propChanged(amp::csRenderDigitalClock::propRenderDigit);
-                
-                clock->renderRectAutosize = false;
-                clock->rectDest = amp::csRect{0, 0, amp::to_size(clockWidth), amp::to_size(clockHeight)};
-                clock->spacing = 0;
-                
-                // Add effects to manager (clock first, then digitGlyph for proper cleanup)
-                effectManager.add(clock);
-                effectManager.add(digitGlyph);
-                break;
-            }
-        case 302:
-            {
-                *name_ptr = F("Digit glyph");
-                if (getOnlyName) return;
-                const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
-                auto* digitGlyph = new csRenderDigitalClockDigit();
-                digitGlyph->setFont(font);
-                digitGlyph->color = csColorRGBA{255, 255, 255, 255};
-                digitGlyph->backgroundColor = csColorRGBA{255, 0, 0, 0};
-                digitGlyph->renderRectAutosize = false;
-                effectManager.add(digitGlyph);
-                break;
-            }
         default:
             ;
     }
