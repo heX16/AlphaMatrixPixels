@@ -19,11 +19,13 @@ using namespace amp::math;
 // effectManager: reference to effect manager for adding effects (matrix is taken from effectManager.getMatrix())
 // effectId: ID of the effect to create
 // matrixSecondBuffer: optional second buffer for effects that need it (e.g., case 5)
+// getOnlyName: if true, fill name_ptr (eff_name) and return without creating the effect
 inline void loadEffectPreset(
         csEffectManager& effectManager, 
         uint16_t effectId, 
         csMatrixPixels* matrixSecondBuffer = nullptr,
-        amp::tProgmemStrPtr* eff_name = nullptr)
+        amp::tProgmemStrPtr* eff_name = nullptr,
+        bool getOnlyName = false)
 {
     // Optional effect name stored in PROGMEM (Flash). If pointer is provided, will be set to effect name.
     // If eff_name is nullptr, use a dummy local pointer as a placeholder
@@ -39,6 +41,7 @@ inline void loadEffectPreset(
         case 1:
             {
                 *name_ptr = F("Plasma");
+                if (getOnlyName) return;
                 auto* plasma = new csRenderPlasma();
                 plasma->scale = csFP16(0.3f);
                 plasma->speed = csFP16(1.0f);
@@ -47,7 +50,8 @@ inline void loadEffectPreset(
             }
         case 2:
             {
-                *name_ptr = F("GradientWaves");
+                *name_ptr = F("Gradient waves");
+                if (getOnlyName) return;
                 auto* gradientWaves = new csRenderGradientWaves();
                 gradientWaves->scale = csFP16(0.5f);
                 gradientWaves->speed = csFP16(1.0f);
@@ -57,6 +61,7 @@ inline void loadEffectPreset(
         case 3:
             {
                 *name_ptr = F("Snowfall");
+                if (getOnlyName) return;
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->color = csColorRGBA{255, 255, 255, 255};
                 snowfall->count = 5;
@@ -69,6 +74,7 @@ inline void loadEffectPreset(
         case 4:
             {
                 *name_ptr = F("Glyph");
+                if (getOnlyName) return;
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
                 glyph->backgroundColor = csColorRGBA{128, 0, 0, 0};
@@ -87,6 +93,7 @@ inline void loadEffectPreset(
         case 5:
             {
                 *name_ptr = F("Snowfall (copy)");
+                if (getOnlyName) return;
                 if (!matrixSecondBuffer) {
                     break; // canvasX2 not provided
                 }
@@ -116,25 +123,29 @@ inline void loadEffectPreset(
         // GUI_Test effects (101-110, 200)
         case 101:
             {
-                *name_ptr = F("GradientWaves");
+                *name_ptr = F("Gradient waves");
+                if (getOnlyName) return;
                 effectManager.add(new csRenderGradientWaves());
                 break;
             }
         case 102:
             {
-                *name_ptr = F("GradientWavesFP");
+                *name_ptr = F("Gradient waves FP");
+                if (getOnlyName) return;
                 effectManager.add(new csRenderGradientWavesFP());
                 break;
             }
         case 103:
             {
                 *name_ptr = F("Plasma");
+                if (getOnlyName) return;
                 effectManager.add(new csRenderPlasma());
                 break;
             }
         case 104:
             {
                 *name_ptr = F("Snowfall");
+                if (getOnlyName) return;
                 auto* snowfall = new csRenderSnowfall();
                 snowfall->smoothMovement = true; // Enable sub-pixel smooth movement
                 effectManager.add(snowfall);
@@ -145,6 +156,7 @@ inline void loadEffectPreset(
         case 105:
             {
                 *name_ptr = F("Glyph");
+                if (getOnlyName) return;
                 auto* glyph = new csRenderGlyph();
                 glyph->color = csColorRGBA{255, 255, 255, 255};
                 glyph->backgroundColor = csColorRGBA{196, 0, 0, 0};
@@ -163,6 +175,7 @@ inline void loadEffectPreset(
         case 106:
             {
             *name_ptr = F("Circle");
+            if (getOnlyName) return;
             auto* circle = new csRenderCircleGradient();
             circle->color = csColorRGBA{255, 255, 255, 255};
             circle->backgroundColor = csColorRGBA{0, 0, 0, 0};
@@ -174,6 +187,7 @@ inline void loadEffectPreset(
         case 107:
             {
                 *name_ptr = F("Clock");
+                if (getOnlyName) return;
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont4x7DigitalClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -220,7 +234,8 @@ inline void loadEffectPreset(
             }
         case 108:
             {
-            *name_ptr = F("AverageArea");
+            *name_ptr = F("Average area");
+            if (getOnlyName) return;
             if (!effectManager.getMatrix()) {
                 break;
             }
@@ -237,6 +252,7 @@ inline void loadEffectPreset(
         case 110:
             {
                 *name_ptr = (effectId == 109) ? F("Clock 3x5") : F("Clock 3x5 (no BG)");
+                if (getOnlyName) return;
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5DigitalClock>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -280,7 +296,8 @@ inline void loadEffectPreset(
             }
         case 111:
             {
-                *name_ptr = F("SlowFadingBackground");
+                *name_ptr = F("Slow fading background");
+                if (getOnlyName) return;
                 auto* fade = new csRenderSlowFadingBackground();
 
                 // Slightly slower fade by default (higher = slower).
@@ -292,6 +309,7 @@ inline void loadEffectPreset(
         case 112:
             {
                 *name_ptr = F("7 horizontal lines");
+                if (getOnlyName) return;
                 if (!effectManager.getMatrix()) {
                     break;
                 }
@@ -332,7 +350,8 @@ inline void loadEffectPreset(
             }
         case 113:
             {
-                *name_ptr = F("BouncingPixel");
+                *name_ptr = F("Bouncing pixel");
+                if (getOnlyName) return;
                 auto* bouncingPixel = new csRenderBouncingPixel();
                 bouncingPixel->color = csColorRGBA{255, 255, 255, 0};
                 bouncingPixel->speed = csFP16(0.5f);
@@ -342,7 +361,8 @@ inline void loadEffectPreset(
             }
         case 114:
             {
-                *name_ptr = F("SlowFadingOverlay");
+                *name_ptr = F("Slow fading overlay");
+                if (getOnlyName) return;
                 auto* fade = new csRenderSlowFadingOverlay();
 
                 // Default fadeAlpha is already set to 240 in constructor.
@@ -354,7 +374,8 @@ inline void loadEffectPreset(
             }
         case 115:
             {
-                *name_ptr = F("BouncingPixelDualTrail");
+                *name_ptr = F("Bouncing pixel dual trail");
+                if (getOnlyName) return;
                 auto* bouncingPixelDualTrail = new csRenderBouncingPixelDualTrail();
                 bouncingPixelDualTrail->color = csColorRGBA{255, 255, 255, 0};
                 bouncingPixelDualTrail->speed = csFP16(0.5f);
@@ -364,7 +385,8 @@ inline void loadEffectPreset(
             }
         case 116:
             {
-                *name_ptr = F("5 BouncingPixels");
+                *name_ptr = F("5 bouncing pixels");
+                if (getOnlyName) return;
                 // Define 5 bright colors
                 // csColorRGBA format: (a, r, g, b)
                 const csColorRGBA colors[5] = {
@@ -387,7 +409,8 @@ inline void loadEffectPreset(
             }
         case 117:
             {
-                *name_ptr = F("RandomFlashPoint");
+                *name_ptr = F("Random flash point");
+                if (getOnlyName) return;
                 auto* fade = new csRenderSlowFadingBackground();
                 fade->fadeAlpha = 192;
                 effectManager.add(fade);
@@ -402,7 +425,8 @@ inline void loadEffectPreset(
             }
         case 118:
             {
-                *name_ptr = F("RandomFlashPointOverlay");
+                *name_ptr = F("Random flash point overlay");
+                if (getOnlyName) return;
                 auto* fade = new csRenderSlowFadingOverlay();
                 fade->fadeAlpha = 240;
                 effectManager.add(fade);
@@ -417,7 +441,8 @@ inline void loadEffectPreset(
             }
         case 119:
             {
-                *name_ptr = F("5 BouncingPixels Fading");
+                *name_ptr = F("5 bouncing pixels fading");
+                if (getOnlyName) return;
                 auto* fade = new csRenderSlowFadingBackground();
                 fade->fadeAlpha = 192;
                 effectManager.add(fade);
@@ -439,6 +464,7 @@ inline void loadEffectPreset(
         case 120:
             {
                 *name_ptr = F("Flame");
+                if (getOnlyName) return;
                 auto* flame = new csRenderFlame();
                 flame->cooling = 40;
                 flame->speed = csFP16(0.4f);
@@ -454,6 +480,7 @@ inline void loadEffectPreset(
         case 202:
             {
                 *name_ptr = (effectId == 201) ? F("Clock") : F("Clock negative");
+                if (getOnlyName) return;
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -502,6 +529,7 @@ inline void loadEffectPreset(
         case 203:
             {
                 *name_ptr = F("5 horizontal lines");
+                if (getOnlyName) return;
                 if (!effectManager.getMatrix()) {
                     break;
                 }
@@ -536,13 +564,15 @@ inline void loadEffectPreset(
             }
         case 204:
             {
-                *name_ptr = F("GradientWavesFP");
+                *name_ptr = F("Gradient waves FP");
+                if (getOnlyName) return;
                 effectManager.add(new csRenderGradientWavesFP());
                 break;
             }
         case 205:
             {
                 *name_ptr = F("Plasma");
+                if (getOnlyName) return;
                 effectManager.add(new csRenderPlasma());
                 break;
             }
@@ -551,6 +581,7 @@ inline void loadEffectPreset(
         case 301:
             {
                 *name_ptr = F("Clock");
+                if (getOnlyName) return;
                 // Get font dimensions for clock size calculation
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 const tMatrixPixelsSize fontWidth = static_cast<tMatrixPixelsSize>(font.width());
@@ -590,7 +621,8 @@ inline void loadEffectPreset(
             }
         case 302:
             {
-                *name_ptr = F("DigitGlyph");
+                *name_ptr = F("Digit glyph");
+                if (getOnlyName) return;
                 const auto& font = amp::getStaticFontTemplate<amp::csFont3x5Digits>();
                 auto* digitGlyph = new csRenderDigitalClockDigit();
                 digitGlyph->setFont(font);
