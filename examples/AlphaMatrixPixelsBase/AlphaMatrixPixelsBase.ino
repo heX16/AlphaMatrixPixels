@@ -28,8 +28,7 @@ uint8_t effectIndex = 1;
 // 10 s timer: switch flame strength via sparking (strong / medium / weak)
 csTimerDef<10 * 1000> tFlameSparkingSwitch;
 // Sparking levels: higher = more active flame (cooling stays 40, set by preset)
-static const uint8_t cFlameSparkingLevels[3] = { 150, 70, 30 };  // strong, medium, weak
-static const uint8_t cFlameCoolingLevels[3] = { 60, 60, 60 };  // strong, medium, weak
+static const uint8_t cFlameSparkingLevels[3] = { 200, 70, 30 };  // strong, medium, weak
 #endif
 
 void setup() {
@@ -105,8 +104,8 @@ void loop() {
             if (eff) {
                 auto* flame = static_cast<amp::csRenderFlame*>(eff->queryClassFamily(amp::PropType::EffectFlame));
                 if (flame != nullptr) {
+                    flame->cooling = 80;
                     flame->sparking = cFlameSparkingLevels[randValue];
-                    flame->cooling = cFlameCoolingLevels[randValue];
                 }
             }
             tFlameSparkingSwitch.start();
